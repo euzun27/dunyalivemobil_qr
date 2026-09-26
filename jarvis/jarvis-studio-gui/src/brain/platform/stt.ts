@@ -13,7 +13,7 @@ const GROQ_STT_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 const WHISPER_MODEL = "whisper-large-v3";
 // Biases spelling/vocabulary toward assistant commands. Whisper can echo its prompt
 // on near-silence, so isNoiseTranscript() screens an exact echo.
-const WHISPER_PROMPT = "Hey JARVIS, a voice command for a phone assistant.";
+const WHISPER_PROMPT = "DUNYATEK, telefon asistanina verilen Turkce sesli komut.";
 
 /** The first recording container the WebView supports (Whisper accepts all). */
 function pickRecordMime(): string {
@@ -165,7 +165,7 @@ export async function transcribeWithGroq(blob: Blob, groqKey: string): Promise<s
   form.append("file", blob, `speech.${ext}`);
   form.append("model", WHISPER_MODEL);
   form.append("response_format", "json");
-  form.append("language", "en");
+  form.append("language", "tr");
   form.append("temperature", "0");
   form.append("prompt", WHISPER_PROMPT);
 
@@ -202,7 +202,7 @@ export async function transcribeWithVertex(
     config: {
       autoDecodingConfig: {},
       model: "chirp_2",
-      languageCodes: ["en-US"],
+      languageCodes: ["tr-TR"],
       features: { enableAutomaticPunctuation: true },
     },
     content: audioBase64,
@@ -314,7 +314,8 @@ const HALLUCINATION_PHRASES = new Set([
 ]);
 
 // The wake word may already be stripped, so match the prompt's tail.
-const PROMPT_ECHO = /^(hey jarvis )?a voice command for a phone assistant$/;
+const PROMPT_ECHO =
+  /^(hey jarvis )?a voice command for a phone assistant$|^(dunyatek )?telefon asistanina verilen turkce sesli komut$/;
 
 export function isNoiseTranscript(text: string): boolean {
   const norm = (text || "")

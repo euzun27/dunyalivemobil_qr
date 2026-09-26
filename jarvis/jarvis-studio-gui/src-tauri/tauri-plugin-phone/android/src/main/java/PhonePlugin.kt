@@ -484,30 +484,21 @@ class PhonePlugin(private val activity: Activity) : Plugin(activity) {
         })
     }
 
-    /** Calmer, lower-pitched British male voice — closer to desktop JARVIS. */
+    /** DUNYATEK: calm Turkish voice (falls back to the engine default if Turkish is missing). */
     private fun configureTtsVoice() {
         val engine = tts ?: return
         try {
-            engine.language = Locale.UK
-            engine.setSpeechRate(0.92f)
-            engine.setPitch(0.86f)
+            engine.language = Locale("tr", "TR")
+            engine.setSpeechRate(0.95f)
+            engine.setPitch(0.9f)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 val voices = engine.voices ?: return
-                val en = voices.filter { v ->
-                    val lang = v.locale?.language ?: ""
-                    lang == "en" || lang.startsWith("en")
-                }
-                val pool = if (en.isNotEmpty()) en else voices.toList()
-                val picked = pool.firstOrNull { v ->
-                    val n = v.name.lowercase()
-                    (n.contains("male") || n.contains("daniel") || n.contains("david") || n.contains("ryan"))
-                        && !n.contains("female")
-                } ?: pool.firstOrNull { v ->
+                val tr = voices.filter { v -> (v.locale?.language ?: "") == "tr" }
+                if (tr.isEmpty()) return
+                val picked = tr.firstOrNull { v ->
                     val n = v.name.lowercase()
                     n.contains("network") || n.contains("neural") || n.contains("enhanced")
-                } ?: pool.firstOrNull { v ->
-                    (v.locale?.country ?: "").equals("GB", ignoreCase = true)
-                } ?: pool.firstOrNull()
+                } ?: tr.firstOrNull { v -> !v.isNetworkConnectionRequired } ?: tr.firstOrNull()
                 if (picked != null) engine.voice = picked
             }
         } catch (_: Exception) {

@@ -113,7 +113,7 @@ export function SysStatsPanel({ d, collapsible, open, onToggle }) {
         ? `${fmtMbps(d.down)} Mbps`
         : d.ping > 0
           ? `${d.ping} ms RTT`
-          : d.linkLabel || "ONLINE";
+          : d.linkLabel || "ÇEVRİMİÇİ";
     return (
       <CornerBox
         title="Device"
@@ -124,13 +124,13 @@ export function SysStatsPanel({ d, collapsible, open, onToggle }) {
         onToggle={onToggle}
       >
         <div className="sys-grid">
-          <RadialGauge value={tempVal} label="TEMP" size={106} sub={tempSub} />
-          <RadialGauge value={d.ram} label="MEMORY" size={106} sub={ramSub} />
+          <RadialGauge value={tempVal} label="SICAKLIK" size={106} sub={tempSub} />
+          <RadialGauge value={d.ram} label="BELLEK" size={106} sub={ramSub} />
         </div>
         <div className="sys-mini">
-          <MiniRadial value={batt} label="BATT" size={60} sub={battSub} />
-          <MiniRadial value={d.disk} label="DISK" size={60} sub={diskSub} />
-          <MiniRadial value={d.net} label="NET" size={60} sub={netSub} />
+          <MiniRadial value={batt} label="PİL" size={60} sub={battSub} />
+          <MiniRadial value={d.disk} label="DEPO" size={60} sub={diskSub} />
+          <MiniRadial value={d.net} label="AĞ" size={60} sub={netSub} />
         </div>
         <p className="sys-mobile-note">
           {d.batteryPct != null
@@ -155,7 +155,7 @@ export function SysStatsPanel({ d, collapsible, open, onToggle }) {
     >
       <div className="sys-grid">
         <RadialGauge value={d.cpu} label="CPU" size={106} sub={tempSub} />
-        <RadialGauge value={d.ram} label="MEMORY" size={106} sub={ramSub} />
+        <RadialGauge value={d.ram} label="BELLEK" size={106} sub={ramSub} />
       </div>
       <div className="sys-mini">
         <MiniRadial
@@ -470,10 +470,10 @@ export function DockBar({
   chatCount = 0,
 }) {
   const items = [
-    { l: "SKILLS", i: "sparkle", on: onOpenSkills },
-    { l: "MEMORY", i: "memory", on: onOpenMemory },
-    { l: "CAPABILITIES", i: "help", on: onOpenCaps },
-    { l: IS_MOBILE ? "DEVICE" : "POWER", i: "power", on: onOpenPower },
+    { l: "ARAÇLAR", i: "sparkle", on: onOpenSkills },
+    { l: "HAFIZA", i: "memory", on: onOpenMemory },
+    { l: "YETENEKLER", i: "help", on: onOpenCaps },
+    { l: IS_MOBILE ? "CİHAZ" : "GÜÇ", i: "power", on: onOpenPower },
   ];
   return (
     <div className="dock" data-slot="dock">
@@ -489,7 +489,7 @@ export function DockBar({
         <span className="dock-i">
           <Icon name="chat" size={18} />
         </span>
-        <span className="dock-l">CONVERSATION</span>
+        <span className="dock-l">SOHBET</span>
         {chatCount > 0 && <span className="dock-badge">{chatCount}</span>}
       </button>
     </div>
@@ -1545,7 +1545,7 @@ export function ChatOverlay({
         {messages.length === 0 ? (
           <div className="cv-empty">
             <p className="cv-empty-title">Ask JARVIS anything</p>
-            <p className="sp-desc">Type below, tap the mic, or say “Hey Jarvis”.</p>
+            <p className="sp-desc">Aşağıya yazın, mikrofona dokunun ya da “Hey Jarvis” deyin.</p>
             <div className="cv-starters">
               {STARTERS.map((t) => (
                 <button key={t} type="button" className="cv-starter" onClick={() => setDraft(t)}>

@@ -9,7 +9,7 @@
  * Voice (STT/TTS), info-tools, and on-phone control land in later Phase 1/2 steps.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createBrain } from "../brain";
 import { resolveBrainConfig } from "../brain/resolveConfig";
 import * as quota from "../brain/quota";
@@ -20,6 +20,7 @@ import { LocationService } from "../brain/tools/location";
 import { getTodaySchedule, onScheduleChange } from "../brain/schedule/store";
 import { loadScreenConfig, patchScreenConfig } from "../brain/mobile/screenConfig";
 import { RemotePC } from "../brain/remote/pc";
+import { simplePcStore } from "../brain/remote/simpleStore";
 import { RemoteScreen } from "../brain/remote/webrtcScreen";
 import { invoke } from "@tauri-apps/api/core";
 import { authenticate, checkStatus } from "@tauri-apps/plugin-biometric";
@@ -1210,12 +1211,39 @@ export function useBrain() {
   // Hard ceiling on one push-to-talk recording (see startListen).
   const listenTimerRef = useRef(undefined);
   const finishListenRef = useRef(null);
+
+  // ── DUNYATEK: eslesmis PC varsa telefon, bilgisayardaki DUNYATEK'in uzaktan kumandasidir.
+  // Mikrofon, yazilan mesajlar ve sohbet PC'ye gider; telefonun kendi ayri asistani susar.
+  const pcSnap = useSyncExternalStore(simplePcStore.subscribe, simplePcStore.getSnapshot);
+  const pcPaired = Boolean(pcSnap.config?.host);
+  const pcPairedRef = useRef(pcPaired);
+  const lastSentToPcRef = useRef("");
+  useEffect(() => {
+    pcPairedRef.current = pcPaired;
+  }, [pcPaired]);
+
   const sendMessage = useCallback(
     async (text) => {
       const t = (text || "").trim();
       if (!t || busyRef.current) return;
       userInteractedRef.current = true; // gates the one-time overlay-permission prompt
       setMessages((prev) => [...prev, { role: "user", text: t, id: uid() }]);
+      if (pcPairedRef.current) {
+        lastSentToPcRef.current = t;
+        if (!simplePcStore.sendCommand(t)) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "jarvis",
+              text: "Bilgisayara şu an bağlı değilim efendim. Bağlantı kurulunca tekrar deneyin.",
+              actions: [],
+              finalized: true,
+              id: uid(),
+            },
+          ]);
+        }
+        return;
+      }
       if (pcCommandModeRef.current) {
         busyRef.current = true;
         setStatus("thinking");
@@ -1588,9 +1616,45 @@ export function useBrain() {
 
   // Tap-to-talk: first tap starts listening, second tap stops + sends.
   const triggerListen = useCallback(() => {
+    // Eslesmis PC: mikrofon dugmesi PC ile canli sesli gorusmeyi acar/kapatir.
+    if (pcPairedRef.current) {
+      void simplePcStore.toggleVoice().catch((e) => pushWarning(`Mikrofon: ${e?.message || e}`));
+      return;
+    }
     if (listeningRef.current) finishListen();
     else startListen();
-  }, [startListen, finishListen]);
+  }, [startListen, finishListen, pushWarning]);
+
+  // PC'deki konusma (sesli ya da yazili) telefonun sohbet ekraninda da gorunsun.
+  const seenPcMsgRef = useRef(null);
+  useEffect(() => {
+    const list = pcSnap.messages || [];
+    if (!pcPaired || !list.length) return;
+    const start = seenPcMsgRef.current ? list.lastIndexOf(seenPcMsgRef.current) + 1 : 0;
+    seenPcMsgRef.current = list[list.length - 1];
+    const fresh = list
+      .slice(start)
+      .filter((m) => m?.type === "log" && m.text)
+      .filter((m) => !(m.speaker === "user" && m.text.trim() === lastSentToPcRef.current));
+    if (!fresh.length) return;
+    setMessages((prev) => [
+      ...prev,
+      ...fresh.map((m) => ({
+        role: m.speaker === "user" ? "user" : "jarvis",
+        text: m.text,
+        actions: [],
+        finalized: true,
+        id: uid(),
+      })),
+    ]);
+  }, [pcSnap.messages, pcPaired]);
+
+  // Canli PC gorusmesi acikken ekran "dinliyorum" gostersin.
+  useEffect(() => {
+    if (!pcPaired) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- durum PC ses baglantisini yansitir
+    setStatus(pcSnap.voice ? "listening" : "idle");
+  }, [pcPaired, pcSnap.voice]);
 
   // ── "Hey Jarvis" wake word (on-device openWakeWord via tauri-plugin-phone) ──
   // Runs whenever the toggle is on and a transcription credential exists. The
@@ -1617,8 +1681,10 @@ export function useBrain() {
     // mid-flight, so start_wake_word never dispatched). syncWakeWord() is idempotent
     // by config signature — calling it every render is fine — and turns the engine
     // off itself when the toggle/keys go away (opts=null below).
+    // Eslesmis PC varsa telefonun kendi asistani (ve "Hey Jarvis") tamamen susar - yoksa
+    // ayni konusmayi o da duyup ayri bir asistan gibi kendi basina cevap veriyor.
     const wanted =
-      alwaysOn && (groqKey || saJson)
+      alwaysOn && !pcPaired && (groqKey || saJson)
         ? {
             groqKey,
             vertexSaJson: saJson,
@@ -1638,7 +1704,7 @@ export function useBrain() {
         : null;
     syncWakeWord(wanted);
     return undefined; // singleton owns lifecycle across re-renders — no teardown here
-  }, [alwaysOn, stored.groqKey, stored.vertexSaJson, sendMessage, pushWarning]);
+  }, [alwaysOn, pcPaired, stored.groqKey, stored.vertexSaJson, sendMessage, pushWarning]);
 
   // Speak a line via device TTS (unless muted). Used by the greeting + anywhere we
   // talk outside the sendMessage flow. Never gets the status stuck.
@@ -1657,16 +1723,17 @@ export function useBrain() {
   // from the backend; on the phone there's none, so the brain greets itself).
   const greetedRef = useRef(false);
   useEffect(() => {
-    if (greetedRef.current || !hasKey) return;
+    // Eslesmis PC varsa selamlamayi PC'deki DUNYATEK yapar.
+    if (greetedRef.current || !hasKey || pcPaired) return;
     greetedRef.current = true;
     const hour = new Date().getHours();
-    const part = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-    const text = `${part}, sir. JARVIS online and at your service. How can I help?`;
+    const part = hour < 12 ? "Günaydın" : hour < 18 ? "İyi günler" : "İyi akşamlar";
+    const text = `${part} efendim. DUNYATEK hazır, size nasıl yardımcı olabilirim?`;
     setMessages((prev) =>
       prev.length ? prev : [{ role: "jarvis", text, actions: [], finalized: true, id: uid() }],
     );
     void speak(text);
-  }, [hasKey, speak]);
+  }, [hasKey, speak, pcPaired]);
 
   // ── Live HUD panels (battery / network / weather) ────────────────────────────
   // Real device signals so the Power, Network and Weather panels aren't dead zeros.
