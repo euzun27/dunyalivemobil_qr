@@ -16,7 +16,7 @@ import { syncBrowserPanel } from "./components/browserPanelWindow";
 import { syncControlOverlay } from "./components/controlOverlayWindow";
 import Icon from "./components/Icon";
 
-// Section name (as JARVIS says it) → panels-state key. Module-scope constant —
+// Section name (as JARVIS says it) â†’ panels-state key. Module-scope constant â€”
 // it never changes, so there's no reason to rebuild it on every render.
 const SECTION_KEY = {
   system: "system",
@@ -62,7 +62,7 @@ function ClarifyPrompt({ request, onRespond }) {
           onKeyDown={(e) => {
             if (e.key === "Enter" && answer.trim()) submit();
           }}
-          placeholder="Type your answer…"
+          placeholder="Type your answerâ€¦"
         />
         <div className="perm-actions">
           <button className="perm-deny" onClick={() => onRespond(request.id, "", request.taskId)}>
@@ -179,7 +179,7 @@ export default function App() {
 
   // Effective HUD config: the base preset recolored by the user/JARVIS screen
   // settings. Memoized so it keeps a stable identity across the many re-renders
-  // driven by the websocket hot path (telemetry ~1.5s, stream_delta many/sec) —
+  // driven by the websocket hot path (telemetry ~1.5s, stream_delta many/sec) â€”
   // otherwise a fresh object every render cascades new props through the whole
   // HUD tree and defeats any child memoization.
   const hudConfig = useMemo(
@@ -192,10 +192,10 @@ export default function App() {
     [screen?.accent, screen?.accent2, screen?.rgb],
   );
 
-  // ── Publish the accent to :root so it drives the WHOLE app ──────────────────
+  // â”€â”€ Publish the accent to :root so it drives the WHOLE app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // The accent was only ever applied as an inline style on `.hud`, so it coloured
   // the HUD subtree and nothing else. The fixed top bar, the mic FAB and every
-  // modal are siblings of <ViewportScale>, not descendants of `.hud` — they read
+  // modal are siblings of <ViewportScale>, not descendants of `.hud` â€” they read
   // index.css's own `--accent`, a hardcoded cyan literal. Picking "amber" recoloured
   // the panels and left the entire chrome cyan.
   //
@@ -211,7 +211,7 @@ export default function App() {
     root.setProperty("--accent-soft", hudConfig.accent2);
   }, [hudConfig.accent, hudConfig.accent2]);
 
-  // Collapsible data panels — expanded by default; terminal starts collapsed.
+  // Collapsible data panels â€” expanded by default; terminal starts collapsed.
   const [panels, setPanels] = useState({
     system: true,
     power: true,
@@ -235,7 +235,7 @@ export default function App() {
   const hudOverlayOpen = chatOpen || skillsOpen || capsOpen || powerOpen || memoryOpen;
 
   // Memory view: pull a fresh snapshot on open, and again as the chat moves while
-  // it's open (a spoken "remember…"/"forget…" changes what it shows).
+  // it's open (a spoken "rememberâ€¦"/"forgetâ€¦" changes what it shows).
   useEffect(() => {
     if (memoryOpen) listMemory?.();
   }, [memoryOpen, messages.length, listMemory]);
@@ -248,9 +248,9 @@ export default function App() {
   // Save the read-only-terminal directory allowlist (Skills panel + Settings).
   const saveDirs = useCallback((dirs) => sendConfig({ allowed_dirs: dirs }), [sendConfig]);
 
-  // ── Precise location for accurate weather + distances (browser GPS → backend) ─
-  // enableHighAccuracy:true asks Windows for WiFi-based positioning (~tens–hundreds
-  // of metres) instead of coarse IP geolocation, which was 2–3 km off. maximumAge:0
+  // â”€â”€ Precise location for accurate weather + distances (browser GPS â†’ backend) â”€
+  // enableHighAccuracy:true asks Windows for WiFi-based positioning (~tensâ€“hundreds
+  // of metres) instead of coarse IP geolocation, which was 2â€“3 km off. maximumAge:0
   // forces a fresh fix (not a stale cached one); we keep the MOST accurate reading
   // and let watchPosition refine it for ~30 s (the first fix is often coarse and
   // tightens as more readings arrive), then stop the sensor.
@@ -277,7 +277,7 @@ export default function App() {
     };
   }, [sendLocation]);
 
-  // ── Global Ctrl+Space (registered in Rust) → push-to-talk ───────────────────
+  // â”€â”€ Global Ctrl+Space (registered in Rust) â†’ push-to-talk â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Hold to talk: pressing emits "ptt-start" (begin recording, ignore silence),
   // releasing emits "ptt-stop" (finish + transcribe what was said). Works even
   // when JARVIS is in the background. "trigger-listen" is kept as a back-compat
@@ -293,7 +293,7 @@ export default function App() {
         unlisteners.push(await listen("trigger-listen", () => triggerListen()));
         if (disposed) unlisteners.forEach((u) => u && u());
       } catch {
-        /* browser dev preview — no Tauri runtime */
+        /* browser dev preview â€” no Tauri runtime */
       }
     })();
     return () => {
@@ -302,13 +302,13 @@ export default function App() {
     };
   }, [pttStart, finishListen, triggerListen]);
 
-  // ── Bring JARVIS to the front when it needs your approval ───────────────────
+  // â”€â”€ Bring JARVIS to the front when it needs your approval â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // FALLBACK only: the floating overlay pill now shows the Approve/Deny card
   // wherever the user is, so the main window doesn't need to steal focus. Only
   // when the overlay is disabled in Settings do we surface this window instead
   // (otherwise the prompt would sit unseen behind other apps).
   useEffect(() => {
-    if (IS_MOBILE) return; // one Activity on a phone — the dialog shows in-app
+    if (IS_MOBILE) return; // one Activity on a phone â€” the dialog shows in-app
     if (!permissionRequest) return;
     if (overlay?.enabled !== false) return; // overlay pill is handling it
     (async () => {
@@ -319,12 +319,12 @@ export default function App() {
         await win.unminimize();
         await win.setFocus();
       } catch {
-        /* browser dev preview — no Tauri runtime */
+        /* browser dev preview â€” no Tauri runtime */
       }
     })();
   }, [permissionRequest, overlay?.enabled]);
 
-  // ── Browser companion panel (right rail beside Playwright Chromium) ─────────
+  // â”€â”€ Browser companion panel (right rail beside Playwright Chromium) â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Desktop-only: it positions a secondary Tauri window that doesn't exist on a
   // phone (one Activity), so skip the sync on mobile (it would call Tauri invoke
   // on a non-existent window and throw).
@@ -336,9 +336,9 @@ export default function App() {
     syncBrowserPanel(browserPanelOpen, wsSend);
   }, [browserPanelOpen, wsSend]);
 
-  // ── "JARVIS CONTROLLING" overlay (shown during desktop computer control) ────
+  // â”€â”€ "JARVIS CONTROLLING" overlay (shown during desktop computer control) â”€â”€â”€â”€
   // Driven from the main window (a hidden window can't reliably show itself).
-  // Desktop-only secondary window — skip on mobile.
+  // Desktop-only secondary window â€” skip on mobile.
   const controlOverlayActive =
     !!controlState.armed ||
     (agentTasks || []).some((t) => t.kind === "computer" && t.status === "running");
@@ -354,7 +354,7 @@ export default function App() {
     }
   }, [isConnected, sendLocation]);
 
-  // ── JARVIS controlling its own interface (ui_action events) ────────────────
+  // â”€â”€ JARVIS controlling its own interface (ui_action events) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!uiCommand) return;
     const cmd = uiCommand.cmd;
@@ -365,7 +365,7 @@ export default function App() {
     // Generic expand_/collapse_/toggle_<section>
     const m = /^(expand|collapse|toggle)_(.+)$/.exec(cmd || "");
     if (m) {
-      // "minimize/expand ALL the panels" — apply the verb to every panel at once.
+      // "minimize/expand ALL the panels" â€” apply the verb to every panel at once.
       if (m[2] === "all") {
         setPanels((p) =>
           Object.fromEntries(
@@ -378,7 +378,7 @@ export default function App() {
       if (m[1] === "expand") togglePanel(key, true);
       else if (m[1] === "collapse") togglePanel(key, false);
       else togglePanel(key);
-      // terminal lives in a rail too — toggling its panel is enough
+      // terminal lives in a rail too â€” toggling its panel is enough
       return;
     }
     switch (cmd) {
@@ -532,7 +532,7 @@ export default function App() {
       </ViewportScale>
 
       {/* Fixed controls layered above the scaled stage. Hidden while the chat
-          panel is open — they're window-fixed (z 200) and would otherwise draw
+          panel is open â€” they're window-fixed (z 200) and would otherwise draw
           on top of the chat header. */}
       {!chatOpen && !memoryOpen && (
         <div className="hud-fixed-controls">
@@ -568,7 +568,7 @@ export default function App() {
           >
             <Icon name="chat" />
           </button>
-          {/* Conversation log — always reachable on mobile (dock is far down the scroll) */}
+          {/* Conversation log â€” always reachable on mobile (dock is far down the scroll) */}
           <button
             className={`hud-fixed-btn ${chatOpen ? "hud-fixed-btn--armed" : ""}`}
             title="Open conversation log"
@@ -583,7 +583,7 @@ export default function App() {
               className={`hud-fixed-btn ${browserState.open ? "hud-fixed-btn--armed" : ""}`}
               title={
                 browserState.open
-                  ? "JARVIS's browser is open — click to close it"
+                  ? "JARVIS's browser is open â€” click to close it"
                   : "Open JARVIS's web browser"
               }
               aria-pressed={browserState.open}
@@ -592,10 +592,10 @@ export default function App() {
               <Icon name="globe" />
             </button>
           )}
-          {/* Agent Activity — JARVIS's autopilot steps + the screenshots it saw */}
+          {/* Agent Activity â€” JARVIS's autopilot steps + the screenshots it saw */}
           <button
             className={`hud-fixed-btn ${anyTaskActive ? "hud-fixed-btn--armed" : ""}`}
-            title="Task Center — durable progress, recovery, proof, and STOP"
+            title="Task Center â€” durable progress, recovery, proof, and STOP"
             aria-pressed={activityOpen}
             onClick={() => setActivityOpen(true)}
           >
@@ -607,9 +607,9 @@ export default function App() {
               className={`hud-fixed-btn ${pcState === "online" ? "hud-fixed-btn--armed" : ""}`}
               title={
                 pcState === "online"
-                  ? "Remote PC — online (tap to manage)"
+                  ? "Remote PC â€” online (tap to manage)"
                   : pcConfig
-                    ? `Remote PC — ${pcState}`
+                    ? `Remote PC â€” ${pcState}`
                     : "Pair a Windows PC to control it from here"
               }
               aria-pressed={remoteOpen}
@@ -632,7 +632,7 @@ export default function App() {
       )}
 
       {/* ANDROID FORK: push-to-talk mic. Tap to start listening, tap again to send.
-          Mic → Groq Whisper → brain (see useBrain). */}
+          Mic â†’ Groq Whisper â†’ brain (see useBrain). */}
       {IS_MOBILE && !hudOverlayOpen && (
         <button
           className={`mobile-mic${status === "listening" ? " mobile-mic--listening" : ""}${
@@ -640,7 +640,7 @@ export default function App() {
           }`}
           onClick={triggerListen}
           aria-label={status === "listening" ? "Stop and send" : "Tap to talk"}
-          title={status === "listening" ? "Listening — tap to send" : "Tap to talk"}
+          title={status === "listening" ? "Listening â€” tap to send" : "Tap to talk"}
         >
           <Icon name={status === "listening" ? "stop" : "mic"} size={28} strokeWidth={1.8} />
         </button>
@@ -651,7 +651,7 @@ export default function App() {
           {controlState.armed && (
             <div className="hud-armed-banner hud-armed-banner--control">
               <span className="hud-armed-dot" />
-              <span>⌨ JARVIS IS CONTROLLING YOUR MOUSE &amp; KEYBOARD</span>
+              <span>âŒ¨ JARVIS IS CONTROLLING YOUR MOUSE &amp; KEYBOARD</span>
               <button className="hud-armed-disarm hud-armed-disarm--stop" onClick={stopControl}>
                 STOP
               </button>
@@ -661,7 +661,7 @@ export default function App() {
             <div className="hud-armed-banner">
               <span className="hud-armed-dot" />
               <span>
-                BROWSER · {browserState.title || browserState.url || "ready"} · panel on the right
+                BROWSER Â· {browserState.title || browserState.url || "ready"} Â· panel on the right
               </span>
               <button className="hud-armed-disarm" onClick={() => setBrowserOpen(false)}>
                 CLOSE
@@ -670,18 +670,18 @@ export default function App() {
           )}
           {!isConnected && (
             <div className="hud-offline">
-              ⚠ CORE OFFLINE — start <code>python main.py</code> in{" "}
+              âš  CORE OFFLINE â€” start <code>python main.py</code> in{" "}
               <code>jarvis-studio-backend/</code>
             </div>
           )}
         </div>
       )}
 
-      {/* JARVIS is actively driving the phone's own screen (phone_task) — the
+      {/* JARVIS is actively driving the phone's own screen (phone_task) â€” the
           desktop has an always-visible "controlling" overlay + STOP for this;
           the phone had neither, so a runaway/undesired task had no interrupt.
           Stays up through `status === "speaking"` too, not just the task's own
-          running flag — JARVIS keeps talking (reading out what it did) after the
+          running flag â€” JARVIS keeps talking (reading out what it did) after the
           task itself finishes, and the STOP control disappearing mid-sentence
           left no way to cut that off. */}
       {IS_MOBILE && (anyTaskActive || status === "speaking") && (
@@ -758,18 +758,7 @@ export default function App() {
       )}
 
       {remoteOpen && IS_MOBILE && (
-        <MobileRemotePC
-          pcConfig={pcConfig}
-          pcState={pcState}
-          onPair={pairPC}
-          onUnpair={unpairPC}
-          onViewScreen={() => {
-            setRemoteOpen(false);
-            setScreenOpen(true);
-            void startScreen();
-          }}
-          onClose={() => setRemoteOpen(false)}
-        />
+        <MobileRemotePC onClose={() => setRemoteOpen(false)} />
       )}
 
       {screenOpen && IS_MOBILE && (
@@ -810,13 +799,13 @@ export default function App() {
           <Onboarding sysInfo={sysInfo} onSave={(cfg) => sendConfig(cfg)} />
         ))}
 
-      {/* First-run asset download (Chromium / Whisper / Piper) — desktop only;
+      {/* First-run asset download (Chromium / Whisper / Piper) â€” desktop only;
           a phone bundles no such runtime assets. */}
       {!IS_MOBILE && isConnected && !sysInfo.needs_setup && (
         <SetupProgress progress={setupProgress} onRepair={repairSetup} />
       )}
 
-      {/* ── Approve/Deny gate for dangerous actions ── */}
+      {/* â”€â”€ Approve/Deny gate for dangerous actions â”€â”€ */}
       {permissionRequest && (
         <div className="perm-overlay">
           <div className="perm-dialog" role="alertdialog" aria-label="Permission required">
@@ -830,7 +819,7 @@ export default function App() {
             {/* The v2 protocol accepts an exact signed approval from the task's
                 own source device (aura main.py handle_task_approval), verified
                 per-message and gated behind a fresh fingerprint in
-                useBrain.respondPermission — so the submitting phone approves
+                useBrain.respondPermission â€” so the submitting phone approves
                 here. (The old "approve on your PC" notice predated that handler
                 and left every consequential remote task stranded: the PC never
                 shows a prompt for phone-submitted tasks.) */}
@@ -857,7 +846,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── On-phone operator: approve one consequential (R2/R3) action ──
+      {/* â”€â”€ On-phone operator: approve one consequential (R2/R3) action â”€â”€
           The operator refuses to send/share/pay/delete or to tap raw coordinates
           without an explicit decision. Until this existed it had nothing to ask,
           so every such action was auto-denied and the task stalled. */}
@@ -886,7 +875,7 @@ export default function App() {
                 ALLOW ONCE
               </button>
             </div>
-            {/* Never offered for R3 — a payment/credential/deletion step re-asks
+            {/* Never offered for R3 â€” a payment/credential/deletion step re-asks
                 every time, however many the task needs. */}
             {phoneApproval.risk === "R2" && (
               <div className="perm-actions">
@@ -899,7 +888,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Mid-task clarify: the autopilot needs one answer to proceed ── */}
+      {/* â”€â”€ Mid-task clarify: the autopilot needs one answer to proceed â”€â”€ */}
       <ClarifyPrompt key={clarifyRequest?.id} request={clarifyRequest} onRespond={respondClarify} />
     </>
   );
