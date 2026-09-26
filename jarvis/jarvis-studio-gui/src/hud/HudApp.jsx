@@ -171,8 +171,8 @@ export function JarvisHUD({
         <span className="fc tr" />
         <span className="fc bl" />
         <span className="fc br" />
-        <span className="edge-label el-t">J.A.R.V.I.S DISPLAY SYSTEM · {c.name}</span>
-        <span className="edge-label el-b">JUST A RATHER VERY INTELLIGENT SYSTEM · v3.0</span>
+        <span className="edge-label el-t">DÜNYATEK EKRAN SİSTEMİ · {c.name}</span>
+        <span className="edge-label el-b">DÜNYATEK KİŞİSEL ASİSTAN · v3.0</span>
       </div>
 
       {/* central core */}

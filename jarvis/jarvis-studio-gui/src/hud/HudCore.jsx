@@ -182,15 +182,33 @@ function VisorFace({ w = 302 }) {
       height={h}
       aria-hidden="true"
     >
-      <image
-        className="iron-trace-image"
-        href="/assets/ironman-helmet-kept.png"
-        x="0"
-        y="0"
-        width="409"
-        height="610"
-        preserveAspectRatio="xMidYMid meet"
-      />
+      {/* DUNYATEK amblemi: dunya (kure) + isim */}
+      <g
+        fill="none"
+        stroke="var(--ac, #00e5ff)"
+        strokeWidth="5"
+        style={{ filter: "drop-shadow(0 0 8px var(--ac, #00e5ff))" }}
+      >
+        <circle cx="204.5" cy="270" r="150" />
+        <ellipse cx="204.5" cy="270" rx="70" ry="150" />
+        <ellipse cx="204.5" cy="270" rx="118" ry="150" opacity="0.6" />
+        <line x1="204.5" y1="120" x2="204.5" y2="420" />
+        <line x1="54.5" y1="270" x2="354.5" y2="270" />
+        <path d="M78 195 Q204.5 225 331 195" />
+        <path d="M78 345 Q204.5 315 331 345" />
+      </g>
+      <text
+        x="204.5"
+        y="505"
+        textAnchor="middle"
+        fill="var(--ac, #00e5ff)"
+        fontSize="64"
+        fontWeight="700"
+        letterSpacing="6"
+        style={{ filter: "drop-shadow(0 0 6px var(--ac, #00e5ff))" }}
+      >
+        DÜNYATEK
+      </text>
     </svg>
   );
 }
@@ -291,7 +309,7 @@ const BOOT_LINES = [
 // so: quicker, and tappable to cut straight through.
 const BOOT_STEP_MS = 190;
 const BOOT_HOLD_MS = 320;
-export function BootSequence({ onDone, name = "REACTOR CORE" }) {
+export function BootSequence({ onDone, name = "DÜNYATEK" }) {
   const [line, setLine] = useState(0);
   const [gone, setGone] = useState(false);
   const finish = () => {

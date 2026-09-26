@@ -21,7 +21,7 @@ export const DEFAULT_TELEMETRY = {
   diskUsedGb: 0,
   diskTotalGb: 0,
   gpuName: "",
-  linkLabel: "ONLINE",
+  linkLabel: "ÇEVRİMİÇİ",
 };
 
 /* ───────── status labels (idle→listening→thinking→speaking) ───────── */
@@ -31,17 +31,17 @@ export const DEFAULT_TELEMETRY = {
 // thinking/speaking/working keep their own hues: those distinguish *what JARVIS is
 // doing* at a glance, and collapsing them into one accent would lose that.
 export const STATUS_META = {
-  idle: { label: 'STANDBY — say "Hey Jarvis"', col: "var(--ac2, #00c8ff)" },
-  listening: { label: "LISTENING…", col: "var(--ac, #00e5ff)" },
-  thinking: { label: "PROCESSING REQUEST…", col: "#78b4ff" },
-  speaking: { label: "RESPONDING…", col: "#ffb648" },
-  working: { label: "EXECUTING TASK…", col: "#22e39a" },
+  idle: { label: "HAZIR — konuşmak için mikrofona dokunun", col: "var(--ac2, #00c8ff)" },
+  listening: { label: "DİNLİYORUM…", col: "var(--ac, #00e5ff)" },
+  thinking: { label: "İŞLENİYOR…", col: "#78b4ff" },
+  speaking: { label: "CEVAP VERİYOR…", col: "#ffb648" },
+  working: { label: "GÖREV YAPILIYOR…", col: "#22e39a" },
 };
 
 /* Default HUD look — recolored per-user by hudConfig in App.jsx */
 export const DEFAULT_DIRECTION = {
   id: "reactor",
-  name: "REACTOR CORE",
+  name: "DÜNYATEK",
   layout: "hud--reactor",
   accent: "#00e5ff",
   accent2: "#6fe9ff",
