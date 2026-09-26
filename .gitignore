@@ -1,0 +1,20 @@
+# Gizli bilgiler
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.keystore
+*.jks
+local.properties
+
+# Derleme çıktıları / buyuk klasorler
+node_modules/
+target/
+build/
+.gradle/
+dist/
+.git_yedek/
+
+# Sistem dosyalari
+Thumbs.db

@@ -1,0 +1,6 @@
+https://apps.abacus.ai/chatllm/route_llm?convoId=14a351b5de
+
+derleme
+
+cd C:\cloude_free\Dunya_live_qr\jarvis\jarvis-studio-gui
+npx tauri android build --debug --apk --target aarch64
