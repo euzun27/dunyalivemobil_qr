@@ -33,8 +33,8 @@ export default function Onboarding({ sysInfo, onSave }) {
           <span className="onboard-kicker">FIRST-RUN SETUP</span>
           <h2>Hoş geldiniz DUNYATEK</h2>
           <p className="onboard-sub">
-            Add at least one AI provider key and choose where DUNYATEK should keep the files it
-            creates. You can change all of this later in Settings.
+            En az bir yapay zekâ sağlayıcı anahtarı ekleyin ve DUNYATEK'in
+            oluşturacağı dosyaların saklanacağı yeri seçin. Tüm bunları daha sonra Ayarlar'dan değiştirebilirsiniz.
           </p>
         </div>
 
@@ -84,8 +84,8 @@ export default function Onboarding({ sysInfo, onSave }) {
         {touched && !canFinish && (
           <div className="onboard-warn">
             {!hasAnyKey
-              ? "Add at least one API key to continue."
-              : "Choose a storage folder to continue."}
+              ? "Devam etmek için en az bir API anahtarı ekleyin."
+              : "Devam etmek için bir depolama klasörü seçin."}
           </div>
         )}
 
