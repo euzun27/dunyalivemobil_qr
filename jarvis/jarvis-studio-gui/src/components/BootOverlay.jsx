@@ -29,19 +29,19 @@ export default function BootOverlay({ connected }) {
 
   return (
     <div className="setup-overlay">
-      <div className="setup-card" role="status" aria-label="Starting JARVIS">
+      <div className="setup-card" role="status" aria-label="DUNYATEK başlatılıyor">
         <div className="setup-ring" aria-hidden="true">
           <span className="setup-ring-core" />
         </div>
         <div className="setup-kicker">BOOTING</div>
-        <div className="setup-title">J.A.R.V.I.S</div>
+        <div className="setup-title">DUNYATEK</div>
         <div className="setup-sub">{msg}</div>
         <div className="setup-bar">
           <div className="setup-bar-fill setup-bar-fill--indet" />
         </div>
         {secs >= 40 && (
           <div className="setup-foot">
-            Diagnostics: open <code>backend.log</code> in the JARVIS install folder (
+            Diagnostics: open <code>backend.log</code> in the DUNYATEK install folder (
             <code>resources\jarvis-backend</code>).
           </div>
         )}

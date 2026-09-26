@@ -46,12 +46,12 @@ export default function MobileOnboarding({ sysInfo, onSave }) {
 
   return (
     <div className="onboard-overlay">
-      <div className="onboard-panel" role="dialog" aria-label="Welcome to JARVIS">
+      <div className="onboard-panel" role="dialog" aria-label="DUNYATEK'e hoş geldiniz">
         <div className="onboard-hd">
           <span className="onboard-kicker">FIRST-RUN SETUP</span>
-          <h2>Welcome to J.A.R.V.I.S</h2>
+          <h2>Hoş geldiniz DUNYATEK</h2>
           <p className="onboard-sub">
-            Connect JARVIS to your AI provider. Keys stay on this device only.
+            DUNYATEK'i yapay zekâ sağlayıcınıza bağlayın. Anahtarlar yalnızca bu cihazda kalır.
           </p>
         </div>
 
@@ -166,7 +166,7 @@ export default function MobileOnboarding({ sysInfo, onSave }) {
           onClick={finish}
           style={{ marginTop: 20 }}
         >
-          Start JARVIS →
+          DUNYATEK'i Başlat →
         </button>
       </div>
     </div>
