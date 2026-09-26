@@ -4,8 +4,12 @@
  *   POST /login  { pin: <tek kullanimlik anahtar> } -> { ok, token }
  *   WS   /ws?token=<token>  -> JSON mesajlar, gonderim: {type:"command", text:"..."}
  */
+// PC'nin mobil uygulama icin actigi duz HTTP portu (dunya_live dashboard APP_PORT).
+// Asil panel portu (8000) kendinden imzali HTTPS kullaniyor, WebView ona guvenmiyor.
+export const PC_APP_PORT = 8002;
+
 export class SimplePC {
-  constructor({ host, port = 8001, secure = false, onStateChange, onMessage }) {
+  constructor({ host, port = PC_APP_PORT, secure = false, onStateChange, onMessage }) {
     this.host = host;
     this.port = port;
     this.secure = secure;
