@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from "react";
 import ModalPanel from "./ModalPanel";
 import Icon from "./Icon";
 import { useSimplePc } from "../hooks/useSimplePc";
+import { PC_APP_PORT } from "../brain/remote/simplePc";
 
 const QrScanner = lazy(() => import("./QrScanner"));
 
@@ -23,12 +24,8 @@ function parsePairingUrl(text) {
     const url = new URL(text.trim());
     const key = url.searchParams.get("key");
     if (!key) return null;
-    return {
-      host: url.hostname,
-      port: url.port ? Number(url.port) : url.protocol === "https:" ? 443 : 80,
-      secure: url.protocol === "https:",
-      key,
-    };
+    // QR, panelin HTTPS adresini (8000) tasir; uygulama ayni PC'ye duz HTTP portundan baglanir.
+    return { host: url.hostname, port: PC_APP_PORT, secure: false, key };
   } catch {
     return null;
   }
@@ -112,8 +109,8 @@ export default function MobileRemotePC({ onClose }) {
           )}
         </div>
         <div className="settings-hint">
-          DUNYATEK'e telefonunuzdan komut gonderin. PC'de Ayarlar - Uzaktan Erisim ekranindaki
-          kodu okutun veya baglanti adresini elle girin.
+          DUNYATEK'e telefonunuzdan komut gonderin. PC'de Ayarlar - Uzaktan Erisim ekranindaki kodu
+          okutun veya baglanti adresini elle girin.
         </div>
       </div>
 
@@ -131,12 +128,12 @@ export default function MobileRemotePC({ onClose }) {
 
         <div className="settings-hint" style={{ marginTop: 8 }}>
           Ya da baglanti adresini elle yapistirin (ornek:
-          http://192.168.1.45:8001/auto-login?key=XXXXXX):
+          https://192.168.1.45:8000/auto-login?key=XXXXXX):
         </div>
         <input
           className="settings-model-id"
           type="text"
-          placeholder="http://192.168.1.45:8001/auto-login?key=..."
+          placeholder="https://192.168.1.45:8000/auto-login?key=..."
           value={manualUrl}
           onChange={(e) => setManualUrl(e.target.value)}
           style={{ marginTop: 6 }}
