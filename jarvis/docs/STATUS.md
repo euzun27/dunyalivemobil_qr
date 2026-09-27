@@ -106,6 +106,7 @@ bearer token → device-key identity). The remaining items are Medium/Low design
 | 🟡 | Release signing | `gen/android/keystore.properties` is wired up; without it the release APK falls back to the debug key |
 | ⬜ | A production keystore and a genuinely signed, distributable build | Needed before this goes to anyone else |
 | 🟡 | App icon: the HUD's Iron Man helmet in a cyan ring, as an Android adaptive icon (2026-09-25; sources in `src-tauri/icon-src/`, regenerate with `npx tauri icon src-tauri/icon-src/icon.json`) | Built into both APKs; not yet seen on the home screen. Splash screen is still the default |
+| 🟡 | DÜNYATEK phone home screen (2026-09-27): dot face from the PC head mesh (`hud/dunyatekHead.js`) that scatters/re-forms with the live voice level (`simplePc.voiceLevel`), wordmark, clock, Turkish date + week strip, agenda/weather summary, www.dunyatek.com; Turkish HUD text; weather from phone GPS (km/h); dock no longer sticky | Built and checked in a browser; not yet seen on a device |
 
 ---
 

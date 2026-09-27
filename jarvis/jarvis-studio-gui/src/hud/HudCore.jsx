@@ -297,12 +297,12 @@ export function Waveform({ status = "idle", bars = 34, height = 48, rgb = [0, 22
 // about an assistant whose whole job is reporting what it did. Same house style,
 // same cadence, but every line names a real subsystem.
 const BOOT_LINES = [
-  "INITIALISING CORE",
-  "LOADING VOICE ENGINE",
-  "READING DEVICE SENSORS",
-  "RESTORING MEMORY",
-  "LINKING ASSISTANT",
-  "READY",
+  "ÇEKİRDEK BAŞLATILIYOR",
+  "SES MOTORU YÜKLENİYOR",
+  "CİHAZ SENSÖRLERİ OKUNUYOR",
+  "HAFIZA YÜKLENİYOR",
+  "ASİSTAN BAĞLANIYOR",
+  "HAZIR",
 ];
 // Total run was 6x360ms + 650ms ≈ 2.8s of blocking animation on EVERY launch.
 // A splash the user cannot skip is the thing that shows up in one-star reviews,
@@ -334,7 +334,7 @@ export function BootSequence({ onDone, name = "DÜNYATEK" }) {
       onClick={finish}
       role="button"
       tabIndex={0}
-      aria-label="Skip startup animation"
+      aria-label="Açılışı geç"
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") finish();
       }}
@@ -352,7 +352,7 @@ export function BootSequence({ onDone, name = "DÜNYATEK" }) {
       <div className="boot-bar">
         <span style={{ width: `${(line / BOOT_LINES.length) * 100}%` }} />
       </div>
-      <div className="boot-skip">TAP TO SKIP</div>
+      <div className="boot-skip">GEÇMEK İÇİN DOKUNUN</div>
     </div>
   );
 }

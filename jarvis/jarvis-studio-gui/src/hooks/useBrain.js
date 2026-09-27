@@ -29,7 +29,12 @@ import { MicRecorder, transcribe } from "../brain/platform/stt";
 import { syncWakeWord } from "../brain/platform/wakeword";
 import { syncStopOverlay } from "../brain/platform/stopOverlay";
 import { subscribeTelemetry } from "../brain/platform/deviceTelemetry";
-import { resolveAmbientLocation, netInfoFrom, fetchPanelWeather } from "../brain/platform/ambient";
+import {
+  resolveAmbientLocation,
+  netInfoFrom,
+  fetchPanelWeather,
+  reversePlace,
+} from "../brain/platform/ambient";
 import { discoverModels } from "../brain/providers/models";
 import { isDead as isModelDead, refreshCatalog } from "../brain/providers/catalog";
 import { listPlaybooks, removePlaybook } from "../brain/memory/proceduralLearning";
@@ -1738,15 +1743,32 @@ export function useBrain() {
   // ── Live HUD panels (battery / network / weather) ────────────────────────────
   // Real device signals so the Power, Network and Weather panels aren't dead zeros.
   useEffect(() => subscribeTelemetry(setTelemetry), []);
+  // Hava durumu once telefonun GPS konumundan (App.jsx'teki konum izleyici
+  // sendLocation ile gonderir); GPS yoksa IP konumuna duser.
+  const gpsRef = useRef(null); // { lat, lon, place }
+  const weatherTickRef = useRef(null);
   useEffect(() => {
     let cancelled = false;
     const tick = async () => {
-      const loc = await resolveAmbientLocation();
+      const ipLoc = await resolveAmbientLocation();
+      if (cancelled) return;
+      if (ipLoc) setNetInfo(netInfoFrom(ipLoc));
+      const gps = gpsRef.current;
+      let loc = ipLoc;
+      if (gps) {
+        if (!gps.place) gps.place = await reversePlace(gps.lat, gps.lon);
+        loc = {
+          lat: gps.lat,
+          lon: gps.lon,
+          place: gps.place || ipLoc?.place || "",
+          publicIp: ipLoc?.publicIp || "",
+        };
+      }
       if (cancelled || !loc) return;
-      setNetInfo(netInfoFrom(loc));
       const w = await fetchPanelWeather(loc).catch(() => null);
       if (!cancelled && w) setWeather(w);
     };
+    weatherTickRef.current = tick;
     void tick();
     const iv = setInterval(tick, 15 * 60 * 1000); // refresh quarter-hourly
     return () => {
@@ -1850,6 +1872,13 @@ export function useBrain() {
 
   const sendLocation = useCallback((lat, lon) => {
     locationRef.current.setDeviceCoords(lat, lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    const prev = gpsRef.current;
+    // Ilk GPS konumunda ya da ~2 km'den fazla yer degisince hava durumunu yenile.
+    if (!prev || Math.abs(prev.lat - lat) + Math.abs(prev.lon - lon) > 0.02) {
+      gpsRef.current = { lat, lon, place: "" };
+      void weatherTickRef.current?.();
+    }
   }, []);
 
   const sendManualLocation = useCallback(

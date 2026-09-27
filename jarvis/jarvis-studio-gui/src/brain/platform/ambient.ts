@@ -14,6 +14,59 @@ import { getJson } from "../tools/httpClient";
 import { ipGeoLookup } from "../tools/location";
 import { wmo } from "../wmoCodes";
 
+/** Hava durumu kartinda Turkce durum adi (WMO kodu -> metin). */
+const WMO_TR: Record<number, string> = {
+  0: "açık",
+  1: "çoğunlukla açık",
+  2: "parçalı bulutlu",
+  3: "kapalı",
+  45: "sisli",
+  48: "kırağılı sis",
+  51: "hafif çisenti",
+  53: "çisenti",
+  55: "yoğun çisenti",
+  61: "hafif yağmur",
+  63: "yağmur",
+  65: "kuvvetli yağmur",
+  66: "donan yağmur",
+  67: "donan yağmur",
+  71: "hafif kar",
+  73: "kar",
+  75: "yoğun kar",
+  77: "kar taneleri",
+  80: "sağanak",
+  81: "sağanak",
+  82: "şiddetli sağanak",
+  85: "kar sağanağı",
+  86: "kar sağanağı",
+  95: "gök gürültülü fırtına",
+  96: "dolu ve fırtına",
+  99: "dolu ve fırtına",
+};
+
+/** Telefonun GPS konumundan ilce / sehir adi (OpenStreetMap, Turkce). Bos donebilir. */
+export async function reversePlace(lat: number, lon: number): Promise<string> {
+  const url =
+    "https://nominatim.openstreetmap.org/reverse?" +
+    new URLSearchParams({
+      lat: String(lat),
+      lon: String(lon),
+      format: "json",
+      zoom: "10",
+      "accept-language": "tr",
+    }).toString();
+  try {
+    const d = await getJson<{ address?: Record<string, string> }>(url, { timeoutMs: 8000 });
+    const a = d.address ?? {};
+    const town = a.town || a.city_district || a.county || a.city || a.village || "";
+    const prov = a.province || a.state || a.city || "";
+    if (town && prov && town !== prov) return `${town}, ${prov}`;
+    return town || prov || "";
+  } catch {
+    return "";
+  }
+}
+
 export interface NetInfo {
   publicIp: string;
   location: string;
@@ -73,7 +126,7 @@ export async function fetchPanelWeather(loc: AmbientLocation): Promise<PanelWeat
       hourly: "temperature_2m,weather_code",
       forecast_days: "2",
       timezone: "auto",
-      wind_speed_unit: "mph",
+      wind_speed_unit: "kmh",
     }).toString();
 
   let d: OpenMeteo;
@@ -83,7 +136,7 @@ export async function fetchPanelWeather(loc: AmbientLocation): Promise<PanelWeat
     return null;
   }
   const cur = d.current ?? {};
-  const [cond] = wmo(cur.weather_code);
+  const cond = WMO_TR[Number(cur.weather_code)] ?? wmo(cur.weather_code)[0];
 
   // Next 6 hours starting at the current hour.
   const hours: PanelWeather["hours"] = [];
@@ -104,7 +157,7 @@ export async function fetchPanelWeather(loc: AmbientLocation): Promise<PanelWeat
     condition: cond,
     location: loc.place || "—",
     humidity: typeof cur.relative_humidity_2m === "number" ? cur.relative_humidity_2m : null,
-    wind: typeof cur.wind_speed_10m === "number" ? `${Math.round(cur.wind_speed_10m)} mph` : "—",
+    wind: typeof cur.wind_speed_10m === "number" ? `${Math.round(cur.wind_speed_10m)} km/s` : "—",
     aqi: null,
     hours,
   };

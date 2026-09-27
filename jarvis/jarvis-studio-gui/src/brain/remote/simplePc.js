@@ -11,6 +11,24 @@ export const PC_APP_PORT = 8002;
 const PC_VOICE_RATE = 24000;
 
 /**
+ * Canli ses seviyesi (0..1): ana ekrandaki DUNYATEK yuzu bununla hareket eder.
+ * mic = telefonun mikrofonu, spk = PC'den gelen DUNYATEK sesi. t = son guncelleme (ms).
+ */
+export const voiceLevel = { mic: 0, spk: 0, t: 0 };
+function rms(arr, scale = 1) {
+  if (!arr || !arr.length) return 0;
+  let sum = 0;
+  const step = Math.max(1, arr.length >> 8); // en fazla ~256 ornek yeter
+  let n = 0;
+  for (let i = 0; i < arr.length; i += step) {
+    const v = arr[i] / scale;
+    sum += v * v;
+    n += 1;
+  }
+  return Math.min(1, Math.sqrt(sum / n) * 4);
+}
+
+/**
  * Adreslerin hepsini ayni anda dener, ilk cevap vereni dondurur (yoksa null).
  * Tailscale tunelinin ilk acilisi 10-15 sn surebildigi icin bekleme uzun tutulur;
  * sirayla denemek (once ev/ofis Wi-Fi adresi, sonra Tailscale) bu sureyi ikiye katliyordu.
@@ -206,6 +224,8 @@ export class SimplePC {
       if (!playCtx || !(ev.data instanceof ArrayBuffer) || ev.data.byteLength < 2) return;
       if (playCtx.state === "suspended") playCtx.resume().catch(() => {});
       const pcm = new Int16Array(ev.data, 0, ev.data.byteLength >> 1);
+      voiceLevel.spk = rms(pcm, 32768);
+      voiceLevel.t = Date.now();
       const abuf = playCtx.createBuffer(1, pcm.length, PC_VOICE_RATE);
       const ch = abuf.getChannelData(0);
       for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 32768;
@@ -230,6 +250,8 @@ export class SimplePC {
         let buf = [];
         let len = 0;
         const push = (f32) => {
+          voiceLevel.mic = rms(f32);
+          voiceLevel.t = Date.now();
           const chunk = f32ToPcm16(f32, rate);
           buf.push(chunk);
           len += chunk.length;

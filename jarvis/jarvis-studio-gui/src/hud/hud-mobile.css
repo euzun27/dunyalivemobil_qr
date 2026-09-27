@@ -441,3 +441,218 @@ html.app-mobile--overlay-open .hud-viewport--mobile {
 .hud-viewport--mobile .memx-open {
   min-height: 36px;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DÜNYATEK TELEFON ANA EKRANI (MobileHome.jsx)
+   ══════════════════════════════════════════════════════════════════════════ */
+.mhome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+.mhome-brand {
+  margin: 2px 0 0;
+  font-family: var(--disp);
+  font-weight: 900;
+  font-size: clamp(30px, 10vw, 42px);
+  letter-spacing: 0.24em;
+  padding-left: 0.24em; /* harf araligi yazıyı sağa kaydırmasın */
+  color: var(--ac2);
+  text-shadow:
+    0 0 18px color-mix(in oklab, var(--ac) 65%, transparent),
+    0 0 2px var(--ac);
+  line-height: 1;
+}
+.mhome-tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.32em;
+  opacity: 0.65;
+  color: var(--ac);
+}
+.mhome-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+.mhome-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.mhome .waveform {
+  width: min(320px, 90%);
+}
+.mhome-clock {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 12px;
+  font-family: var(--disp);
+  color: var(--ac2);
+}
+.mhome-hm {
+  font-weight: 900;
+  font-size: clamp(56px, 19vw, 76px);
+  line-height: 0.95;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 26px color-mix(in oklab, var(--ac) 55%, transparent);
+}
+.mhome-colon {
+  animation: mhome-blink 1s steps(2, start) infinite;
+}
+@keyframes mhome-blink {
+  to {
+    opacity: 0.25;
+  }
+}
+.mhome-ss {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 3px 6px;
+  margin-top: 8px;
+  border: 1.5px solid color-mix(in oklab, var(--ac) 60%, transparent);
+  border-radius: 7px;
+  font-family: var(--mono);
+}
+.mhome-date {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--ac);
+  opacity: 0.9;
+}
+.mhome-day {
+  text-transform: capitalize;
+}
+.mhome-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  width: min(360px, 100%);
+  margin-top: 10px;
+}
+.mhome-wd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklab, var(--ac) 22%, transparent);
+  font-family: var(--mono);
+  color: var(--ac);
+}
+.mhome-wd-n {
+  font-size: 10px;
+  opacity: 0.7;
+}
+.mhome-wd-d {
+  font-size: 15px;
+  font-weight: 700;
+}
+.mhome-wd.is-today {
+  background: var(--ac);
+  color: var(--bg-0, #02060a);
+  border-color: var(--ac);
+  box-shadow: 0 0 14px color-mix(in oklab, var(--ac) 55%, transparent);
+}
+.mhome-wd.is-today .mhome-wd-n {
+  opacity: 0.9;
+}
+.mhome-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: min(360px, 100%);
+  margin-top: 6px;
+}
+.mhome-mini {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklab, var(--ac) 22%, transparent);
+  background: rgba(7, 13, 21, 0.7);
+  text-align: left;
+}
+.mhome-mini-k {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  opacity: 0.6;
+  color: var(--ac);
+}
+.mhome-mini-v {
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--ac2);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+.mhome-mini-v b {
+  font-size: 15px;
+}
+.mhome-mini-v em {
+  font-style: normal;
+  opacity: 0.6;
+}
+.mhome-mini-muted {
+  opacity: 0.55;
+}
+.mhome-web {
+  margin: 10px 0 2px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: var(--ac);
+  opacity: 0.75;
+}
+
+/* Telefonda tek kart sütunu */
+.hud-viewport--mobile .hud-rail--mobile {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Butonlar artık sayfayla birlikte kayar; kartların üstüne binmez. */
+.hud-viewport--mobile [data-slot="dock"] {
+  position: relative !important;
+  bottom: auto !important;
+  box-shadow: none;
+  backdrop-filter: none;
+  margin: 4px auto 0;
+}
+
+/* Android kenardan kenara ekran: bazı WebView'lar güvenli alanı 0 bildirir,
+   o yüzden üst çubuk ve alt gezinme çubuğu için en az bir pay bırak. */
+.hud-viewport--mobile .hud {
+  padding-top: calc(64px + max(env(safe-area-inset-top, 0px), 28px));
+  padding-bottom: calc(130px + max(env(safe-area-inset-bottom, 0px), 24px));
+}
+@media (max-width: 640px), (pointer: coarse) {
+  .hud-fixed-controls {
+    top: 0 !important;
+    padding-top: calc(8px + max(env(safe-area-inset-top, 0px), 28px)) !important;
+  }
+  .hud-top-stack,
+  .hud-warns {
+    top: calc(60px + max(env(safe-area-inset-top, 0px), 28px)) !important;
+  }
+}
+.mobile-mic {
+  bottom: calc(18px + max(env(safe-area-inset-bottom, 0px), 24px));
+}

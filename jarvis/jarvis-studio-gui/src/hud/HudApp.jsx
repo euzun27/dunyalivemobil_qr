@@ -9,6 +9,7 @@ import "./hud.css";
 import "./layouts.css";
 import "./hud-mobile.css"; // ANDROID FORK: phone reflow (scoped to .hud-viewport--mobile)
 import { ReactorCore, BootSequence } from "./HudCore";
+import { MobileHome } from "./MobileHome";
 import { STATUS_META, DEFAULT_TELEMETRY } from "./hudConstants";
 import {
   ClockPanel,
@@ -26,6 +27,9 @@ import {
   MemoryOverlay,
   ChatOverlay,
 } from "./HudPanels";
+
+// Telefonda kartlarin sirasi: once ajanda ve hava durumu (ilk bakista lazim olanlar).
+const MOBILE_ORDER = ["agenda", "weather", "system", "power", "network", "terminal"];
 
 export function JarvisHUD({
   config,
@@ -175,36 +179,59 @@ export function JarvisHUD({
         <span className="edge-label el-b">DÜNYATEK KİŞİSEL ASİSTAN · v3.0</span>
       </div>
 
-      {/* central core */}
-      <div className="hud-core-zone" data-slot="core">
-        <ReactorCore status={status} size={IS_MOBILE ? 232 : 482} rgb={c.rgb} />
-        <div className="core-readout">
-          <span className="core-name">{c.name}</span>
-          <span className="core-sub">{(STATUS_META[status] ?? STATUS_META.idle).label}</span>
-        </div>
-      </div>
+      {IS_MOBILE ? (
+        <>
+          {/* Telefon: yuz + DUNYATEK yazisi + durum dalgasi + saat/tarih, sonra
+              butonlar (kaydirinca kartlarin ustune binmez), sonra kartlar. */}
+          <MobileHome status={status} rgb={c.rgb} schedule={schedule} weather={weather} />
+          <DockBar
+            onOpenSkills={() => setSkillsOpen(true)}
+            onOpenCaps={() => setCapsOpen(true)}
+            onOpenPower={() => setPowerOpen(true)}
+            onOpenMemory={() => setMemoryOpen(true)}
+            onOpenChat={() => setChatOpen(true)}
+            chatCount={messages.length}
+          />
+          <div className="hud-rail hud-rail--mobile">
+            {MOBILE_ORDER.filter(shown)
+              .map((k) => PANELS[k])
+              .filter(Boolean)}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* central core */}
+          <div className="hud-core-zone" data-slot="core">
+            <ReactorCore status={status} size={IS_MOBILE ? 232 : 482} rgb={c.rgb} />
+            <div className="core-readout">
+              <span className="core-name">{c.name}</span>
+              <span className="core-sub">{(STATUS_META[status] ?? STATUS_META.idle).label}</span>
+            </div>
+          </div>
 
-      {/* ── left rail: clock + the panels assigned to the left (user/JARVIS arrangeable) ── */}
-      <div className="hud-rail hud-rail--left">
-        <ClockPanel rgb={c.rgb} />
-        {railPanels("left")}
-      </div>
+          {/* ── left rail: clock + the panels assigned to the left (user/JARVIS arrangeable) ── */}
+          <div className="hud-rail hud-rail--left">
+            <ClockPanel rgb={c.rgb} />
+            {railPanels("left")}
+          </div>
 
-      {/* ── right rail: status + the panels assigned to the right ── */}
-      <div className="hud-rail hud-rail--right">
-        <StatusPanel status={status} rgb={c.rgb} />
-        {railPanels("right")}
-      </div>
+          {/* ── right rail: status + the panels assigned to the right ── */}
+          <div className="hud-rail hud-rail--right">
+            <StatusPanel status={status} rgb={c.rgb} />
+            {railPanels("right")}
+          </div>
 
-      {/* ── bottom dock ── */}
-      <DockBar
-        onOpenSkills={() => setSkillsOpen(true)}
-        onOpenCaps={() => setCapsOpen(true)}
-        onOpenPower={() => setPowerOpen(true)}
-        onOpenMemory={() => setMemoryOpen(true)}
-        onOpenChat={() => setChatOpen(true)}
-        chatCount={messages.length}
-      />
+          {/* ── bottom dock ── */}
+          <DockBar
+            onOpenSkills={() => setSkillsOpen(true)}
+            onOpenCaps={() => setCapsOpen(true)}
+            onOpenPower={() => setPowerOpen(true)}
+            onOpenMemory={() => setMemoryOpen(true)}
+            onOpenChat={() => setChatOpen(true)}
+            chatCount={messages.length}
+          />
+        </>
+      )}
 
       {/* ── overlays ── */}
       <SkillsOverlay

@@ -243,7 +243,7 @@ export function CornerBox({
               className="cbox-hd cbox-hd--btn"
               onClick={toggle}
               aria-expanded={open}
-              title={open ? "Collapse" : "Expand"}
+              title={open ? "Daralt" : "Genişlet"}
             >
               <span className="cbox-title">{title}</span>
               <span className="cbox-hd-right">
