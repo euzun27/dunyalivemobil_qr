@@ -79,6 +79,7 @@ impl<R: Runtime> Phone<R> {
     mobile_command!(pick_folder() -> PickFolderResponse, "pickFolder");
     mobile_command!(list_directory(payload: FileOpRequest) -> ListDirectoryResponse, "listDirectory");
     mobile_command!(read_file(payload: FileOpRequest) -> ReadFileResponse, "readFile");
+    mobile_command!(send_sms(payload: SendSmsRequest) -> ActionResponse, "sendSms");
     mobile_command!(clock_action(payload: ClockActionRequest) -> ActionResponse, "clockAction");
     mobile_command!(calendar_action(payload: CalendarActionRequest) -> CalendarResponse, "calendarAction");
     mobile_command!(task_begin(payload: TaskBeginRequest) -> TaskBeginResponse, "taskBegin");

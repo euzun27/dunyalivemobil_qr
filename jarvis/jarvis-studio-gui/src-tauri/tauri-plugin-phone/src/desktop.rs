@@ -134,6 +134,7 @@ impl<R: Runtime> Phone<R> {
         })
     }
     unavailable_command!(clock_action(ClockActionRequest));
+    unavailable_command!(send_sms(SendSmsRequest));
     pub fn calendar_action(&self, _p: CalendarActionRequest) -> crate::Result<CalendarResponse> {
         Ok(CalendarResponse {
             ok: false,

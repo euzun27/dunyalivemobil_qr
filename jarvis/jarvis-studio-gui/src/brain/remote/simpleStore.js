@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { SimplePC, findReachableHost } from "./simplePc";
 
 /* DUNYATEK - telefon, bilgisayardaki DUNYATEK'in uzaktan kumandasi.
@@ -71,17 +72,39 @@ function uniq(list) {
   return [...new Set(list.filter(Boolean))];
 }
 
+// PC'nin istedigi SMS'ler. Kullanici PC'de "evet" dedikten sonra gelir; ayni istek
+// (id) iki kez gelirse ikinci kez gonderilmez.
+const smsDone = new Set();
+
+async function handleSendSms(msg, pc) {
+  const id = String(msg.id || "");
+  if (!id || smsDone.has(id)) return;
+  smsDone.add(id);
+  let res;
+  try {
+    res = await invoke("plugin:phone|send_sms", { to: String(msg.to || ""), text: String(msg.text || "") });
+  } catch (e) {
+    res = { ok: false, summary: `SMS gönderilemedi: ${e?.message || e}` };
+  }
+  pc.sendJson({ type: "sms_result", id, ok: Boolean(res?.ok), summary: res?.summary || "" });
+}
+
 function makeClient(host, port, secure) {
-  return new SimplePC({
+  const pc = new SimplePC({
     host,
     port,
     secure,
     onStateChange: setState,
     onMessage: (msg) => {
+      if (msg?.type === "send_sms") {
+        void handleSendSms(msg, pc);
+        return;
+      }
       messages = [...messages.slice(-49), msg];
       emit();
     },
   });
+  return pc;
 }
 
 export const simplePcStore = {

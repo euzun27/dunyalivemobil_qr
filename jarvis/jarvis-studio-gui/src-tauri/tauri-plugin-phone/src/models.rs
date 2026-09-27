@@ -622,6 +622,14 @@ pub struct CalendarResponse {
     pub event_id: Option<i64>,
 }
 
+/// An SMS the PC assistant asked the phone to send from its own SIM. The PC has
+/// already read it back to the user and got a spoken "yes" before this arrives.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SendSmsRequest {
+    pub to: String,
+    pub text: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClockActionRequest {
     /// alarm | timer | show_alarms | show_timers | dismiss_timer

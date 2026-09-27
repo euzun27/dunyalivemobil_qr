@@ -38,6 +38,7 @@ permissions = [
     "allow-list-directory",
     "allow-read-file",
     "allow-clock-action",
+    "allow-send-sms",
     "allow-calendar-action",
     "allow-task-begin",
     "allow-task-checkpoint",

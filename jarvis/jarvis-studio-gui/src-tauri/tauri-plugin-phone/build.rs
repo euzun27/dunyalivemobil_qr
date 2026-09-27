@@ -38,6 +38,7 @@ const COMMANDS: &[&str] = &[
     "list_directory",
     "read_file",
     "clock_action",
+    "send_sms",
     "calendar_action",
     "task_begin",
     "task_checkpoint",

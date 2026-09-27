@@ -25,6 +25,7 @@ import android.provider.AlarmClock
 import android.provider.CalendarContract
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
+import android.telephony.SmsManager
 import android.speech.tts.UtteranceProgressListener
 import android.util.TypedValue
 import android.view.Gravity
@@ -269,6 +270,13 @@ internal class CalendarArgs {
     var endMillis: Long = 0
     /** Event id returned by a previous `add`, for `remove`. */
     var eventId: Long = 0
+}
+
+@InvokeArg
+internal class SendSmsArgs {
+    /** Phone number; "905321112233", "+90 532 111 22 33" and "0532..." all work. */
+    var to: String = ""
+    var text: String = ""
 }
 
 @InvokeArg
@@ -1993,6 +2001,43 @@ class PhonePlugin(private val activity: Activity) : Plugin(activity) {
             }
 
             else -> result(false, "I don't know the calendar action '${args.action}'.")
+        }
+        invoke.resolve(response)
+    }
+
+    /**
+     * Sends an SMS from this phone's own SIM. Only the PC assistant calls this, and
+     * only after the user heard the recipient and text read back and said "yes"
+     * (the PC keeps the draft/confirm step; see dunya_live plugins/phone_sms.py).
+     */
+    @Command
+    fun sendSms(invoke: Invoke) {
+        val args = invoke.parseArgs(SendSmsArgs::class.java)
+        val text = args.text.trim()
+        var to = args.to.filter { it.isDigit() || it == '+' }
+        if (to.startsWith("0") && to.length == 11) to = "+90" + to.substring(1)
+        else if (!to.startsWith("+") && to.length >= 11) to = "+$to"
+        val response = when {
+            to.length < 8 -> result(false, "Telefon numarası anlaşılamadı.")
+            text.isEmpty() -> result(false, "Mesaj metni boş.")
+            ContextCompat.checkSelfPermission(activity, android.Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED -> {
+                ActivityCompat.requestPermissions(
+                    activity, arrayOf(android.Manifest.permission.SEND_SMS), 105
+                )
+                result(false, "Telefonda SMS izni yok. Telefonda çıkan pencerede 'İzin ver'e basın, sonra tekrar deneyin.")
+            }
+            else -> try {
+                val sms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                    activity.getSystemService(SmsManager::class.java)
+                else @Suppress("DEPRECATION") SmsManager.getDefault()
+                val parts = sms.divideMessage(text)
+                if (parts.size > 1) sms.sendMultipartTextMessage(to, null, parts, null, null)
+                else sms.sendTextMessage(to, null, text, null, null)
+                result(true, "SMS telefondan gönderildi: $to")
+            } catch (e: Exception) {
+                result(false, "SMS gönderilemedi: ${e.message ?: e.javaClass.simpleName}")
+            }
         }
         invoke.resolve(response)
     }

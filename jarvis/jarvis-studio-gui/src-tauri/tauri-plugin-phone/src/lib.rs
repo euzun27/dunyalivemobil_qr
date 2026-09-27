@@ -76,6 +76,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::list_directory,
             commands::read_file,
             commands::clock_action,
+            commands::send_sms,
             commands::calendar_action,
             commands::task_begin,
             commands::task_checkpoint,

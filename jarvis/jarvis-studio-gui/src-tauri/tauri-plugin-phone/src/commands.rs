@@ -109,6 +109,7 @@ phone_command!(capture_screenshot() -> crate::models::CaptureScreenshotResponse)
 phone_command!(pick_folder() -> PickFolderResponse);
 phone_command!(list_directory(uri: String, path: String) -> ListDirectoryResponse, FileOpRequest);
 phone_command!(read_file(uri: String, path: String) -> ReadFileResponse, FileOpRequest);
+phone_command!(send_sms(to: String, text: String) -> ActionResponse, SendSmsRequest);
 phone_command!(clock_action(action: String, label: String, hour: i32, minute: i32, seconds: i32, days: String) -> ActionResponse, ClockActionRequest);
 phone_command!(calendar_action(action: String, title: String, notes: String, start_millis: i64, end_millis: i64, event_id: i64) -> CalendarResponse, CalendarActionRequest);
 phone_command!(task_finish(task_id: String, state: String, result: String, verification_receipt: String) -> ActionResponse, TaskFinishRequest);

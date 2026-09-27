@@ -93,7 +93,8 @@ export class SimplePC {
 
     return new Promise((resolve) => {
       try {
-        const ws = new WebSocket(`${this.wsBase}/ws?token=${encodeURIComponent(this.token)}`);
+        // client=phone: PC bu soketi telefon olarak tanir (SMS istegini sadece buraya yollar).
+        const ws = new WebSocket(`${this.wsBase}/ws?token=${encodeURIComponent(this.token)}&client=phone`);
         this.ws = ws;
         // Soket 10 sn icinde acilmazsa vazgec (yoksa yeniden deneme hic baslamaz).
         const openTimer = setTimeout(() => {
@@ -136,6 +137,13 @@ export class SimplePC {
         resolve(false);
       }
     });
+  }
+
+  /** PC'ye yapisal cevap (ornegin SMS sonucu). */
+  sendJson(obj) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return false;
+    this.ws.send(JSON.stringify(obj));
+    return true;
   }
 
   sendCommand(text) {
