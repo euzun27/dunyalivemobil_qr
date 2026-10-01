@@ -7,6 +7,7 @@ import Settings from "./components/Settings";
 import Onboarding from "./components/Onboarding";
 import MobileOnboarding from "./components/MobileOnboarding";
 import MobileRemotePC from "./components/MobileRemotePC";
+import { useSimplePc } from "./hooks/useSimplePc";
 import RemoteDesktop from "./components/RemoteDesktop";
 import SetupProgress from "./components/SetupProgress";
 import BootOverlay from "./components/BootOverlay";
@@ -160,6 +161,17 @@ export default function App() {
     stopTask,
     stopAllTasks,
   } = useAssistant();
+  // DUNYATEK: PC'ye bagliyken HUD cekirdegi PC'deki asistanin durumunu gosterir
+  // (konusuyor / dusunuyor / dinliyor). PC zaten "speaking" ve "log" mesajlari gonderiyor.
+  const pcLink = useSimplePc();
+  const pcOnline = pcLink.state === "online";
+  const hudStatus = pcOnline ? pcLink.pcStatus : status;
+  const togglePcVoice = () => {
+    if (pcLink.voice) pcLink.stopVoice();
+    else void pcLink.startVoice().catch(() => {}); // hata ayrintisi "Uzak PC" ekraninda
+  };
+  const micListening = pcOnline ? pcLink.voice : status === "listening";
+  const micBusy = !pcOnline && (status === "thinking" || status === "speaking");
 
   const unifiedTasks = taskCenterTasks || agentTasks || [];
   const anyTaskActive =
@@ -490,7 +502,7 @@ export default function App() {
         <JarvisHUD
           config={hudConfig}
           screen={screen}
-          status={status}
+          status={hudStatus}
           telemetry={telemetry}
           weather={weather}
           netInfo={netInfo}
@@ -635,14 +647,30 @@ export default function App() {
           Mic â†’ Groq Whisper â†’ brain (see useBrain). */}
       {IS_MOBILE && !hudOverlayOpen && (
         <button
-          className={`mobile-mic${status === "listening" ? " mobile-mic--listening" : ""}${
-            status === "thinking" || status === "speaking" ? " mobile-mic--busy" : ""
+          className={`mobile-mic${micListening ? " mobile-mic--listening" : ""}${
+            micBusy ? " mobile-mic--busy" : ""
           }`}
-          onClick={triggerListen}
-          aria-label={status === "listening" ? "Stop and send" : "Tap to talk"}
-          title={status === "listening" ? "Listening â€” tap to send" : "Tap to talk"}
+          onClick={pcOnline ? togglePcVoice : triggerListen}
+          aria-label={
+            pcOnline
+              ? pcLink.voice
+                ? "PC ile sesli gorusmeyi kapat"
+                : "PC ile sesli gorusmeyi ac"
+              : status === "listening"
+                ? "Stop and send"
+                : "Tap to talk"
+          }
+          title={
+            pcOnline
+              ? pcLink.voice
+                ? "DUNYATEK dinliyor - kapatmak icin dokun"
+                : "DUNYATEK ile konusmak icin dokun"
+              : status === "listening"
+                ? "Listening â€” tap to send"
+                : "Tap to talk"
+          }
         >
-          <Icon name={status === "listening" ? "stop" : "mic"} size={28} strokeWidth={1.8} />
+          <Icon name={micListening ? "stop" : "mic"} size={28} strokeWidth={1.8} />
         </button>
       )}
 
