@@ -503,6 +503,7 @@ export default function App() {
           config={hudConfig}
           screen={screen}
           status={hudStatus}
+          muted={pcOnline && !pcLink.voice}
           telemetry={telemetry}
           weather={weather}
           netInfo={netInfo}

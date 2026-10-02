@@ -39,9 +39,29 @@ export default function Customize({ screen, onClose, onPatch }) {
   const accent = (s.accent || "#00e5ff").toLowerCase();
   const background = s.background || "grid";
   const density = s.density || "normal";
+  const core = s.core || "emblem";
 
   return (
     <ModalPanel title="Customize Display" onClose={onClose}>
+      {/* DUNYATEK: merkez gorunum - amblem ya da insan yuzu */}
+      <div className="settings-sec">
+        <label>Merkez</label>
+        <div className="cz-row">
+          {[
+            ["emblem", "DUNYATEK amblemi"],
+            ["face", "\u0130nsan y\u00fcz\u00fc"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              className={`cz-chip ${core === key ? "cz-chip--on" : ""}`}
+              onClick={() => onPatch({ core: key })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Accent colour */}
       <div className="settings-sec">
         <label>Accent colour</label>

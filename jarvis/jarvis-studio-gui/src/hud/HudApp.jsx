@@ -9,6 +9,7 @@ import "./hud.css";
 import "./layouts.css";
 import "./hud-mobile.css"; // ANDROID FORK: phone reflow (scoped to .hud-viewport--mobile)
 import { ReactorCore, BootSequence } from "./HudCore";
+import { HoloFace } from "./HoloFace";
 import { STATUS_META, DEFAULT_TELEMETRY } from "./hudConstants";
 import {
   ClockPanel,
@@ -32,6 +33,7 @@ export function JarvisHUD({
   screen, // home-screen look & layout (accent/bg/density/panels/order)
   // live data
   status = "idle",
+  muted = false, // DUNYATEK: PC ile sesli gorusme kapali -> yuz kirmizi (masaustundeki MUTED)
   telemetry,
   weather,
   netInfo,
@@ -177,7 +179,11 @@ export function JarvisHUD({
 
       {/* central core */}
       <div className="hud-core-zone" data-slot="core">
-        <ReactorCore status={status} size={IS_MOBILE ? 232 : 482} rgb={c.rgb} />
+        {screen?.core === "face" ? (
+          <HoloFace status={status} muted={muted} size={IS_MOBILE ? 232 : 482} rgb={c.rgb} />
+        ) : (
+          <ReactorCore status={status} size={IS_MOBILE ? 232 : 482} rgb={c.rgb} />
+        )}
         <div className="core-readout">
           <span className="core-name">{c.name}</span>
           <span className="core-sub">{(STATUS_META[status] ?? STATUS_META.idle).label}</span>
