@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from "react";
 import mesh from "./faceMesh.json";
-import { HoloFace as FaceEngine, KonusmaZarfi } from "./holoFace";
+import { HoloFace as FaceEngine, KonusmaZarfi } from "./faceEngine";
 
 const STATE = { listening: "LISTENING", thinking: "THINKING", speaking: "SPEAKING", idle: "" };
 const EYES = [0, 255, 136]; // masaustundeki yesil goz

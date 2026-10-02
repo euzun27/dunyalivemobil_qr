@@ -9,7 +9,9 @@ import "./hud.css";
 import "./layouts.css";
 import "./hud-mobile.css"; // ANDROID FORK: phone reflow (scoped to .hud-viewport--mobile)
 import { ReactorCore, BootSequence } from "./HudCore";
-import { HoloFace } from "./HoloFace";
+// Uzanti ACIK yazilir: Windows buyuk/kucuk harf ayirmaz ve Vite .ts'yi .jsx'ten once dener;
+// "./HoloFace" yazilirsa yanlis dosya cozulebilir.
+import { HoloFace } from "./HoloFace.jsx";
 import { STATUS_META, DEFAULT_TELEMETRY } from "./hudConstants";
 import {
   ClockPanel,

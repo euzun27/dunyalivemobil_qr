@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import meshJson from "./faceMesh.json";
-import { HoloFace, KonusmaZarfi, blend, rate, rgba, type FaceMesh } from "./holoFace";
+import { HoloFace, KonusmaZarfi, blend, rate, rgba, type FaceMesh } from "./faceEngine";
 
 const mesh = meshJson as unknown as FaceMesh;
 
