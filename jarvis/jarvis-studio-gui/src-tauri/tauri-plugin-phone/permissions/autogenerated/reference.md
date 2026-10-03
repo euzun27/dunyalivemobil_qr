@@ -19,6 +19,7 @@ Allows the JARVIS brain to drive the phone via the AccessibilityService.
 - `allow-open-app`
 - `allow-close-app`
 - `allow-open-url`
+- `allow-send-sms`
 - `allow-set-volume`
 - `allow-read-clipboard`
 - `allow-open-system-settings`
@@ -998,6 +999,32 @@ Enables the scroll command without any pre-configured scope.
 <td>
 
 Denies the scroll command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`phone:allow-send-sms`
+
+</td>
+<td>
+
+Enables the send_sms command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`phone:deny-send-sms`
+
+</td>
+<td>
+
+Denies the send_sms command without any pre-configured scope.
 
 </td>
 </tr>
