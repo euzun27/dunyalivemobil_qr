@@ -36,3 +36,33 @@ export function wmo(code: unknown): [string, string] {
   const n = Number(code);
   return Number.isFinite(n) && WMO[n] ? WMO[n] : ["—", "•"];
 }
+
+/** DUNYATEK: Turkish condition text for the HUD Weather panel. */
+const TR: Record<string, string> = {
+  clear: "açık",
+  "mainly clear": "çoğunlukla açık",
+  "partly cloudy": "parçalı bulutlu",
+  overcast: "kapalı",
+  fog: "sisli",
+  "rime fog": "kırağılı sis",
+  "light drizzle": "hafif çisenti",
+  drizzle: "çisenti",
+  "dense drizzle": "yoğun çisenti",
+  "light rain": "hafif yağmur",
+  rain: "yağmurlu",
+  "heavy rain": "şiddetli yağmur",
+  "freezing rain": "dondurucu yağmur",
+  "light snow": "hafif kar",
+  snow: "karlı",
+  "heavy snow": "yoğun kar",
+  "snow grains": "kar taneleri",
+  showers: "sağanak",
+  "violent showers": "kuvvetli sağanak",
+  "snow showers": "kar sağanağı",
+  thunderstorm: "gök gürültülü fırtına",
+};
+
+export function wmoTr(code: unknown): [string, string] {
+  const [text, glyph] = wmo(code);
+  return [TR[text] ?? text, glyph];
+}

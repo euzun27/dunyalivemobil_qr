@@ -6,6 +6,7 @@
 import { useEffect, useRef } from "react";
 import mesh from "./faceMesh.json";
 import { HoloFace as FaceEngine, KonusmaZarfi } from "./faceEngine";
+import { simplePcStore } from "../brain/remote/simpleStore";
 
 const STATE = { listening: "LISTENING", thinking: "THINKING", speaking: "SPEAKING", idle: "" };
 const EYES = [0, 255, 136]; // masaustundeki yesil goz
@@ -47,8 +48,11 @@ export function HoloFace({ status = "idle", muted = false, size = 232, rgb = [0,
       last = now;
       const s = live.current;
       const speaking = s.status === "speaking";
+      // Gercek dudak senkronu: PC'nin sesi telefonda caliyorsa onun seviyesi; yoksa ritim.
+      const gercek = simplePcStore.levels().out;
+      const ritim = zarf.next(dt, speaking && !s.muted);
       face.step(dt, {
-        amp: zarf.next(dt, speaking && !s.muted),
+        amp: gercek > 0.02 ? gercek : ritim,
         speaking,
         muted: s.muted,
         state: STATE[s.status] ?? "",

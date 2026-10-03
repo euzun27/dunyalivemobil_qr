@@ -18,6 +18,7 @@ const COMMANDS: &[&str] = &[
     "open_app",
     "close_app",
     "open_url",
+    "send_sms",
     "set_volume",
     "read_clipboard",
     "open_system_settings",

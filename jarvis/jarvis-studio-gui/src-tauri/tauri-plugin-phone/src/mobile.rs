@@ -60,6 +60,7 @@ impl<R: Runtime> Phone<R> {
     mobile_command!(open_app(payload: OpenAppRequest) -> ActionResponse, "openApp");
     mobile_command!(close_app(payload: CloseAppRequest) -> ActionResponse, "closeApp");
     mobile_command!(open_url(payload: OpenUrlRequest) -> ActionResponse, "openUrl");
+    mobile_command!(send_sms(payload: SendSmsRequest) -> ActionResponse, "sendSms");
     mobile_command!(set_volume(payload: VolumeRequest) -> ActionResponse, "setVolume");
     mobile_command!(read_clipboard() -> ActionResponse, "readClipboard");
     mobile_command!(open_system_settings(payload: SystemSettingsRequest) -> ActionResponse, "openSystemSettings");

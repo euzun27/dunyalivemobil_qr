@@ -90,6 +90,7 @@ phone_command!(swipe(start_x: i32, start_y: i32, end_x: i32, end_y: i32, duratio
 phone_command!(open_app(name: String) -> ActionResponse, OpenAppRequest);
 phone_command!(close_app(name: String) -> ActionResponse, CloseAppRequest);
 phone_command!(open_url(url: String) -> ActionResponse, OpenUrlRequest);
+phone_command!(send_sms(to: String, text: String) -> ActionResponse, SendSmsRequest);
 phone_command!(set_volume(level: i32) -> ActionResponse, VolumeRequest);
 phone_command!(read_clipboard() -> ActionResponse);
 phone_command!(open_system_settings(target: String) -> ActionResponse, SystemSettingsRequest);

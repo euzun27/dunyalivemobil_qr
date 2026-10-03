@@ -18,6 +18,7 @@ permissions = [
     "allow-open-app",
     "allow-close-app",
     "allow-open-url",
+    "allow-send-sms",
     "allow-set-volume",
     "allow-read-clipboard",
     "allow-open-system-settings",

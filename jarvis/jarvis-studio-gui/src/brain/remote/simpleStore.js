@@ -1,5 +1,6 @@
 import { SimplePC, findReachableHost } from "./simplePc";
 import { INITIAL_PC_STATUS, nextPcStatus } from "./pcStatus";
+import { handleCameraRequest } from "./phoneCamera";
 
 /* DUNYATEK - telefon, bilgisayardaki DUNYATEK'in uzaktan kumandasi.
  * Eslesmis bir PC varsa uygulama acilir acilmaz ona baglanir, baglanti koparsa
@@ -94,6 +95,11 @@ function makeClient(host, port, secure) {
     secure,
     onStateChange: setState,
     onMessage: (msg) => {
+      if (msg?.type === "camera_capture") {
+        // PC'deki asistan telefon kamerasindan tek kare istiyor (sohbet mesaji degil).
+        void handleCameraRequest(msg, (r) => client?.sendJson(r));
+        return;
+      }
       messages = [...messages.slice(-49), msg];
       pcEvent({ kind: "msg", msg });
       emit();
@@ -184,6 +190,10 @@ export const simplePcStore = {
   },
   sendCommand(text) {
     return client?.sendCommand(text) || false;
+  },
+  /** Canli gorusmenin anlik ses seviyeleri (ekrandaki yuz icin), yoksa 0. */
+  levels() {
+    return client ? client.levels() : { mic: 0, out: 0 };
   },
   async startVoice() {
     if (!client || voice || state !== "online") return voice;

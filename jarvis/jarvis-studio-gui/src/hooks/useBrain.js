@@ -29,7 +29,13 @@ import { MicRecorder, transcribe } from "../brain/platform/stt";
 import { syncWakeWord } from "../brain/platform/wakeword";
 import { syncStopOverlay } from "../brain/platform/stopOverlay";
 import { subscribeTelemetry } from "../brain/platform/deviceTelemetry";
-import { resolveAmbientLocation, netInfoFrom, fetchPanelWeather } from "../brain/platform/ambient";
+import {
+  resolveAmbientLocation,
+  netInfoFrom,
+  fetchPanelWeather,
+  setAmbientGps,
+  onAmbientGps,
+} from "../brain/platform/ambient";
 import { discoverModels } from "../brain/providers/models";
 import { isDead as isModelDead, refreshCatalog } from "../brain/providers/catalog";
 import { listPlaybooks, removePlaybook } from "../brain/memory/proceduralLearning";
@@ -1749,9 +1755,11 @@ export function useBrain() {
     };
     void tick();
     const iv = setInterval(tick, 15 * 60 * 1000); // refresh quarter-hourly
+    const offGps = onAmbientGps(() => void tick()); // first GPS fix / moved: refresh now
     return () => {
       cancelled = true;
       clearInterval(iv);
+      offGps();
     };
   }, []);
 
@@ -1850,6 +1858,7 @@ export function useBrain() {
 
   const sendLocation = useCallback((lat, lon) => {
     locationRef.current.setDeviceCoords(lat, lon);
+    setAmbientGps(lat, lon); // HUD weather follows the phone's GPS, not the ISP's city
   }, []);
 
   const sendManualLocation = useCallback(

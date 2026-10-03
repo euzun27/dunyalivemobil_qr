@@ -498,6 +498,12 @@ pub struct OpenUrlRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SendSmsRequest {
+    pub to: String,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VolumeRequest {
     pub level: i32,
 }

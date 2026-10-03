@@ -51,9 +51,9 @@ function useHistory(value, points = 46) {
 
 export function ClockPanel() {
   const now = useClock();
-  const hh = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  const hh = now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", hour12: false });
   const ss = String(now.getSeconds()).padStart(2, "0");
-  const date = now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+  const date = now.toLocaleDateString("tr-TR", { weekday: "long", month: "long", day: "numeric" });
   const yr = now.getFullYear();
   return (
     <div className="clock">
@@ -64,7 +64,41 @@ export function ClockPanel() {
       <div className="clock-date">
         {date} · {yr}
       </div>
-      <TickStrip count={46} />
+      {IS_MOBILE ? <MonthCalendar now={now} /> : <TickStrip count={46} />}
+    </div>
+  );
+}
+
+/* ───────── DUNYATEK: small Turkish month calendar under the clock (phone) ───────── */
+const TR_DAYS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+function MonthCalendar({ now }) {
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const today = now.getDate();
+  const first = (new Date(y, m, 1).getDay() + 6) % 7; // Monday first
+  const days = new Date(y, m + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < first; i++) cells.push(null);
+  for (let d = 1; d <= days; d++) cells.push(d);
+  const title = now.toLocaleDateString("tr-TR", { month: "long", year: "numeric" });
+  return (
+    <div className="mcal" aria-label={title}>
+      <div className="mcal-title">{title}</div>
+      <div className="mcal-grid">
+        {TR_DAYS.map((d) => (
+          <span key={d} className="mcal-dow">
+            {d}
+          </span>
+        ))}
+        {cells.map((d, i) => (
+          <span
+            key={i}
+            className={`mcal-d${d === today ? " mcal-d--today" : ""}${i % 7 >= 5 ? " mcal-d--we" : ""}`}
+          >
+            {d || ""}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -94,20 +128,20 @@ export function SysStatsPanel({ d, collapsible, open, onToggle }) {
     const batt = d.batteryPct ?? 0;
     const battSub =
       d.batteryPct == null
-        ? "NO DATA"
+        ? "VERİ YOK"
         : d.charging
-          ? `CHARGING${d.remaining ? ` · ${d.remaining}` : ""}`
+          ? `ŞARJ OLUYOR${d.remaining ? ` · ${d.remaining}` : ""}`
           : d.remaining || `${Math.round(batt)}%`;
     const tempVal = d.temp != null ? Math.min(100, Math.max(0, (d.temp - 20) * 2)) : 0;
-    const tempSub = d.temp != null ? `${n0(d.temp).toFixed(0)}°C` : "NO DATA";
+    const tempSub = d.temp != null ? `${n0(d.temp).toFixed(0)}°C` : "VERİ YOK";
     const ramUsed = d.ramTotalGb ? Math.round((n0(d.ram) / 100) * d.ramTotalGb * 10) / 10 : null;
     const ramSub =
       ramUsed != null && d.ramTotalGb
         ? `${ramUsed} / ${Math.round(d.ramTotalGb)} GB`
-        : `${n0(d.ram).toFixed(0)}% used`;
+        : `%${n0(d.ram).toFixed(0)} dolu`;
     const diskSub = d.diskTotalGb
       ? `${Math.round(n0(d.diskUsedGb))} / ${Math.round(n0(d.diskTotalGb))} GB`
-      : `${n0(d.disk).toFixed(0)}% used`;
+      : `%${n0(d.disk).toFixed(0)} dolu`;
     const netSub =
       d.down > 0
         ? `${fmtMbps(d.down)} Mbps`
@@ -116,8 +150,8 @@ export function SysStatsPanel({ d, collapsible, open, onToggle }) {
           : d.linkLabel || "ÇEVRİMİÇİ";
     return (
       <CornerBox
-        title="Device"
-        code="SYS·01"
+        title="Telefon"
+        code="CİHAZ"
         slot="sysstats"
         collapsible={collapsible}
         open={open}
@@ -134,8 +168,8 @@ export function SysStatsPanel({ d, collapsible, open, onToggle }) {
         </div>
         <p className="sys-mobile-note">
           {d.batteryPct != null
-            ? `Power: ${battSub}`
-            : "Live CPU, memory, storage and network from this device."}
+            ? `Pil: ${battSub}`
+            : "Bu telefonun canlı bellek, depolama ve ağ bilgileri."}
         </p>
       </CornerBox>
     );
@@ -190,11 +224,11 @@ export function PowerPanel({ d, collapsible, open, onToggle }) {
   const pct = d.batteryPct;
   const hasBattery = pct != null;
   const shown = hasBattery ? pct : 0;
-  const label = !hasBattery ? "BATTERY" : d.charging ? "CHARGING" : "BATTERY";
+  const label = !hasBattery ? "PİL" : d.charging ? "ŞARJDA" : "PİL";
   return (
     <CornerBox
-      title="Power"
-      code="PWR"
+      title="Güç"
+      code="PİL"
       slot="power"
       collapsible={collapsible}
       open={open}
@@ -203,17 +237,13 @@ export function PowerPanel({ d, collapsible, open, onToggle }) {
       <div className="pwr">
         <RadialGauge value={shown} label={label} size={96} unit="%" />
         <div className="pwr-meta">
-          <DataRow
-            k="SOURCE"
-            v={!hasBattery ? "UNKNOWN" : d.charging ? "AC / USB" : "CELL"}
-            accent
-          />
-          <DataRow k="STATE" v={!hasBattery ? "—" : d.charging ? "CHARGING" : "DISCHARGING"} />
-          <DataRow k="REMAINING" v={d.remaining || "—"} />
-          <DataRow k="LEVEL" v={hasBattery ? `${Math.round(pct)}%` : "—"} accent />
+          <DataRow k="KAYNAK" v={!hasBattery ? "BİLİNMİYOR" : d.charging ? "ŞARJ" : "PİL"} accent />
+          <DataRow k="DURUM" v={!hasBattery ? "—" : d.charging ? "ŞARJ OLUYOR" : "KULLANIMDA"} />
+          <DataRow k="KALAN" v={d.remaining || "—"} />
+          <DataRow k="SEVİYE" v={hasBattery ? `%${Math.round(pct)}` : "—"} accent />
         </div>
       </div>
-      {hasBattery && <SegBar value={shown} segs={18} label="OUTPUT" />}
+      {hasBattery && <SegBar value={shown} segs={18} label="DOLULUK" />}
     </CornerBox>
   );
 }
@@ -222,7 +252,7 @@ export function PowerPanel({ d, collapsible, open, onToggle }) {
 const DEFAULT_WEATHER = {
   temp: null,
   condition: "—",
-  location: "LOCATING…",
+  location: "KONUM ALINIYOR…",
   humidity: null,
   wind: "—",
   aqi: null,
@@ -232,8 +262,8 @@ export function WeatherPanel({ weather, collapsible, open, onToggle }) {
   const w = weather || DEFAULT_WEATHER;
   return (
     <CornerBox
-      title="Weather"
-      code="ATM"
+      title="Hava Durumu"
+      code="KONUM"
       slot="weather"
       collapsible={collapsible}
       open={open}
@@ -242,13 +272,13 @@ export function WeatherPanel({ weather, collapsible, open, onToggle }) {
       <div className="wx-now">
         <span className="wx-temp">{w.temp != null ? `${Math.round(w.temp)}°` : "—"}</span>
         <div className="wx-meta">
-          <span className="wx-cond">{(w.condition || "—").toUpperCase()}</span>
-          <span className="wx-loc">{(w.location || "—").toUpperCase()}</span>
+          <span className="wx-cond">{(w.condition || "—").toLocaleUpperCase("tr-TR")}</span>
+          <span className="wx-loc">{(w.location || "—").toLocaleUpperCase("tr-TR")}</span>
         </div>
       </div>
       <div className="wx-stats">
-        <DataRow k="HUMIDITY" v={w.humidity != null ? `${Math.round(w.humidity)}%` : "—"} />
-        <DataRow k="WIND" v={w.wind || "—"} />
+        <DataRow k="NEM" v={w.humidity != null ? `%${Math.round(w.humidity)}` : "—"} />
+        <DataRow k="RÜZGAR" v={w.wind || "—"} />
         {w.aqi != null && <DataRow k="AQI" v={`${w.aqi}`} accent />}
       </div>
       {w.hours?.length > 0 && (
@@ -276,8 +306,8 @@ export function NetworkPanel({ d, netInfo, collapsible, open, onToggle }) {
   const downHist = useHistory(d.down);
   return (
     <CornerBox
-      title="Network"
-      code="NET·LINK"
+      title="Ağ"
+      code="BAĞLANTI"
       slot="network"
       collapsible={collapsible}
       open={open}
@@ -287,20 +317,20 @@ export function NetworkPanel({ d, netInfo, collapsible, open, onToggle }) {
         <div className="net-rate">
           <span className="net-arrow">▼</span>
           <span className="net-num">{fmtMbps(d.down)}</span>
-          <span className="net-u">Mbps DOWN</span>
+          <span className="net-u">Mbps İNDİRME</span>
         </div>
         <div className="net-rate">
           <span className="net-arrow up">▲</span>
           <span className="net-num">{fmtMbps(d.up)}</span>
-          <span className="net-u">Mbps UP</span>
+          <span className="net-u">Mbps YÜKLEME</span>
         </div>
       </div>
       <Sparkline points={42} height={34} data={downHist} />
       <div className="net-meta">
-        <DataRow k="PING" v={d.ping ? `${d.ping} ms` : "—"} accent />
-        <DataRow k="LINK" v={d.linkLabel || (d.down > 0 ? "ACTIVE" : "—")} />
-        <DataRow k="PUBLIC IP" v={n.publicIp || "—"} />
-        <DataRow k="LOCATION" v={n.location || "—"} />
+        <DataRow k="GECİKME" v={d.ping ? `${d.ping} ms` : "—"} accent />
+        <DataRow k="BAĞLANTI" v={d.linkLabel || (d.down > 0 ? "AKTİF" : "—")} />
+        <DataRow k="İNTERNET IP" v={n.publicIp || "—"} />
+        <DataRow k="KONUM" v={n.location || "—"} />
       </div>
     </CornerBox>
   );
@@ -312,14 +342,14 @@ export function SchedulePanel({ items, collapsible, open, onToggle, runAction })
   const editable = typeof runAction === "function";
 
   const addItem = () => {
-    const task = window.prompt("New agenda item — what is it?");
+    const task = window.prompt("Yeni ajanda maddesi — ne yapılacak?");
     if (!task || !task.trim()) return;
-    const time = (window.prompt("At what time? (e.g. 09:00 — leave blank for none)") || "").trim();
+    const time = (window.prompt("Saat kaçta? (örn. 09:00 — yoksa boş bırakın)") || "").trim();
     runAction({ type: "schedule", do: "add", day: "today", time, task: task.trim() });
   };
   const editItem = (it) => {
-    const task = (window.prompt("Edit task:", it.task) || "").trim();
-    const time = (window.prompt("Edit time (e.g. 09:00):", it.time || "") || "").trim();
+    const task = (window.prompt("Maddeyi düzenle:", it.task) || "").trim();
+    const time = (window.prompt("Saati düzenle (örn. 09:00):", it.time || "") || "").trim();
     if (!task && !time) return;
     runAction({
       type: "schedule",
@@ -335,8 +365,8 @@ export function SchedulePanel({ items, collapsible, open, onToggle, runAction })
 
   return (
     <CornerBox
-      title="Agenda"
-      code="TODAY"
+      title="Ajanda"
+      code="BUGÜN"
       slot="schedule"
       collapsible={collapsible}
       open={open}
@@ -344,8 +374,8 @@ export function SchedulePanel({ items, collapsible, open, onToggle, runAction })
     >
       <div className="sch">
         {list.length === 0 ? (
-          <StateMessage variant="empty" icon="calendar" title="Nothing scheduled today">
-            Ask JARVIS to remind you about something and it will show up here.
+          <StateMessage variant="empty" icon="calendar" title="Bugün için plan yok">
+            DUNYATEK&apos;e bir hatırlatma söyleyin, burada görünsün.
           </StateMessage>
         ) : (
           list.map((it, i) => (
@@ -358,10 +388,10 @@ export function SchedulePanel({ items, collapsible, open, onToggle, runAction })
               {it.duration && <span className="sch-dur">{it.duration}</span>}
               {editable && (
                 <span className="sch-edit">
-                  <button title="Edit" onClick={() => editItem(it)}>
+                  <button title="Düzenle" onClick={() => editItem(it)}>
                     ✎
                   </button>
-                  <button title="Remove" onClick={() => removeItem(it)}>
+                  <button title="Sil" onClick={() => removeItem(it)}>
                     ✕
                   </button>
                 </span>
@@ -372,7 +402,7 @@ export function SchedulePanel({ items, collapsible, open, onToggle, runAction })
       </div>
       {editable && (
         <button className="sch-add" onClick={addItem}>
-          ＋ Add item
+          ＋ Madde ekle
         </button>
       )}
     </CornerBox>
@@ -400,7 +430,7 @@ function ClearLogButton({ onClear }) {
       onBlur={() => setArmed(false)}
     >
       <Icon name="trash" size={14} />
-      {armed ? "Clear log?" : "Clear"}
+      {armed ? "Silinsin mi?" : "Temizle"}
     </button>
   );
 }
@@ -420,8 +450,8 @@ export function TerminalPanel({ commands = [], onClear, open, onToggle }) {
   };
   return (
     <CornerBox
-      title="Terminal"
-      code="LOG"
+      title="İşlem Kaydı"
+      code="KAYIT"
       slot="terminal"
       collapsible
       open={open}
@@ -430,8 +460,8 @@ export function TerminalPanel({ commands = [], onClear, open, onToggle }) {
     >
       <div className="term" ref={bodyRef}>
         {commands.length === 0 && (
-          <StateMessage variant="empty" icon="terminal" title="Nothing run yet">
-            Every action JARVIS takes for you is logged here, newest last.
+          <StateMessage variant="empty" icon="terminal" title="Henüz işlem yok">
+            DUNYATEK&apos;in sizin için yaptığı her işlem burada listelenir.
           </StateMessage>
         )}
         {commands.map((c, i) => (
@@ -472,7 +502,7 @@ export function DockBar({
   const items = [
     { l: "ARAÇLAR", i: "sparkle", on: onOpenSkills },
     { l: "HAFIZA", i: "memory", on: onOpenMemory },
-    { l: "YETENEKLER", i: "help", on: onOpenCaps },
+    { l: IS_MOBILE ? "YARDIM" : "YETENEKLER", i: "help", on: onOpenCaps },
     { l: IS_MOBILE ? "CİHAZ" : "GÜÇ", i: "power", on: onOpenPower },
   ];
   return (

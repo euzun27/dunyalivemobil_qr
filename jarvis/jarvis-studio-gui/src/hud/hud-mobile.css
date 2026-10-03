@@ -441,3 +441,180 @@ html.app-mobile--overlay-open .hud-viewport--mobile {
 .hud-viewport--mobile .memx-open {
   min-height: 36px;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DUNYATEK FRONT SCREEN (phone)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Particle face replaces the globe emblem on the phone. */
+.pface {
+  position: relative;
+  margin: 0 auto;
+}
+.pface canvas {
+  position: relative;
+  display: block;
+}
+.pface-glow {
+  position: absolute;
+  inset: 12% 18%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, var(--ac) 22%, transparent),
+    transparent
+  );
+  filter: blur(18px);
+  pointer-events: none;
+}
+.hud-viewport--mobile .hud-core-zone {
+  margin: 0 auto 8px;
+}
+.hud-viewport--mobile .core-readout {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.hud-viewport--mobile .core-name {
+  font-size: 34px;
+  text-shadow: 0 0 18px color-mix(in oklab, var(--ac) 70%, transparent);
+}
+.core-tag {
+  font-size: 10.5px;
+  letter-spacing: 0.34em;
+  color: var(--ac2, #6fe9ff);
+  opacity: 0.8;
+}
+.hud-viewport--mobile .core-readout .waveform {
+  width: 100%;
+  max-width: 340px;
+  margin-top: 4px;
+}
+.core-web {
+  margin-top: 2px;
+  padding: 4px 14px;
+  border: 1px solid color-mix(in oklab, var(--ac) 45%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ac);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+/* Turkish month calendar under the clock. */
+.mcal {
+  width: 100%;
+  margin-top: 6px;
+}
+.mcal-title {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ac);
+  margin-bottom: 6px;
+}
+.mcal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  text-align: center;
+}
+.mcal-dow {
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+  padding-bottom: 2px;
+}
+.mcal-d {
+  font-size: 12px;
+  line-height: 26px;
+  border-radius: 7px;
+  color: var(--tx-1, #cfe9f2);
+}
+.mcal-d--we {
+  opacity: 0.6;
+}
+.mcal-d--today {
+  opacity: 1;
+  background: var(--ac);
+  color: var(--bg-0, #02060a);
+  font-weight: 700;
+  box-shadow: 0 0 12px color-mix(in oklab, var(--ac) 60%, transparent);
+}
+
+/* ── Dock: one slim bar at the very bottom, the mic button sits in its middle.
+   It used to be a tall sticky block that covered half of every panel. ── */
+.hud-viewport--mobile .hud {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+.hud-viewport--mobile [data-slot="dock"] {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: none;
+  margin: 0;
+  border-radius: 16px 16px 0 0;
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+  display: grid !important;
+  grid-template-columns:
+    repeat(3, calc((100% - 84px) / 6)) 84px
+    repeat(2, calc((100% - 84px) / 4));
+  gap: 0;
+  background: color-mix(in oklab, var(--bg-0) 92%, transparent);
+  border-top: 1px solid color-mix(in oklab, var(--ac) 35%, transparent);
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.45);
+}
+.hud-viewport--mobile .dock-btn {
+  position: relative;
+  min-height: 52px;
+  min-width: 0;
+  padding: 4px 2px;
+  margin: 0 2px;
+  border: none;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.hud-viewport--mobile .dock-btn:nth-child(1) {
+  grid-column: 1;
+}
+.hud-viewport--mobile .dock-btn:nth-child(2) {
+  grid-column: 2;
+}
+.hud-viewport--mobile .dock-btn:nth-child(3) {
+  grid-column: 3;
+}
+.hud-viewport--mobile .dock-btn:nth-child(4) {
+  grid-column: 6;
+  grid-row: 1;
+}
+.hud-viewport--mobile .dock-btn--chat {
+  grid-column: 5;
+  grid-row: 1;
+  flex: none;
+  margin-top: 0;
+}
+.hud-viewport--mobile .dock-l {
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.hud-viewport--mobile .dock-badge {
+  top: 0;
+  right: 6px;
+}
+.mobile-mic {
+  bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+}

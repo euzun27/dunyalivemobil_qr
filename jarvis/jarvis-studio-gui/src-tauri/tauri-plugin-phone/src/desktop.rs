@@ -70,6 +70,7 @@ impl<R: Runtime> Phone<R> {
     unavailable_command!(open_app(OpenAppRequest));
     unavailable_command!(close_app(CloseAppRequest));
     unavailable_command!(open_url(OpenUrlRequest));
+    unavailable_command!(send_sms(SendSmsRequest));
     unavailable_command!(set_volume(VolumeRequest));
     unavailable_command!(read_clipboard());
     unavailable_command!(open_system_settings(SystemSettingsRequest));

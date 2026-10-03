@@ -56,6 +56,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::open_app,
             commands::close_app,
             commands::open_url,
+            commands::send_sms,
             commands::set_volume,
             commands::read_clipboard,
             commands::open_system_settings,

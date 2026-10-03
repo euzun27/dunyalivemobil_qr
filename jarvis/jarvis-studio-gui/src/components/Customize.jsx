@@ -4,6 +4,7 @@
 // edit the same live state. Mirrors the named themes in actions/__init__.py.
 
 import ModalPanel from "./ModalPanel";
+import { IS_MOBILE } from "../hooks/useAssistant";
 
 const THEMES = {
   cyan: ["#00e5ff", "#6fe9ff", [0, 229, 255]],
@@ -39,7 +40,7 @@ export default function Customize({ screen, onClose, onPatch }) {
   const accent = (s.accent || "#00e5ff").toLowerCase();
   const background = s.background || "grid";
   const density = s.density || "normal";
-  const core = s.core || "emblem";
+  const core = s.core || (IS_MOBILE ? "face" : "emblem"); // HudApp ile ayni varsayilan
 
   return (
     <ModalPanel title="Customize Display" onClose={onClose}>
@@ -50,6 +51,7 @@ export default function Customize({ screen, onClose, onPatch }) {
           {[
             ["emblem", "DUNYATEK amblemi"],
             ["face", "\u0130nsan y\u00fcz\u00fc"],
+            ["particle", "Par\u00e7ac\u0131k y\u00fcz\u00fc"],
           ].map(([key, label]) => (
             <button
               key={key}

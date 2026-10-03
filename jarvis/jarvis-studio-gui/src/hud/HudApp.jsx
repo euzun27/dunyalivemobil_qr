@@ -8,10 +8,18 @@ import { IS_MOBILE } from "../hooks/useAssistant";
 import "./hud.css";
 import "./layouts.css";
 import "./hud-mobile.css"; // ANDROID FORK: phone reflow (scoped to .hud-viewport--mobile)
-import { ReactorCore, BootSequence } from "./HudCore";
+import { ReactorCore, BootSequence, Waveform } from "./HudCore";
 // Uzanti ACIK yazilir: Windows buyuk/kucuk harf ayirmaz ve Vite .ts'yi .jsx'ten once dener;
 // "./HoloFace" yazilirsa yanlis dosya cozulebilir.
 import { HoloFace } from "./HoloFace.jsx";
+import ParticleFace from "./ParticleFace.jsx";
+import { useSimplePc } from "../hooks/useSimplePc";
+
+function openWebsite() {
+  import("@tauri-apps/api/core")
+    .then(({ invoke }) => invoke("plugin:phone|open_url", { url: "https://www.dunyatek.com" }))
+    .catch(() => {});
+}
 import { STATUS_META, DEFAULT_TELEMETRY } from "./hudConstants";
 import {
   ClockPanel,
@@ -94,6 +102,14 @@ export function JarvisHUD({
     [setCapsOpen, setChatOpen],
   );
   const endBoot = useCallback(() => setIsBoot(false), []); // stable: BootSequence's timer depends on it
+  // DUNYATEK: while the live PC call is on, the phone is DUNYATEK's ear and voice.
+  const pc = useSimplePc();
+  const pcLive = IS_MOBILE && pc.state === "online" && pc.voice;
+  // status zaten PC'deki asistanin durumu (App.jsx: hudStatus); canli gorusmede onu yaz.
+  const statusLabel = pcLive
+    ? `CANLI GÖRÜŞME · ${(STATUS_META[status] ?? STATUS_META.idle).label}`
+    : (STATUS_META[status] ?? STATUS_META.idle).label;
+  const centre = screen?.core || (IS_MOBILE ? "face" : "emblem");
   const p = (k, def = true) => (panels[k] === undefined ? def : panels[k]);
   const tog = (k) => (v) => onTogglePanel && onTogglePanel(k, v);
 
@@ -181,14 +197,28 @@ export function JarvisHUD({
 
       {/* central core */}
       <div className="hud-core-zone" data-slot="core">
-        {screen?.core === "face" ? (
-          <HoloFace status={status} muted={muted} size={IS_MOBILE ? 232 : 482} rgb={c.rgb} />
+        {/* DUNYATEK merkez: insan yuzu (masaustuyle ayni) / parcacik yuzu / amblem.
+            Telefonda varsayilan insan yuzu; masaustu gorunumunde amblem. */}
+        {centre === "face" ? (
+          <HoloFace status={status} muted={muted} size={IS_MOBILE ? 300 : 482} rgb={c.rgb} />
+        ) : centre === "particle" ? (
+          <ParticleFace status={status} size={IS_MOBILE ? 300 : 482} rgb={c.rgb} />
         ) : (
           <ReactorCore status={status} size={IS_MOBILE ? 232 : 482} rgb={c.rgb} />
         )}
         <div className="core-readout">
           <span className="core-name">{c.name}</span>
-          <span className="core-sub">{(STATUS_META[status] ?? STATUS_META.idle).label}</span>
+          {IS_MOBILE && <span className="core-tag">YAPAY ZEKÂ ASİSTANI</span>}
+          <span className="core-sub">{statusLabel}</span>
+          {IS_MOBILE && (
+            <>
+              <Waveform status={status} bars={42} height={40} rgb={c.rgb} />
+              {/* opened in the phone's browser — never navigate the app's own WebView */}
+              <button type="button" className="core-web" onClick={openWebsite}>
+                www.dunyatek.com
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -200,7 +230,8 @@ export function JarvisHUD({
 
       {/* ── right rail: status + the panels assigned to the right ── */}
       <div className="hud-rail hud-rail--right">
-        <StatusPanel status={status} rgb={c.rgb} />
+        {/* on the phone the status + waveform sit right under the face */}
+        {!IS_MOBILE && <StatusPanel status={status} rgb={c.rgb} />}
         {railPanels("right")}
       </div>
 

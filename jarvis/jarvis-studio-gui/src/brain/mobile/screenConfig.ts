@@ -10,8 +10,8 @@ export interface ScreenConfig {
   density?: string;
   panels?: Record<string, boolean>;
   order?: { left?: string[]; right?: string[] };
-  /** HUD merkezi: DUNYATEK amblemi (varsayilan) ya da insan yuzu (masaustuyle ayni yuz). */
-  core?: "emblem" | "face";
+  /** HUD merkezi: amblem, insan yuzu (masaustuyle ayni) ya da parcacik yuzu. Telefonda varsayilan yuz. */
+  core?: "emblem" | "face" | "particle";
 }
 
 const KEY = "jarvis.android.screen.v1";
