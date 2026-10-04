@@ -11,7 +11,7 @@ export interface ScreenConfig {
   panels?: Record<string, boolean>;
   order?: { left?: string[]; right?: string[] };
   /** HUD merkezi: amblem, insan yuzu (masaustuyle ayni) ya da parcacik yuzu. Telefonda varsayilan yuz. */
-  core?: "emblem" | "face" | "particle";
+  core?: "emblem" | "face" | "particle" | "video";
 }
 
 const KEY = "jarvis.android.screen.v1";

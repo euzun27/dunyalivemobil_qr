@@ -1545,7 +1545,7 @@ export function useBrain() {
         promptPermission: userInteractedRef.current && !taskCenterActive,
         onNeedsPermission: () =>
           pushWarning(
-            "Opening a system setting so JARVIS can show a STOP button over other apps — turn on “Draw over other apps”, then it'll appear whenever JARVIS is speaking or busy.",
+            "DUNYATEK'in diğer uygulamaların üzerinde DURDUR düğmesi gösterebilmesi için bir sistem ayarı açılıyor — “Diğer uygulamaların üzerinde göster” iznini açın; DUNYATEK konuşurken ya da çalışırken düğme görünür.",
           ),
       },
     );

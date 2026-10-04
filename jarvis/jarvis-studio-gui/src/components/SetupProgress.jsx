@@ -53,7 +53,7 @@ export default function SetupProgress({ progress, onRepair }) {
           <span className="setup-ring-core" />
         </div>
         <div className="setup-kicker">{anyError ? "SETUP — ACTION NEEDED" : "FIRST-RUN SETUP"}</div>
-        <div className="setup-title">Initialising J.A.R.V.I.S</div>
+        <div className="setup-title">DUNYATEK başlatılıyor</div>
         <div className="setup-sub">
           {anyError
             ? "A component couldn't be set up, sir. The rest are ready — retry the missing one below."

@@ -971,7 +971,7 @@ export class RemotePC {
       const why =
         this._state === "unauthorized"
           ? "the phone identity or host pins were rejected — scan a fresh pairing QR."
-          : "make sure it's on, on the same network, and the JARVIS desktop app is running.";
+          : "bilgisayarın açık, aynı ağda ve DUNYATEK masaüstü programının çalışıyor olduğundan emin olun.";
       return {
         ok: false,
         summary: `I can't reach your PC, sir — ${why}`,

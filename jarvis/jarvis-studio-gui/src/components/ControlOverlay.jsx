@@ -216,7 +216,7 @@ export default function ControlOverlay() {
 
       <div className="co-bar">
         <span className="co-dot" aria-hidden="true" />
-        <span className="co-title">JARVIS CONTROLLING</span>
+        <span className="co-title">DUNYATEK KONTROLDE</span>
         <span className={`co-live${paused ? " co-live--paused" : ""}`}>
           {paused ? "PAUSED" : "LIVE"}
         </span>
@@ -265,7 +265,7 @@ export default function ControlOverlay() {
             {lastShot?.image && (
               <div className="co-shot">
                 <span className="co-shot-label">SEEN</span>
-                <img src={lastShot.image} alt="what JARVIS sees" />
+                <img src={lastShot.image} alt="DUNYATEK'in gördüğü" />
               </div>
             )}
             <div className="co-steps" ref={stepsRef} aria-live="polite">
@@ -303,7 +303,7 @@ export default function ControlOverlay() {
             ▸
           </span>
           <span className="co-status-txt">
-            {lastStep || (paused ? "Paused — JARVIS is holding." : "Working…")}
+            {lastStep || (paused ? "Duraklatıldı — DUNYATEK bekliyor." : "Working…")}
           </span>
         </div>
       )}
@@ -317,7 +317,7 @@ export default function ControlOverlay() {
           onKeyDown={(e) => {
             if (e.key === "Enter") sendCorr();
           }}
-          placeholder="Tell JARVIS what to fix…"
+          placeholder="DUNYATEK'e neyi düzelteceğini söyleyin…"
         />
         <button className="co-btn co-send" title="Send correction" onClick={sendCorr}>
           ➤

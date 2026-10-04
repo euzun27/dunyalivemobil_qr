@@ -78,7 +78,7 @@ export default function QrScanner({ onResult, onCancel }) {
         rafRef.current = requestAnimationFrame(scanLoop);
       } catch (e) {
         setError(
-          "Couldn't open the camera — check JARVIS has camera permission in Android Settings, or enter the details manually instead. (" +
+          "Kamera açılamadı — Android Ayarları'nda DUNYATEK'e kamera izni verildiğini kontrol edin ya da bilgileri elle girin. (" +
             (e?.message || e) +
             ")",
         );

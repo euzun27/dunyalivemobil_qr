@@ -653,8 +653,8 @@ export default function Settings({
             model !== "auto"
               ? `Every request goes to ${model} on ${providerName}.`
               : providerMode === "auto"
-                ? "JARVIS picks the model for each request: a quick one for small talk, a stronger one for real work."
-                : `JARVIS picks the best ${providerName} model for each request.`
+                ? "DUNYATEK her istek için modeli kendisi seçer: sohbet için hızlı bir model, gerçek işler için daha güçlü bir model."
+                : `DUNYATEK her istek için en uygun ${providerName} modelini seçer.`
           }
         >
           <select
@@ -722,7 +722,7 @@ export default function Settings({
   );
 
   const multiKeyHint =
-    "Free-tier limits count per key. Paste several, one per line, and JARVIS rotates through them.";
+    "Ücretsiz kullanım sınırları anahtar başınadır. Her satıra bir tane olacak şekilde birkaç anahtar yapıştırın; DUNYATEK sırayla kullanır.";
   const keysPage = (
     <>
       <p className="sp-lede">
@@ -943,7 +943,7 @@ export default function Settings({
           label="Show over other apps"
           checked={ovlEnabled}
           onChange={setOvlEnabled}
-          hint="A small pill above the taskbar shows whether JARVIS is listening or working, with a stop button."
+          hint="Ekranın üstündeki küçük bir rozet, DUNYATEK'in dinlediğini ya da çalıştığını gösterir; durdurma düğmesi de vardır."
         />
         {ovlEnabled && (
           <Field label="Hide it in these apps">
@@ -1046,7 +1046,7 @@ export default function Settings({
           // dialog would lose that race.
           if (on) void requestCalendarPermission();
         }}
-        hint="Items show up in Google Calendar and on your other devices. Turn off to keep the agenda inside JARVIS."
+        hint="Kayıtlar Google Takvim'de ve diğer cihazlarınızda görünür. Ajandayı yalnızca DUNYATEK içinde tutmak için kapatın."
       />
       <div className="sp-field">
         <More label="If you decline calendar permission">
@@ -1063,7 +1063,7 @@ export default function Settings({
         <span className="sp-label">Folder</span>
         <span className="sp-value sp-mono">{grantedFolder ? grantedFolder.name : "None"}</span>
       </div>
-      <Field hint="JARVIS can list this folder and read the text files in it. It can never write, move or delete anything.">
+      <Field hint="DUNYATEK bu klasörü listeleyip içindeki metin dosyalarını okuyabilir. Hiçbir şeyi yazamaz, taşıyamaz ya da silemez.">
         <button type="button" className="sp-btn" onClick={chooseFolder}>
           {grantedFolder ? "Change folder" : "Choose folder"}
         </button>
@@ -1071,7 +1071,7 @@ export default function Settings({
     </Group>
   ) : (
     <>
-      <Group title="Where JARVIS saves things">
+      <Group title="DUNYATEK'in kayıt yeri">
         <Field hint="Images, recordings and documents go into subfolders here.">
           <input
             type="text"
@@ -1083,7 +1083,7 @@ export default function Settings({
           />
         </Field>
       </Group>
-      <Group title="Folders JARVIS can read">
+      <Group title="DUNYATEK'in okuyabileceği klasörler">
         <Field hint="It can list these and read files inside, asking you each time. It can never run, write, move or delete anything.">
           <div className="dirlist">
             {dirs.length === 0 && (

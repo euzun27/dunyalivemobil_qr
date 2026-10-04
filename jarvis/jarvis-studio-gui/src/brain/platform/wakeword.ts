@@ -195,7 +195,7 @@ export class WakeWordListener {
       void invoke("plugin:phone|start_wake_word").catch(() => {});
       if (this.notListeningStreak === 20) {
         this.opts.onFatal?.(
-          "Could not start on-device wake word — check that JARVIS has microphone access.",
+          "“Hey Jarvis” uyandırma sözü başlatılamadı — DUNYATEK'in mikrofon izni olduğunu kontrol edin.",
         );
       }
     }

@@ -13,11 +13,12 @@ import { ReactorCore, BootSequence, Waveform } from "./HudCore";
 // "./HoloFace" yazilirsa yanlis dosya cozulebilir.
 import { HoloFace } from "./HoloFace.jsx";
 import ParticleFace from "./ParticleFace.jsx";
+import { VideoAvatar } from "./VideoAvatar.jsx";
 import { useSimplePc } from "../hooks/useSimplePc";
 
 function openWebsite() {
   import("@tauri-apps/api/core")
-    .then(({ invoke }) => invoke("plugin:phone|open_url", { url: "https://www.dunyatek.com" }))
+    .then(({ invoke }) => invoke("plugin:phone|open_url", { url: "https://www.ai.dunyatek.com.tr" }))
     .catch(() => {});
 }
 import { STATUS_META, DEFAULT_TELEMETRY } from "./hudConstants";
@@ -109,7 +110,11 @@ export function JarvisHUD({
   const statusLabel = pcLive
     ? `CANLI GÖRÜŞME · ${(STATUS_META[status] ?? STATUS_META.idle).label}`
     : (STATUS_META[status] ?? STATUS_META.idle).label;
-  const centre = screen?.core || (IS_MOBILE ? "face" : "emblem");
+  // Telefonda varsayilan gercekci DUNYATEK avatari; klipler yuklenemezse insan yuzu.
+  const [videoHata, setVideoHata] = useState(false);
+  const videoHatasi = useCallback(() => setVideoHata(true), []);
+  const secilen = screen?.core || (IS_MOBILE ? "video" : "emblem");
+  const centre = secilen === "video" && videoHata ? "face" : secilen;
   const p = (k, def = true) => (panels[k] === undefined ? def : panels[k]);
   const tog = (k) => (v) => onTogglePanel && onTogglePanel(k, v);
 
@@ -199,7 +204,9 @@ export function JarvisHUD({
       <div className="hud-core-zone" data-slot="core">
         {/* DUNYATEK merkez: insan yuzu (masaustuyle ayni) / parcacik yuzu / amblem.
             Telefonda varsayilan insan yuzu; masaustu gorunumunde amblem. */}
-        {centre === "face" ? (
+        {centre === "video" ? (
+          <VideoAvatar status={status} muted={muted} width={IS_MOBILE ? 260 : 400} onError={videoHatasi} />
+        ) : centre === "face" ? (
           <HoloFace status={status} muted={muted} size={IS_MOBILE ? 300 : 482} rgb={c.rgb} />
         ) : centre === "particle" ? (
           <ParticleFace status={status} size={IS_MOBILE ? 300 : 482} rgb={c.rgb} />
@@ -215,7 +222,7 @@ export function JarvisHUD({
               <Waveform status={status} bars={42} height={40} rgb={c.rgb} />
               {/* opened in the phone's browser — never navigate the app's own WebView */}
               <button type="button" className="core-web" onClick={openWebsite}>
-                www.dunyatek.com
+                www.ai.dunyatek.com.tr
               </button>
             </>
           )}

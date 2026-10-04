@@ -653,7 +653,7 @@ export function SkillsOverlay({
                 </div>
               </Field>
             </Group>
-            <Group title="Folders JARVIS can read">
+            <Group title="DUNYATEK'in okuyabileceği klasörler">
               <Field hint="It can list these and read files inside, asking you each time. It can never run, write, move or delete anything.">
                 <div className="dirlist">
                   {allowedDirs.length === 0 && (
@@ -905,14 +905,14 @@ const MEM_KINDS = [
     kind: "fact",
     label: "About you",
     color: "var(--ac)",
-    note: "JARVIS reads these before every reply.",
+    note: "DUNYATEK her cevaptan önce bunları okur.",
   },
   {
     key: "playbooks",
     kind: "playbook",
     label: "Playbooks",
     color: "#6ee7a8",
-    note: "Routines you taught JARVIS. A playbook runs on its own only after three verified successes.",
+    note: "DUNYATEK'e öğrettiğiniz rutinler. Bir rutin, üç kez doğrulanmış başarıdan sonra kendi kendine çalışır.",
   },
   {
     key: "conversations",
@@ -1028,7 +1028,7 @@ export function MemoryOverlay({
         <header className="memx-hd">
           <div className="memx-hd-txt">
             <span className="memx-kicker">MEMORY</span>
-            <h2 className="memx-title">What JARVIS knows</h2>
+            <h2 className="memx-title">DUNYATEK'in bildikleri</h2>
             <p className="memx-loc">Kept on this phone only.</p>
           </div>
           <button className="memx-close" onClick={onClose} aria-label="Close memory">
@@ -1091,7 +1091,7 @@ export function MemoryOverlay({
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   aria-label="New fact"
-                  placeholder="Something JARVIS should always know — e.g. I'm vegetarian"
+                  placeholder="DUNYATEK'in her zaman bilmesi gereken bir şey — ör. Vejetaryenim"
                   maxLength={300}
                 />
                 <button type="submit" disabled={!draft.trim()}>
@@ -1115,7 +1115,7 @@ export function MemoryOverlay({
               <p className="memx-empty">
                 {
                   {
-                    facts: "Nothing yet. Tell JARVIS “remember that…”, or add something above.",
+                    facts: "Henüz bir şey yok. DUNYATEK'e “şunu hatırla…” deyin ya da yukarıdan ekleyin.",
                     playbooks: "No playbooks. Teach one by saying “learn a playbook called…”.",
                     conversations:
                       "No saved chats. Starting a new chat saves the current one here.",
@@ -1296,7 +1296,7 @@ export function PowerOverlay({ open, onClose, runAction, d = {} }) {
           <ActionRow
             icon="hand"
             title="App control"
-            desc="Lets JARVIS tap and type in other apps. Turn on JARVIS in Accessibility."
+            desc="DUNYATEK'in diğer uygulamalarda dokunup yazmasını sağlar. Erişilebilirlik ayarlarında DUNYATEK'i açın."
             leaves
             onClick={() => {
               onClose();
@@ -1326,7 +1326,7 @@ const ChatMessage = memo(function ChatMessage({ m, runAction }) {
   const user = m.role === "user";
   return (
     <div className={`cv-msg cv-msg--${user ? "user" : "jarvis"}`}>
-      <span className="sp-sr">{user ? "You:" : "JARVIS:"}</span>
+      <span className="sp-sr">{user ? "Siz:" : "DUNYATEK:"}</span>
       <div className="cv-bubble">
         {user ? (
           m.text
@@ -1545,8 +1545,8 @@ export function ChatOverlay({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Message JARVIS"
-            aria-label="Message JARVIS"
+            placeholder="DUNYATEK'e yazın"
+            aria-label="DUNYATEK'e yazın"
           />
           {busy && onStop ? (
             <button
@@ -1574,7 +1574,7 @@ export function ChatOverlay({
       <div className="cv" aria-live="polite">
         {messages.length === 0 ? (
           <div className="cv-empty">
-            <p className="cv-empty-title">Ask JARVIS anything</p>
+            <p className="cv-empty-title">DUNYATEK'e her şeyi sorabilirsiniz</p>
             <p className="sp-desc">Aşağıya yazın, mikrofona dokunun ya da “Hey Jarvis” deyin.</p>
             <div className="cv-starters">
               {STARTERS.map((t) => (
@@ -1589,7 +1589,7 @@ export function ChatOverlay({
         )}
         {status === "thinking" && (
           <div className="cv-msg cv-msg--jarvis">
-            <span className="sp-sr">JARVIS is thinking</span>
+            <span className="sp-sr">DUNYATEK düşünüyor</span>
             <div className="cv-typing" aria-hidden="true">
               <i />
               <i />

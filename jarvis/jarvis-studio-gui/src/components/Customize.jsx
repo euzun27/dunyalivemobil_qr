@@ -40,7 +40,7 @@ export default function Customize({ screen, onClose, onPatch }) {
   const accent = (s.accent || "#00e5ff").toLowerCase();
   const background = s.background || "grid";
   const density = s.density || "normal";
-  const core = s.core || (IS_MOBILE ? "face" : "emblem"); // HudApp ile ayni varsayilan
+  const core = s.core || (IS_MOBILE ? "video" : "emblem"); // HudApp ile ayni varsayilan
 
   return (
     <ModalPanel title="Customize Display" onClose={onClose}>
@@ -50,6 +50,7 @@ export default function Customize({ screen, onClose, onPatch }) {
         <div className="cz-row">
           {[
             ["emblem", "DUNYATEK amblemi"],
+            ["video", "DUNYATEK avatar\u0131"],
             ["face", "\u0130nsan y\u00fcz\u00fc"],
             ["particle", "Par\u00e7ac\u0131k y\u00fcz\u00fc"],
           ].map(([key, label]) => (

@@ -434,7 +434,7 @@ export default function RemoteDesktop({
         </span>
         <button
           onClick={onStop}
-          title="Stop JARVIS immediately — cancels any running task and disarms control"
+          title="DUNYATEK'i hemen durdur — çalışan görevi iptal eder ve kontrolü bırakır"
           style={{
             marginLeft: 10,
             padding: "6px 12px",
@@ -541,7 +541,7 @@ export default function RemoteDesktop({
       >
         <button
           onClick={onTriggerListen}
-          title={listening ? "Listening… tap to stop" : "Speak a command to JARVIS"}
+          title={listening ? "Listening… tap to stop" : "DUNYATEK'e sesli komut verin"}
           style={{
             width: 36,
             height: 36,
@@ -561,7 +561,7 @@ export default function RemoteDesktop({
           onKeyDown={(e) => {
             if (e.key === "Enter") submitCommand();
           }}
-          placeholder={thinking ? "JARVIS is working on it…" : "Tell JARVIS what to do on this PC…"}
+          placeholder={thinking ? "DUNYATEK üzerinde çalışıyor…" : "DUNYATEK'e bu bilgisayarda ne yapacağını söyleyin…"}
           disabled={thinking}
           style={{
             flex: 1,

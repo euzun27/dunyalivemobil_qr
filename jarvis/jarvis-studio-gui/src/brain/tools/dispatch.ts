@@ -403,18 +403,18 @@ const OPERATOR_POLL_FAILURES = 20;
 const OPERATOR_JOURNAL_DEADLINE_MS = 450_000;
 
 const A11Y_OFF_SUMMARY =
-  "I can't control your phone yet, sir — I don't have Accessibility access, so I can't " +
-  "see or touch the screen, and I haven't done anything. Turn on “JARVIS” in " +
-  "Settings ▸ Accessibility ▸ Installed apps, then ask me again.";
+  "Telefonunuzu henüz kontrol edemiyorum efendim — Erişilebilirlik iznim olmadığı için " +
+  "ekranı göremiyor ve dokunamıyorum; hiçbir işlem yapmadım. Ayarlar ▸ Erişilebilirlik ▸ " +
+  "Yüklü uygulamalar bölümünden “DUNYATEK”i açın, sonra tekrar isteyin.";
 
 /** isEnabled() passed (the switch is on in Settings) but native has no bound
  *  service: Android stopped it after the app crashed or was force-stopped, and
  *  won't rebind until the switch is cycled. "Turn it on" would confuse — it IS on. */
 const A11Y_STALE_SUMMARY =
-  "I can't control your phone right now, sir, and I haven't done anything. JARVIS's " +
-  "Accessibility switch is on, but Android has stopped the service (it does that after " +
-  "the app crashes or is force-stopped). Turn “JARVIS” off and on again in Settings ▸ " +
-  "Accessibility ▸ Installed apps, then ask me again.";
+  "Şu an telefonunuzu kontrol edemiyorum efendim; hiçbir işlem yapmadım. DUNYATEK'in " +
+  "Erişilebilirlik izni açık görünüyor ama Android hizmeti durdurmuş (uygulama çöktüğünde " +
+  "ya da zorla durdurulduğunda bunu yapar). Ayarlar ▸ Erişilebilirlik ▸ Yüklü uygulamalar " +
+  "bölümünde “DUNYATEK”i kapatıp yeniden açın, sonra tekrar isteyin.";
 
 /**
  * The model routes the native operator may use, best first, each resolved to a

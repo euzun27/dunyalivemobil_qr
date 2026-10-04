@@ -49,11 +49,11 @@ function ClarifyPrompt({ request, onRespond }) {
   const submit = () => onRespond(request.id, answer.trim(), request.taskId);
   return (
     <div className="perm-overlay">
-      <div className="perm-dialog" role="alertdialog" aria-label="JARVIS needs your input">
+      <div className="perm-dialog" role="alertdialog" aria-label="DUNYATEK sizden bir yanıt bekliyor">
         <div className="perm-icon">
           <Icon name="help" size={26} />
         </div>
-        <div className="perm-kicker">JARVIS NEEDS YOUR INPUT</div>
+        <div className="perm-kicker">DUNYATEK SİZDEN BİR YANIT BEKLİYOR</div>
         <div className="perm-desc">{request.question}</div>
         <input
           className="clarify-input"
@@ -596,8 +596,8 @@ export default function App() {
               className={`hud-fixed-btn ${browserState.open ? "hud-fixed-btn--armed" : ""}`}
               title={
                 browserState.open
-                  ? "JARVIS's browser is open â€” click to close it"
-                  : "Open JARVIS's web browser"
+                  ? "DUNYATEK'in tarayıcısı açık — kapatmak için dokunun"
+                  : "DUNYATEK'in web tarayıcısını aç"
               }
               aria-pressed={browserState.open}
               onClick={() => setBrowserOpen(!browserState.open)}
@@ -680,7 +680,7 @@ export default function App() {
           {controlState.armed && (
             <div className="hud-armed-banner hud-armed-banner--control">
               <span className="hud-armed-dot" />
-              <span>âŒ¨ JARVIS IS CONTROLLING YOUR MOUSE &amp; KEYBOARD</span>
+              <span>âŒ¨ DUNYATEK FARE VE KLAVYENİZİ KONTROL EDİYOR</span>
               <button className="hud-armed-disarm hud-armed-disarm--stop" onClick={stopControl}>
                 STOP
               </button>
