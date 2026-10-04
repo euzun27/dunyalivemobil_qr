@@ -32,7 +32,8 @@
   flex-direction: column;
   align-items: stretch;
   gap: 16px;
-  padding: calc(64px + env(safe-area-inset-top, 0px)) 12px
+  /* DUNYATEK: ust serit 10+42+10 px + kenar; icerik onun altindan, biraz payla baslar */
+  padding: calc(72px + env(safe-area-inset-top, 0px)) 12px
     calc(172px + env(safe-area-inset-bottom, 0px));
 }
 
