@@ -113,7 +113,7 @@ describe("reminders", () => {
     expect(r.ok).toBe(true);
     // 15:00 — the resolved wall-clock time, not the raw phrase.
     expect(clock.setAlarm).toHaveBeenCalledWith(15, 0, "call mum");
-    expect(runSchedule({ do: "get", day: "today" }).summary).toMatch(/1 item/);
+    expect(runSchedule({ do: "get", day: "today" }).summary).toMatch(/1 kayıt/);
   });
 
   it("uses a TIMER for a countdown, never an alarm", async () => {
@@ -137,7 +137,7 @@ describe("reminders", () => {
     const { clock, deps } = makeDeps();
     const r = await dispatch({ type: "reminder", when: "sometime later", text: "x" }, deps);
     expect(clock.setAlarm).not.toHaveBeenCalled();
-    expect(r.summary).toMatch(/nothing will go off/i);
+    expect(r.summary).toMatch(/herhangi bir uyarı çalmayacak/i);
   });
 
   it("still reports the agenda entry when the Clock refuses", async () => {
@@ -160,7 +160,7 @@ describe("calendar mirroring", () => {
     );
     expect(calendar.add).toHaveBeenCalledWith("gym", expect.any(Number));
     expect(r.ok).toBe(true);
-    expect(r.summary).toMatch(/calendar/i);
+    expect(r.summary).toMatch(/takvim/i);
     // The id must be stored, or a later remove orphans the real event.
     const removed = runSchedule({ do: "remove", day: "monday", match: "gym" });
     expect(removed.item?.calendarEventId).toBe(42);
@@ -178,7 +178,7 @@ describe("calendar mirroring", () => {
     );
     expect(r.ok).toBe(true);
     expect(r.summary).toMatch(/No calendar permission/);
-    expect(runSchedule({ do: "get", day: "tuesday" }).summary).toMatch(/1 item/);
+    expect(runSchedule({ do: "get", day: "tuesday" }).summary).toMatch(/1 kayıt/);
   });
 
   it("deletes the real event when the agenda item is removed", async () => {

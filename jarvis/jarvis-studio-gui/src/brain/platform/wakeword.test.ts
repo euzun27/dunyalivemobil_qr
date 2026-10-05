@@ -86,7 +86,7 @@ describe("stuck-listener recovery", () => {
 
     expect((l as unknown as { handling: boolean }).handling).toBe(false);
     expect(invokeMock).toHaveBeenCalledWith("plugin:phone|start_wake_word");
-    expect(onError).toHaveBeenCalledWith(expect.stringMatching(/stuck/i));
+    expect(onError).toHaveBeenCalledWith(expect.stringMatching(/takıldı/i));
   });
 
   it("leaves a normally-running command alone", async () => {
@@ -110,6 +110,6 @@ describe("stuck-listener recovery", () => {
 
     await expect(pending).resolves.toBeNull();
     expect(cancelSpy).toHaveBeenCalled();
-    expect(onError).toHaveBeenCalledWith(expect.stringMatching(/microphone capture/i));
+    expect(onError).toHaveBeenCalledWith(expect.stringMatching(/mikrofon kaydı/i));
   });
 });

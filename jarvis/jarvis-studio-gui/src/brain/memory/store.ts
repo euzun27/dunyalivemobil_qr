@@ -236,7 +236,7 @@ export class PersistentStore implements MemoryStore {
   // ── Durable facts ──
   async remember(text: string, saJson?: string): Promise<ToolResult> {
     const t = text.trim();
-    if (!t) return { ok: false, summary: "Nothing to remember." };
+    if (!t) return { ok: false, summary: "Hatırlanacak bir şey yok." };
     const facts = readJson<string[]>(this.kv, FACTS_KEY, []);
     if (!facts.includes(t)) {
       facts.push(t);
@@ -249,7 +249,7 @@ export class PersistentStore implements MemoryStore {
       if (!writeJson(this.kv, FACTS_KEY, facts)) {
         return {
           ok: false,
-          summary: "I couldn't save that, sir — my on-device storage is full.",
+          summary: "Bunu kaydedemedim efendim — cihazdaki depolama alanım dolu.",
           error: "storage_full",
         };
       }
@@ -263,7 +263,7 @@ export class PersistentStore implements MemoryStore {
         );
       }
     }
-    return { ok: true, summary: "Got it — I'll remember that." };
+    return { ok: true, summary: "Anladım — bunu hatırlayacağım." };
   }
 
   async forget(text: string): Promise<ToolResult> {
@@ -271,7 +271,7 @@ export class PersistentStore implements MemoryStore {
     if (t === "everything") {
       writeJson(this.kv, FACTS_KEY, []);
       await withVectorStore((m) => m.clearVectors());
-      return { ok: true, summary: "Forgotten everything I knew about you." };
+      return { ok: true, summary: "Sizinle ilgili bildiğim her şeyi unuttum." };
     }
     const facts = readJson<string[]>(this.kv, FACTS_KEY, []);
     const kept = facts.filter((f) => !f.toLowerCase().includes(t));
@@ -285,8 +285,8 @@ export class PersistentStore implements MemoryStore {
     // A no-op deletion is not a success: the model is told tool results are the
     // source of truth, so ok:true here had it report the fact as deleted.
     return kept.length === facts.length
-      ? { ok: false, summary: "I don't have anything matching that, sir.", error: "no_match" }
-      : { ok: true, summary: "Forgotten." };
+      ? { ok: false, summary: "Bununla eşleşen bir bilgim yok efendim.", error: "no_match" }
+      : { ok: true, summary: "Unuttum." };
   }
 
   async listFacts(): Promise<Array<{ text: string; ts?: number }>> {
@@ -297,7 +297,7 @@ export class PersistentStore implements MemoryStore {
   async deleteFact(text: string): Promise<ToolResult> {
     const facts = readJson<string[]>(this.kv, FACTS_KEY, []);
     if (!facts.includes(text))
-      return { ok: false, summary: "That fact is already gone.", error: "no_match" };
+      return { ok: false, summary: "Bu bilgi zaten silinmiş.", error: "no_match" };
     writeJson(
       this.kv,
       FACTS_KEY,
@@ -307,7 +307,7 @@ export class PersistentStore implements MemoryStore {
     delete times[text];
     writeJson(this.kv, FACT_TIMES_KEY, times);
     await withVectorStore((m) => m.deleteVectorRecordByText(text));
-    return { ok: true, summary: "Forgotten." };
+    return { ok: true, summary: "Unuttum." };
   }
 
   async facts(query?: string, saJson?: string): Promise<string[]> {
@@ -345,7 +345,7 @@ export class PersistentStore implements MemoryStore {
     if (turns.length) {
       const recents = readJson<ArchivedThread[]>(this.kv, RECENTS_KEY, []);
       const firstUser = turns.find((t) => t.role === "user");
-      const title = (firstUser?.content ?? "Conversation").slice(0, 60);
+      const title = (firstUser?.content ?? "Sohbet").slice(0, 60);
       recents.push({ id: threadId(), title, savedAt: Date.now(), turns });
       writeJson(this.kv, RECENTS_KEY, recents.slice(-MAX_RECENTS));
     }
@@ -354,7 +354,7 @@ export class PersistentStore implements MemoryStore {
 
   async clearConversation(): Promise<ToolResult> {
     writeJson(this.kv, TURNS_KEY, []);
-    return { ok: true, summary: "Conversation cleared." };
+    return { ok: true, summary: "Sohbet temizlendi." };
   }
 
   async listRecents(): Promise<ArchivedThread[]> {

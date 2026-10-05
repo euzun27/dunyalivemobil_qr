@@ -215,24 +215,38 @@ export interface ScheduleResult {
   item?: ScheduleItem;
 }
 
+/** Weekday bucket key → the Turkish name spoken/shown to the user. */
+const DAY_TR: Record<string, string> = {
+  monday: "Pazartesi",
+  tuesday: "Salı",
+  wednesday: "Çarşamba",
+  thursday: "Perşembe",
+  friday: "Cuma",
+  saturday: "Cumartesi",
+  sunday: "Pazar",
+};
+
 /** Run a schedule action from the HUD or the `manage_schedule` tool. */
 export function runSchedule(payload: Record<string, unknown>): ScheduleResult {
   const action = String(payload.do ?? payload.action ?? "get").toLowerCase();
   const day = normaliseDay(String(payload.day ?? "today"));
+  const dayTr = DAY_TR[day] ?? day;
   const data = readRaw();
 
   if (action === "get" || action === "list") {
     const n = (data[day] ?? []).length;
     return {
       ok: true,
-      summary: n ? `You have ${n} item(s) on ${day}.` : `Nothing on ${day}'s schedule.`,
+      summary: n
+        ? `${dayTr} günü gündeminizde ${n} kayıt var.`
+        : `${dayTr} günü gündeminizde hiçbir şey yok.`,
     };
   }
 
   if (action === "add" || action === "set" || action === "create") {
     const task = String(payload.task ?? "").trim();
     const when = normaliseTime(String(payload.time ?? ""));
-    if (!task) return { ok: false, summary: "What should I add to your schedule?" };
+    if (!task) return { ok: false, summary: "Gündeminize ne ekleyeyim?" };
     const eventId = Number(payload.calendarEventId ?? 0);
     // Stamp WHICH day this is for, so it retires instead of recurring weekly.
     // agendaStartMillis already resolves "the next <weekday>" for us; fall back to
@@ -251,7 +265,7 @@ export function runSchedule(payload: Record<string, unknown>): ScheduleResult {
     writeRaw(data);
     return {
       ok: true,
-      summary: `Added '${task}'${when ? ` at ${when}` : ""} to your ${day} schedule.`,
+      summary: `'${task}'${when ? ` (saat ${when})` : ""} ${dayTr} günü gündeminize eklendi.`,
       item,
     };
   }
@@ -260,38 +274,42 @@ export function runSchedule(payload: Record<string, unknown>): ScheduleResult {
     const items = data[day] ?? [];
     const idx = findItem(items, payload);
     if (idx == null)
-      return { ok: false, summary: "I couldn't find that item on your schedule to edit." };
+      return { ok: false, summary: "Düzenlemek için bu kaydı gündeminizde bulamadım." };
     const old = { ...items[idx] };
     const newTask = String(payload.new_task ?? payload.task ?? "").trim();
     const newTime = normaliseTime(String(payload.new_time ?? payload.time ?? ""));
     if (newTask) items[idx].task = newTask;
     if (newTime) items[idx].time = newTime;
     if (!newTask && !newTime)
-      return { ok: false, summary: "Tell me the new time or task for that item." };
+      return { ok: false, summary: "Bu kayıt için yeni saati veya görevi söyleyin." };
     items.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
     data[day] = items;
     writeRaw(data);
     return {
       ok: true,
-      summary: `Updated '${old.task}'${newTime ? ` to ${newTime}` : ""}.`,
+      summary: `'${old.task}' güncellendi${newTime ? ` (yeni saat: ${newTime})` : ""}.`,
     };
   }
 
   if (action === "remove" || action === "delete") {
     const items = data[day] ?? [];
     const idx = findItem(items, payload);
-    if (idx == null) return { ok: false, summary: "I couldn't find that item to remove." };
+    if (idx == null) return { ok: false, summary: "Kaldırmak için bu kaydı bulamadım." };
     const removed = items.splice(idx, 1)[0]!;
     data[day] = items;
     writeRaw(data);
-    return { ok: true, summary: `Removed '${removed.task}' from ${day}.`, item: removed };
+    return {
+      ok: true,
+      summary: `'${removed.task}' ${dayTr} günü gündeminden kaldırıldı.`,
+      item: removed,
+    };
   }
 
   if (action === "clear") {
     data[day] = [];
     writeRaw(data);
-    return { ok: true, summary: `Cleared ${day}'s schedule.` };
+    return { ok: true, summary: `${dayTr} günü gündemi temizlendi.` };
   }
 
-  return { ok: false, summary: `Unknown schedule action '${action}'.` };
+  return { ok: false, summary: `Bilinmeyen gündem işlemi: '${action}'.` };
 }

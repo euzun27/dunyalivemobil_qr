@@ -174,7 +174,7 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
           return {
             ok: r.ok,
             summary: ev.ok
-              ? `${r.summary} It's in your calendar too.`
+              ? `${r.summary} Takviminize de ekledim.`
               : `${r.summary} (${ev.summary})`,
           };
         }
@@ -196,7 +196,7 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
       if (action === "timer") {
         const seconds = Number(spec.seconds ?? 0);
         if (!Number.isFinite(seconds) || seconds <= 0) {
-          return { ok: false, summary: "How long should that timer run, sir?" };
+          return { ok: false, summary: "Zamanlayıcı ne kadar sürsün efendim?" };
         }
         return platform.clock.setTimer(Math.round(seconds), label);
       }
@@ -204,14 +204,14 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
         const hour = Number(spec.hour ?? -1);
         const minute = Number(spec.minute ?? 0);
         if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
-          return { ok: false, summary: "What time should I set that alarm for, sir?" };
+          return { ok: false, summary: "Alarmı saat kaça kurayım efendim?" };
         }
         return platform.clock.setAlarm(hour, minute, label, String(spec.days ?? ""));
       }
       if (action === "show_alarms") return platform.clock.showAlarms();
       if (action === "show_timers") return platform.clock.showTimers();
       if (action === "dismiss_timer") return platform.clock.dismissTimer();
-      return { ok: false, summary: `I don't know the clock action '${action}'.` };
+      return { ok: false, summary: `'${action}' saat işlemini tanımıyorum.` };
     }
 
     // ── Reminders — a real Clock alarm, plus an entry on the agenda ─────────────
@@ -221,7 +221,7 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
     case "reminder": {
       const text = String(spec.text ?? "").trim();
       const when = String(spec.when ?? "").trim();
-      if (!text) return { ok: false, summary: "What should I remind you about?" };
+      if (!text) return { ok: false, summary: "Size neyi hatırlatayım?" };
       const parsed = parseReminderDetail(when);
       // Store the RESOLVED clock time on the agenda, not the raw phrase — "in 2
       // minutes" left verbatim is meaningless once that moment has passed, and the
@@ -231,14 +231,14 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
         do: "add",
         day: "today",
         time: at ? at.toTimeString().slice(0, 5) : when,
-        task: `Reminder: ${text}`,
+        task: `Hatırlatıcı: ${text}`,
       });
       if (!parsed || !at) {
         // Couldn't resolve a concrete time — still on the agenda, but honest that
         // nothing will actually go off.
         return {
           ok: agenda.ok,
-          summary: `${agenda.summary} I couldn't work out exactly when though, so nothing will go off — check the agenda.`,
+          summary: `${agenda.summary} Ancak tam zamanını belirleyemedim, bu yüzden herhangi bir uyarı çalmayacak — lütfen gündemi kontrol edin.`,
         };
       }
       // A countdown is a TIMER, a time of day is an ALARM. Forcing "in 30 seconds"
@@ -247,9 +247,9 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
       const fired = parsed.relative
         ? await platform.clock.setTimer(parsed.seconds, text)
         : await platform.clock.setAlarm(at.getHours(), at.getMinutes(), text);
-      const kind = parsed.relative ? "timer" : "clock alarm";
+      const kind = parsed.relative ? "zamanlayıcı" : "saat alarmı";
       return fired.ok
-        ? { ok: true, summary: `${agenda.summary} I've set a ${kind} for it too.` }
+        ? { ok: true, summary: `${agenda.summary} Bunun için bir ${kind} da kurdum.` }
         : { ok: agenda.ok, summary: `${agenda.summary} (${fired.summary})` };
     }
 
@@ -271,19 +271,19 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
         return {
           ok: false,
           summary:
-            "Sleep and hibernate aren't available on Android — try locking the screen manually.",
+            "Uyku ve hazırda bekletme Android’de kullanılamıyor — ekranı elle kilitlemeyi deneyin.",
         };
       }
       if (cmd.includes("shutdown") || cmd.includes("restart") || cmd.includes("logoff")) {
         return {
           ok: false,
-          summary: "Power off and restart aren't available from the app on Android.",
+          summary: "Android’de kapatma ve yeniden başlatma uygulamadan yapılamıyor.",
         };
       }
       if (cmd.includes("lock")) {
         return {
           ok: true,
-          summary: "Use your phone's power button to lock the screen, sir.",
+          summary: "Ekranı kilitlemek için telefonunuzun güç düğmesini kullanın efendim.",
         };
       }
       return platform.system.control(cmd || "settings");
@@ -310,7 +310,7 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
 
     // ── Remote-control the PC (Phase 3) ──
     case "pc_task":
-      if (!remote) return { ok: false, summary: "No PC is paired yet." };
+      if (!remote) return { ok: false, summary: "Henüz eşleşmiş bir bilgisayar yok." };
       return remote.runTask(
         String(spec.goal ?? ""),
         spec.kind === "computer" ? "computer" : "browser",
@@ -323,7 +323,7 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
     // honest "not yet". ──
     case "routine":
       return notReady(
-        "Recurring routines aren't available yet, sir — I can set a one-off reminder instead.",
+        "Tekrarlayan rutinler henüz kullanılamıyor efendim — bunun yerine tek seferlik bir hatırlatıcı kurabilirim.",
       );
 
     // ── Playbooks — raw model/user prose is a disabled reference only. Promotion
@@ -344,7 +344,7 @@ async function dispatchInner(spec: ActionSpec, deps: DispatchDeps): Promise<Tool
     }
 
     default:
-      return notReady(`'${spec.type}' is not implemented in the scaffold yet.`);
+      return notReady(`'${spec.type}' henüz desteklenmiyor.`);
   }
 }
 
@@ -360,36 +360,36 @@ function notReady(msg: string): ToolResult {
  */
 function controlInterface(deps: DispatchDeps, action: string): ToolResult {
   const cmd = action.trim().toLowerCase();
-  if (!cmd) return { ok: false, summary: "Which part of the interface, sir?" };
+  if (!cmd) return { ok: false, summary: "Arayüzün hangi kısmı efendim?" };
   if (!deps.onUiCommand) {
-    return notReady("I can't reach my own interface controls right now, sir.");
+    return notReady("Şu an kendi arayüz kontrollerime erişemiyorum efendim.");
   }
   deps.onUiCommand(cmd);
-  return { ok: true, summary: UI_CONFIRM[cmd] ?? "Done, sir." };
+  return { ok: true, summary: UI_CONFIRM[cmd] ?? "Tamamdır efendim." };
 }
 
 /** Truthful spoken confirmation per self-control action. */
 const UI_CONFIRM: Record<string, string> = {
-  open_chat: "Opened the conversation log, sir.",
-  close_chat: "Closed the conversation log.",
-  open_settings: "Opened Settings, sir.",
-  close_settings: "Closed Settings.",
-  open_activity: "Opened Agent Activity, sir.",
-  close_activity: "Closed Agent Activity.",
-  open_customize: "Opened the home-screen customiser, sir.",
-  close_customize: "Closed the customiser.",
-  open_remote: "Opened the Remote PC screen, sir.",
-  close_remote: "Closed the Remote PC screen.",
-  listen: "Listening, sir.",
-  stop_speaking: "Stopped.",
-  mute: "Muted — I'll show replies as text, sir.",
-  unmute: "Unmuted, sir.",
-  conversation_mode_on: "Conversation mode on — I'll keep it brief, sir.",
-  conversation_mode_off: "Conversation mode off, sir.",
-  new_conversation: "Started a fresh conversation, sir.",
-  clear_chat: "Cleared the conversation, sir.",
-  expand_all: "Expanded every panel, sir.",
-  collapse_all: "Minimised every panel, sir.",
+  open_chat: "Sohbet geçmişini açtım efendim.",
+  close_chat: "Sohbet geçmişini kapattım.",
+  open_settings: "Ayarları açtım efendim.",
+  close_settings: "Ayarları kapattım.",
+  open_activity: "Ajan Etkinliği’ni açtım efendim.",
+  close_activity: "Ajan Etkinliği’ni kapattım.",
+  open_customize: "Ana ekran özelleştiricisini açtım efendim.",
+  close_customize: "Özelleştiriciyi kapattım.",
+  open_remote: "Uzak Bilgisayar ekranını açtım efendim.",
+  close_remote: "Uzak Bilgisayar ekranını kapattım.",
+  listen: "Dinliyorum efendim.",
+  stop_speaking: "Durdurdum.",
+  mute: "Sessize aldım — yanıtları yazılı göstereceğim efendim.",
+  unmute: "Sesi açtım efendim.",
+  conversation_mode_on: "Sohbet modu açık — kısa tutacağım efendim.",
+  conversation_mode_off: "Sohbet modu kapalı efendim.",
+  new_conversation: "Yeni bir sohbet başlattım efendim.",
+  clear_chat: "Sohbeti temizledim efendim.",
+  expand_all: "Tüm panelleri genişlettim efendim.",
+  collapse_all: "Tüm panelleri küçülttüm efendim.",
 };
 
 /** How often the brain polls the native operator. Only matters while this WebView is
@@ -443,11 +443,11 @@ async function operatorRoutes(cfg: BrainConfig): Promise<NativeRoute[]> {
  */
 async function runPhone(deps: DispatchDeps, goal: string, stayInApp = false): Promise<ToolResult> {
   const g = goal.trim();
-  if (!g) return { ok: false, summary: "What should I do on the phone, sir?" };
+  if (!g) return { ok: false, summary: "Telefonda ne yapayım efendim?" };
   if (!configReady(deps.config)) {
     return {
       ok: false,
-      summary: "I need an API key first — set one in Settings.",
+      summary: "Önce bir API anahtarına ihtiyacım var — Ayarlar’dan bir tane ekleyin.",
       error: "no_key",
     };
   }
@@ -490,11 +490,11 @@ async function runPhone(deps: DispatchDeps, goal: string, stayInApp = false): Pr
           steps: [],
         }),
       })
-    : { ok: false, summary: "The native task journal is unavailable." };
+    : { ok: false, summary: "Yerel görev günlüğü kullanılamıyor." };
   if (!begun.ok) {
     return end({
       ok: false,
-      summary: `I couldn't start a durable phone task: ${begun.summary}`,
+      summary: `Kalıcı bir telefon görevi başlatamadım: ${begun.summary}`,
       error: "task_journal_unavailable",
     });
   }
@@ -524,14 +524,14 @@ async function runPhone(deps: DispatchDeps, goal: string, stayInApp = false): Pr
           risk: "R2",
           action: "task",
           target: g.slice(0, 240),
-          reason: `run this on your phone: ${g.slice(0, 160)}`,
+          reason: `bunu telefonunuzda çalıştırmak: ${g.slice(0, 160)}`,
           untrustedScreenText: "",
         })
       : "deny";
     if (decision === "deny") {
       return giveUp({
         ok: false,
-        summary: "I didn't run that, sir — you didn't approve it.",
+        summary: "Bunu çalıştırmadım efendim — onay vermediniz.",
         error: "approval_denied",
       });
     }
@@ -544,7 +544,7 @@ async function runPhone(deps: DispatchDeps, goal: string, stayInApp = false): Pr
     }
     return giveUp({
       ok: false,
-      summary: `I couldn't start that on the phone: ${started.summary}`,
+      summary: `Bunu telefonda başlatamadım: ${started.summary}`,
       error: started.error || "operator_start_failed",
     });
   }
@@ -567,8 +567,8 @@ async function runPhone(deps: DispatchDeps, goal: string, stayInApp = false): Pr
         return end({
           ok: false,
           summary:
-            "I lost track of that phone task, sir — it may have been interrupted. " +
-            "Please check the screen before asking again.",
+            "Telefon görevinin takibini kaybettim efendim — kesintiye uğramış olabilir. " +
+            "Tekrar istemeden önce lütfen ekranı kontrol edin.",
           error: "operator_lost",
         });
       }
@@ -605,16 +605,20 @@ async function setLocation(
 ): Promise<ToolResult> {
   if (action === "clear") {
     location.clearPinned();
-    return { ok: true, summary: "Cleared your pinned location — I'll auto-detect it again, sir." };
+    return {
+      ok: true,
+      summary:
+        "Sabitlenen konumunuzu kaldırdım — konumunuzu yeniden otomatik algılayacağım efendim.",
+    };
   }
   const p = place.trim();
-  if (!p) return { ok: false, summary: "Which place should I pin, sir?" };
+  if (!p) return { ok: false, summary: "Hangi konumu sabitleyeyim efendim?" };
   location.setPinned(p);
   // Confirm it resolves so we don't silently pin an un-geocodable name.
   const coords = await location.coords();
   if (!coords) {
     location.clearPinned();
-    return { ok: false, summary: `I couldn't find “${p}” on the map, sir.` };
+    return { ok: false, summary: `“${p}” konumunu haritada bulamadım efendim.` };
   }
-  return { ok: true, summary: `Pinned your location to ${coords.place || p}, sir.` };
+  return { ok: true, summary: `Konumunuzu ${coords.place || p} olarak sabitledim efendim.` };
 }

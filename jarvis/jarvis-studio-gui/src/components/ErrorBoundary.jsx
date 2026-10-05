@@ -21,12 +21,12 @@ export default class ErrorBoundary extends Component {
         <div className="crash-guard">
           <div className="crash-guard-box">
             <div className="crash-guard-ico">⚠</div>
-            <div className="crash-guard-title">Something went wrong</div>
+            <div className="crash-guard-title">Bir şeyler ters gitti</div>
             <div className="crash-guard-msg">
-              {this.state.error?.message || "An unexpected error occurred."}
+              {this.state.error?.message || "Beklenmeyen bir hata oluştu."}
             </div>
             <button className="crash-guard-btn" onClick={() => this.setState({ error: null })}>
-              Try again
+              Tekrar dene
             </button>
           </div>
         </div>

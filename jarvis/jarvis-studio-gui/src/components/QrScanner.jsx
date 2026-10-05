@@ -112,8 +112,8 @@ export default function QrScanner({ onResult, onCancel }) {
           background: "rgba(10,16,26,0.9)",
         }}
       >
-        <span style={{ color: "#8fd0ff", fontWeight: 700 }}>Scan the code on your PC</span>
-        <button className="settings-x" onClick={onCancel}>
+        <span style={{ color: "#8fd0ff", fontWeight: 700 }}>Bilgisayarınızdaki kodu tarayın</span>
+        <button className="settings-x" onClick={onCancel} aria-label="Kapat">
           ✕
         </button>
       </div>
@@ -159,7 +159,7 @@ export default function QrScanner({ onResult, onCancel }) {
       </div>
 
       <div style={{ padding: 16, color: "#9fb2c8", fontSize: 13, textAlign: "center" }}>
-        Point your camera at the code shown in the JARVIS window on your PC.
+        Kameranızı bilgisayarınızdaki DUNYATEK penceresinde gösterilen koda doğrultun.
       </div>
     </div>
   );

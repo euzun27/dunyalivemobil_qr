@@ -257,12 +257,12 @@ class WakeWordService : Service() {
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(applicationInfo.icon)
-            .setContentTitle("JARVIS is listening")
-            .setContentText("Say “Hey Jarvis” any time — tap Stop to turn this off")
+            .setContentTitle("DUNYATEK dinliyor")
+            .setContentText("İstediğiniz an “Hey Jarvis” deyin. Kapatmak için Durdur’a dokunun.")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .apply { if (contentPending != null) setContentIntent(contentPending) }
-            .addAction(0, "Stop", stopPending)
+            .addAction(0, "Durdur", stopPending)
             .build()
     }
 
@@ -271,9 +271,9 @@ class WakeWordService : Service() {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Wake word listening",
+                "Uyandırma sözü dinleme",
                 NotificationManager.IMPORTANCE_LOW,
-            ).apply { description = "Shown while JARVIS is listening for \"Hey Jarvis\"." }
+            ).apply { description = "DUNYATEK “Hey Jarvis” sözünü dinlerken görünür." }
             nm.createNotificationChannel(channel)
         }
     }

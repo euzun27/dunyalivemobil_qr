@@ -136,7 +136,7 @@ object NativeOperator {
             val outcome = try {
                 loop.run()
             } catch (e: Exception) {
-                OperatorOutcome(false, "The phone task stopped unexpectedly: ${e.message}", "phone_task_crashed")
+                OperatorOutcome(false, "Telefon görevi beklenmedik şekilde durdu: ${e.message}", "phone_task_crashed")
             }
             val final = commitTerminal(app, dao, taskId, outcome)
             Log.i(TAG, "task $taskId finished ok=${final.ok} error=${final.error}: ${final.summary}")
@@ -203,7 +203,7 @@ object NativeOperator {
         if (r.ok && !OperatorLoop.VERIFICATION_RECEIPT_RE.matches(r.verificationReceipt)) {
             r = r.copy(
                 ok = false,
-                summary = "The outcome looked complete, but Aura could not create durable verification evidence.",
+                summary = "İş tamamlanmış görünüyor, ancak DUNYATEK bunu kalıcı olarak doğrulayamadı.",
                 error = "verification_unavailable",
             )
         }
@@ -218,7 +218,7 @@ object NativeOperator {
             finishJournalTask(context, dao, taskId, "suspended", "Verified outcome could not be committed; re-observation is required.", "")
             return r.copy(
                 ok = false,
-                summary = "Aura verified the screen, but the durable task journal rejected completion, so success was not reported.",
+                summary = "DUNYATEK ekranı doğruladı, ancak görev kaydı tamamlanmayı kabul etmedi; bu yüzden başarılı sayılmadı.",
                 error = "verification_commit_failed",
             )
         }
@@ -233,7 +233,7 @@ object NativeOperator {
             }
             val n = NotificationCompat.Builder(context, PhonePlugin.REMINDER_CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle(if (outcome.ok) "JARVIS finished" else "JARVIS stopped")
+                .setContentTitle(if (outcome.ok) "DUNYATEK işi bitirdi" else "DUNYATEK durdu")
                 .setContentText(outcome.summary)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(outcome.summary))
                 .setAutoCancel(true)

@@ -144,7 +144,7 @@ export async function runTurn(
         // change the outcome. Degrade gracefully instead of burning the budget.
         return {
           reply:
-            "I caught myself repeating the same step with no change, sir — stopping here rather than going in circles.",
+            "Aynı adımı hiçbir değişiklik olmadan tekrarladığımı fark ettim efendim — döngüye girmek yerine burada duruyorum.",
           toolResults,
         };
       }
@@ -154,7 +154,7 @@ export async function runTurn(
 
   // Hit the round cap — summarise honestly rather than claim completion.
   return {
-    reply: "I worked on that but couldn't fully finish it.",
+    reply: "Bunun üzerinde çalıştım ama tamamen bitiremedim.",
     toolResults,
   };
 }

@@ -61,7 +61,10 @@ const HANDLING_MAX_MS = 45000; // ceiling on one wake→command→resume cycle
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    const t = setTimeout(
+      () => reject(new Error(`${label} ${ms} ms sonra zaman aşımına uğradı`)),
+      ms,
+    );
     p.then(
       (v) => {
         clearTimeout(t);
@@ -166,7 +169,9 @@ export class WakeWordListener {
       this.handling = false;
       this.rec.cancel();
       this.opts.onStatus?.("idle");
-      this.opts.onError?.("Wake word got stuck mid-command — restarting the listener.");
+      this.opts.onError?.(
+        "Uyandırma sözü bir komutun ortasında takıldı — dinleyici yeniden başlatılıyor.",
+      );
       void invoke("plugin:phone|start_wake_word").catch(() => {});
       return;
     }
@@ -195,7 +200,7 @@ export class WakeWordListener {
       void invoke("plugin:phone|start_wake_word").catch(() => {});
       if (this.notListeningStreak === 20) {
         this.opts.onFatal?.(
-          "“Hey Jarvis” uyandırma sözü başlatılamadı — DUNYATEK'in mikrofon izni olduğunu kontrol edin.",
+          "“Hey Jarvis” uyandırma sözü başlatılamadı — DUNYATEK’in mikrofon izni olduğunu kontrol edin.",
         );
       }
     }
@@ -228,7 +233,9 @@ export class WakeWordListener {
         ((b: Blob) => {
           const key = (this.opts.groqKey || "").trim();
           if (!key)
-            throw new Error("Add a Groq API key to transcribe commands after “Hey Jarvis”.");
+            throw new Error(
+              "“Hey Jarvis” sonrasındaki komutları yazıya dökebilmem için bir Groq API anahtarı ekleyin.",
+            );
           return transcribe(b, { groqKey: key });
         });
 
@@ -262,7 +269,7 @@ export class WakeWordListener {
           const hidden = typeof document !== "undefined" && document.hidden;
           if (!hidden) {
             this.opts.onError?.(
-              `Couldn't restart wake-word listening: ${String((e as Error)?.message ?? e)}`,
+              `Uyandırma sözü dinlemesi yeniden başlatılamadı: ${String((e as Error)?.message ?? e)}`,
             );
           }
         }
@@ -281,11 +288,11 @@ export class WakeWordListener {
           return this.rec.stop();
         })(),
         CAPTURE_TIMEOUT_MS,
-        "mic capture",
+        "Mikrofon kaydı",
       );
     } catch (e) {
       this.rec.cancel();
-      this.opts.onError?.(`Microphone capture failed: ${String((e as Error)?.message ?? e)}`);
+      this.opts.onError?.(`Mikrofon kaydı başarısız oldu: ${String((e as Error)?.message ?? e)}`);
       return null;
     }
   }

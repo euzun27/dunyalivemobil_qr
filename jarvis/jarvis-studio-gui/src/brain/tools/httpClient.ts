@@ -56,18 +56,18 @@ function describeError(err: unknown): string {
 }
 
 function requestFailure(url: string, err: unknown, nativeErr?: unknown): Error {
-  if (isOffline()) return new Error("You're offline — I can't reach the internet right now.");
+  if (isOffline()) return new Error("Çevrimdışısınız — şu an internete erişemiyorum.");
   const host = hostOf(url);
-  const fallback = describeError(err) || "request failed";
+  const fallback = describeError(err) || "istek başarısız oldu";
   if (nativeErr) {
-    const native = describeError(nativeErr) || "native request failed";
+    const native = describeError(nativeErr) || "yerel istek başarısız oldu";
     return new Error(
-      `Network request to ${host} failed. Native HTTP failed first (${native}); ` +
-        `WebView fetch fallback also failed (${fallback}). Rebuild/reinstall the latest APK ` +
-        `so the http capability is active, then check internet access.`,
+      `${host} adresine ağ isteği başarısız oldu. Önce yerel HTTP başarısız oldu (${native}); ` +
+        `WebView yedek isteği de başarısız oldu (${fallback}). http yeteneğinin etkin olması için ` +
+        `en son APK’yı yeniden derleyin/yükleyin, ardından internet erişimini kontrol edin.`,
     );
   }
-  return new Error(`Network request to ${host} failed: ${fallback}`);
+  return new Error(`${host} adresine ağ isteği başarısız oldu: ${fallback}`);
 }
 
 /** Drop browser-forbidden headers (User-Agent) so a plain-`fetch` fallback can't throw. */

@@ -193,10 +193,10 @@ export default function ControlOverlay() {
       >
         <span className="co-dot" aria-hidden="true" />
         <span className="co-min-time">{fmt(elapsed)}</span>
-        <button className="co-btn co-stop" title="Stop" onClick={stopControl}>
+        <button className="co-btn co-stop" title="Durdur" onClick={stopControl}>
           ■
         </button>
-        <button className="co-btn" title="Expand" onClick={() => setMinimized(false)}>
+        <button className="co-btn" title="Genişlet" onClick={() => setMinimized(false)}>
           ⤢
         </button>
       </div>
@@ -218,28 +218,28 @@ export default function ControlOverlay() {
         <span className="co-dot" aria-hidden="true" />
         <span className="co-title">DUNYATEK KONTROLDE</span>
         <span className={`co-live${paused ? " co-live--paused" : ""}`}>
-          {paused ? "PAUSED" : "LIVE"}
+          {paused ? "DURAKLATILDI" : "CANLI"}
         </span>
         <span className="co-time">{fmt(elapsed)}</span>
         <div className="co-spacer" />
-        <button className="co-btn co-stop" title="Stop & disarm" onClick={stopControl}>
-          ■ Stop
+        <button className="co-btn co-stop" title="Durdur ve kontrolü bırak" onClick={stopControl}>
+          ■ Durdur
         </button>
         <button
           className="co-btn co-pause"
-          title={paused ? "Resume" : "Pause"}
+          title={paused ? "Devam et" : "Duraklat"}
           onClick={togglePause}
         >
-          {paused ? "▶ Resume" : "❚❚ Pause"}
+          {paused ? "▶ Devam et" : "❚❚ Duraklat"}
         </button>
         <button
           className="co-btn co-icon"
-          title={expanded ? "Collapse" : "Show full process"}
+          title={expanded ? "Daralt" : "Tüm süreci göster"}
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? "⤡" : "⤢"}
         </button>
-        <button className="co-btn co-icon" title="Minimize" onClick={() => setMinimized(true)}>
+        <button className="co-btn co-icon" title="Küçült" onClick={() => setMinimized(true)}>
           —
         </button>
       </div>
@@ -264,7 +264,7 @@ export default function ControlOverlay() {
           <div className="co-feed">
             {lastShot?.image && (
               <div className="co-shot">
-                <span className="co-shot-label">SEEN</span>
+                <span className="co-shot-label">GÖRÜLEN</span>
                 <img src={lastShot.image} alt="DUNYATEK'in gördüğü" />
               </div>
             )}
@@ -273,7 +273,7 @@ export default function ControlOverlay() {
                 <div className="co-step co-step--muted">
                   <span className="co-step-ico">⏳</span>
                   <span className="co-step-txt">
-                    {paused ? "Paused — holding." : "Watching the screen…"}
+                    {paused ? "Duraklatıldı — bekliyor." : "Ekran izleniyor…"}
                   </span>
                 </div>
               )}
@@ -287,7 +287,7 @@ export default function ControlOverlay() {
                 <div className="co-step co-step--live">
                   <span className="co-step-ico">⏳</span>
                   <span className="co-step-txt">
-                    {status === "thinking" ? "Thinking…" : "Working…"}
+                    {status === "thinking" ? "Düşünüyor…" : "Çalışıyor…"}
                   </span>
                 </div>
               )}
@@ -303,7 +303,7 @@ export default function ControlOverlay() {
             ▸
           </span>
           <span className="co-status-txt">
-            {lastStep || (paused ? "Duraklatıldı — DUNYATEK bekliyor." : "Working…")}
+            {lastStep || (paused ? "Duraklatıldı — DUNYATEK bekliyor." : "Çalışıyor…")}
           </span>
         </div>
       )}
@@ -319,7 +319,7 @@ export default function ControlOverlay() {
           }}
           placeholder="DUNYATEK'e neyi düzelteceğini söyleyin…"
         />
-        <button className="co-btn co-send" title="Send correction" onClick={sendCorr}>
+        <button className="co-btn co-send" title="Düzeltmeyi gönder" onClick={sendCorr}>
           ➤
         </button>
       </div>
