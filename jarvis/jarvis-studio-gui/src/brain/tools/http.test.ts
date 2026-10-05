@@ -66,8 +66,8 @@ describe("generateImage — free tier allocates some image models nothing", () =
     const r = await generateImage("a red fox", ctx());
 
     expect(r.ok).toBe(false);
-    expect(r.summary).toMatch(/free tier/i);
-    expect(r.summary).toMatch(/billing/i);
+    expect(r.summary).toMatch(/ücretsiz katman/i);
+    expect(r.summary).toMatch(/faturalandırma/i);
     // The bug this replaces: the raw 429 reached the chat model, which relayed it as
     // an exhausted allowance that would "free up" — it never will.
     expect(r.summary).not.toMatch(/used up|try again later|free up/i);

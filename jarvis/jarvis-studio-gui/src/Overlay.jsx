@@ -58,11 +58,11 @@ function shouldShow(activeApp, overlay) {
 }
 
 const STATE_LABEL = {
-  idle: "STANDBY",
-  listening: "LISTENING",
-  thinking: "THINKING",
-  speaking: "SPEAKING",
-  working: "EXECUTING",
+  idle: "BEKLEMEDE",
+  listening: "DİNLİYOR",
+  thinking: "DÜŞÜNÜYOR",
+  speaking: "KONUŞUYOR",
+  working: "ÇALIŞIYOR",
 };
 
 const BAR_COUNT = 9;
@@ -245,24 +245,24 @@ export default function Overlay() {
           className="perm-card"
           style={{ color: accent, "--pill-rgb": accentRgb }}
           role="alertdialog"
-          aria-label="Permission required"
+          aria-label="İzin gerekiyor"
         >
           <div className="perm-card-kicker">⚠ DUNYATEK — ONAY GEREKİYOR</div>
           <div className="perm-card-desc">
-            Wants to <strong>{permissionRequest.description}</strong>
+            Şunu yapmak istiyor: <strong>{permissionRequest.description}</strong>
           </div>
           <div className="perm-card-actions">
             <button
               className="perm-card-btn perm-card-btn--deny"
               onClick={() => respondPermission(permissionRequest.id, false)}
             >
-              DENY
+              REDDET
             </button>
             <button
               className="perm-card-btn perm-card-btn--approve"
               onClick={() => respondPermission(permissionRequest.id, true)}
             >
-              APPROVE
+              ONAYLA
             </button>
           </div>
         </div>
@@ -275,7 +275,9 @@ export default function Overlay() {
       <div
         className={`pill pill--${displayStatus}${busy ? " is-busy" : ""}`}
         style={{ color: accent, "--pill-rgb": accentRgb }}
-        title={busy ? displayStatus : "DUNYATEK ile konuşmak için dokunun"}
+        title={
+          busy ? STATE_LABEL[displayStatus] || displayStatus : "DUNYATEK ile konuşmak için dokunun"
+        }
         onClick={busy ? undefined : handleListen}
       >
         <div className="pill-face">
@@ -285,7 +287,7 @@ export default function Overlay() {
 
           {displayStatus === "idle" && (
             <div className="pill-brand" aria-hidden="true">
-              JARVIS
+              DUNYATEK
             </div>
           )}
 
@@ -298,8 +300,8 @@ export default function Overlay() {
             <div className="pill-listen-controls">
               <button
                 className="pill-action pill-action--cancel"
-                title="Cancel listening"
-                aria-label="Cancel listening"
+                title="Dinlemeyi iptal et"
+                aria-label="Dinlemeyi iptal et"
                 onClick={handleStop}
               >
                 x
@@ -309,8 +311,8 @@ export default function Overlay() {
               </div>
               <button
                 className="pill-action pill-action--ok"
-                title="Done — process now"
-                aria-label="Finish listening"
+                title="Tamam — şimdi işle"
+                aria-label="Dinlemeyi bitir"
                 onClick={handleCommit}
               />
             </div>
@@ -323,7 +325,7 @@ export default function Overlay() {
           )}
 
           {busy && displayStatus !== "listening" && (
-            <button className="pill-stop" title="Stop" aria-label="Stop" onClick={handleStop}>
+            <button className="pill-stop" title="Durdur" aria-label="Durdur" onClick={handleStop}>
               x
             </button>
           )}

@@ -105,7 +105,7 @@ export function loadAndPurgeLegacyConfig(
     } catch {
       /* the caller will fail closed below */
     }
-    throw new Error("Could not purge credentials from WebView storage.", { cause: error });
+    throw new Error("Kimlik bilgileri WebView depolamasından temizlenemedi.", { cause: error });
   }
   return {
     config: { ...fallback, ...publicConfig, ...legacySecrets },
@@ -139,7 +139,7 @@ export function savePublicConfig(kv: KV, key: string, value: unknown): void {
     } catch {
       /* preserve the original persistence error */
     }
-    throw new Error("Could not persist public configuration safely.", { cause: error });
+    throw new Error("Genel yapılandırma güvenli şekilde kaydedilemedi.", { cause: error });
   }
 }
 
@@ -161,12 +161,12 @@ export async function hydrateConfigSecrets(
     try {
       read = await bridge.get(name);
     } catch {
-      read = { ok: false, summary: "Native secure storage is unavailable." };
+      read = { ok: false, summary: "Yerel güvenli depolama kullanılamıyor." };
     }
 
     if (!read.ok) {
       if (legacySecrets[name]) secrets[name] = legacySecrets[name];
-      failures.push({ name, reason: read.summary || "Secure credential read failed." });
+      failures.push({ name, reason: read.summary || "Güvenli kimlik bilgisi okunamadı." });
       continue;
     }
 
@@ -174,7 +174,7 @@ export async function hydrateConfigSecrets(
       if (typeof read.value === "string" && read.value.length > 0) {
         secrets[name] = read.value;
       } else {
-        failures.push({ name, reason: "Secure storage returned an invalid credential." });
+        failures.push({ name, reason: "Güvenli depolama geçersiz bir kimlik bilgisi döndürdü." });
       }
       continue;
     }
@@ -185,11 +185,11 @@ export async function hydrateConfigSecrets(
     try {
       written = await bridge.set(name, legacy);
     } catch {
-      written = { ok: false, summary: "Native secure storage is unavailable." };
+      written = { ok: false, summary: "Yerel güvenli depolama kullanılamıyor." };
     }
     secrets[name] = legacy;
     if (written.ok) migrated.push(name);
-    else failures.push({ name, reason: written.summary || "Secure credential migration failed." });
+    else failures.push({ name, reason: written.summary || "Güvenli kimlik bilgisi taşınamadı." });
   }
 
   return { secrets, migrated, failures };

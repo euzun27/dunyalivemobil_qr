@@ -86,7 +86,7 @@ export class SimplePC {
       this.token = data.token;
       this.loginInfo = data;
     } catch (err) {
-      this.lastError = err?.name === "AbortError" ? "zaman asimi" : String(err?.message || err);
+      this.lastError = err?.name === "AbortError" ? "zaman aşımı" : String(err?.message || err);
       this.onStateChange("offline");
       return false;
     }
@@ -101,7 +101,7 @@ export class SimplePC {
         // Soket 10 sn icinde acilmazsa vazgec (yoksa yeniden deneme hic baslamaz).
         const openTimer = setTimeout(() => {
           if (ws.readyState !== WebSocket.OPEN) {
-            this.lastError = "soket zaman asimi";
+            this.lastError = "soket zaman aşımı";
             try {
               ws.close();
             } catch {
@@ -133,7 +133,7 @@ export class SimplePC {
         };
         ws.onerror = () => {
           clearTimeout(openTimer);
-          this.lastError = "soket hatasi";
+          this.lastError = "soket hatası";
           this.onStateChange("offline");
           resolve(false);
         };
@@ -158,7 +158,7 @@ export class SimplePC {
         text: String(req.text || ""),
       });
     } catch (e) {
-      res = { ok: false, summary: `Telefon SMS gonderemedi: ${e?.message || e}` };
+      res = { ok: false, summary: `Telefon SMS gönderemedi: ${e?.message || e}` };
     }
     try {
       ws.send(

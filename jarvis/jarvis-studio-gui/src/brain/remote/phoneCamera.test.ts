@@ -60,8 +60,8 @@ describe("yardimcilar", () => {
 
   it("errorMessage Turkce nedenler", () => {
     expect(errorMessage({ name: "NotAllowedError" })).toBe("Kamera izni verilmedi.");
-    expect(errorMessage({ name: "NotFoundError" })).toBe("Telefonda kamera bulunamadi.");
-    expect(errorMessage(null)).toBe("Kare cekilemedi.");
+    expect(errorMessage({ name: "NotFoundError" })).toBe("Telefonda kamera bulunamadı.");
+    expect(errorMessage(null)).toBe("Kare çekilemedi.");
   });
 });
 
@@ -128,7 +128,7 @@ describe("handleCameraRequest", () => {
     await handleCameraRequest({ type: "camera_capture", id: "c" }, (r) => giden.push(r), asili, 20);
     expect(giden.map((r) => (r.ok ? "ok" : r.summary))).toEqual([
       "Kamera izni verilmedi.",
-      "Kamera zamaninda acilamadi.",
+      "Kamera zamanında açılamadı.",
     ]);
   });
 
@@ -141,7 +141,7 @@ describe("handleCameraRequest", () => {
     bitir({ mime: "image/jpeg", data: "QUJD" });
     await ilk;
     expect(giden.map((r) => `${r.id}:${r.ok ? "ok" : r.summary}`)).toEqual([
-      "2:Kamera su an mesgul.",
+      "2:Kamera şu an meşgul.",
       "1:ok",
     ]);
   });

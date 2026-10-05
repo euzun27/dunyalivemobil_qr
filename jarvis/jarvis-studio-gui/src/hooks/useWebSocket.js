@@ -651,7 +651,7 @@ export function useWebSocket() {
         setWarnings((prev) => [
           ...prev,
           {
-            text: `Upload too large. Please choose a file under ${MAX_UPLOAD_BYTES / (1024 * 1024)} MB.`,
+            text: `Dosya çok büyük. Lütfen ${MAX_UPLOAD_BYTES / (1024 * 1024)} MB’tan küçük bir dosya seçin.`,
             id: Date.now() + Math.random(),
           },
         ]);

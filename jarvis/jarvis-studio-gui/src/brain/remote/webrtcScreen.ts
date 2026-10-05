@@ -149,7 +149,7 @@ export class RemoteScreen {
   async start(): Promise<void> {
     if (!webrtcAvailable()) {
       this.setState("failed");
-      throw new Error("This device's WebView has no WebRTC support.");
+      throw new Error("Bu cihazın WebView bileşeni WebRTC desteklemiyor.");
     }
     await this.close(false); // fresh start; don't tell the PC to stop yet
     this._sessionId = "";
@@ -157,12 +157,12 @@ export class RemoteScreen {
     this._pendingIce = [];
     this._earlyRemoteIce = [];
     this.setState("connecting");
-    this.setDetail("Asking your PC for its screen…");
+    this.setDetail("Bilgisayarınızdan ekran görüntüsü isteniyor…");
     this.clearSlowTimer();
     this.slowTimer = setTimeout(() => {
       this.setDetail(
-        "Still working on it — this can take longer on a slow or crowded Wi-Fi. " +
-          "If it doesn't connect soon, check the PC is on and the same network.",
+        "Hâlâ üzerinde çalışıyorum — yavaş veya kalabalık bir Wi-Fi ağında bu daha uzun sürebilir. " +
+          "Birazdan bağlanmazsa bilgisayarın açık ve aynı ağda olduğunu kontrol edin.",
       );
     }, SLOW_CONNECT_HINT_MS);
 
@@ -203,9 +203,10 @@ export class RemoteScreen {
 
     pc.oniceconnectionstatechange = () => {
       const st = pc.iceConnectionState;
-      if (st === "checking") this.setDetail("Found your PC — finding the fastest path to it…");
+      if (st === "checking")
+        this.setDetail("Bilgisayarınız bulundu — en hızlı bağlantı yolu aranıyor…");
       else if (st === "connected" || st === "completed") {
-        this.setDetail("Connected — waiting for the first frame…");
+        this.setDetail("Bağlandı — ilk kare bekleniyor…");
       }
     };
 
@@ -220,7 +221,7 @@ export class RemoteScreen {
     const offer = await pc.createOffer({ offerToReceiveVideo: true });
     await pc.setLocalDescription(offer);
 
-    this.setDetail("Sending the request to your PC…");
+    this.setDetail("İstek bilgisayarınıza gönderiliyor…");
     const ok = this.opts.signaller.signal("webrtc_offer", {
       offer: { sdp: pc.localDescription?.sdp, type: pc.localDescription?.type },
       ice_servers: this.opts.iceServers ?? [],
@@ -229,7 +230,7 @@ export class RemoteScreen {
     });
     if (!ok) {
       this.setState("failed");
-      throw new Error("Couldn't reach the PC to start the stream — is it paired and online?");
+      throw new Error("Yayını başlatmak için bilgisayara ulaşılamadı — eşleşmiş ve çevrimiçi mi?");
     }
   }
 
@@ -247,7 +248,7 @@ export class RemoteScreen {
       if (d?.sdp && d?.type) {
         this._sessionId = String(d.screen_session_id || d.session_id || "");
         this._taskId = String(d.task_id || "");
-        this.setDetail("Your PC answered — setting up the video…");
+        this.setDetail("Bilgisayarınız yanıt verdi — görüntü hazırlanıyor…");
         await this.pc.setRemoteDescription(
           new RTCSessionDescription({ sdp: d.sdp, type: d.type as RTCSdpType }),
         );

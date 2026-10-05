@@ -156,6 +156,10 @@ export function isRetryable(err: unknown): boolean {
     msg.includes("connection") ||
     msg.includes("unavailable") ||
     msg.includes("native http") ||
+    // Turkish wording of tools/httpClient.ts requestFailure() — same transport
+    // failures as "network" / "native http" above.
+    msg.includes("ağ isteği") ||
+    msg.includes("yerel http") ||
     msg.includes("cors") ||
     msg.includes("not found")
   );

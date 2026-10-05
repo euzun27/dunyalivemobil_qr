@@ -74,7 +74,7 @@ export default function Onboarding({ sysInfo, onSave }) {
             type="text"
             value={storageDir}
             onChange={(e) => setStorageDir(e.target.value)}
-            placeholder="C:\Users\you\Jarvis"
+            placeholder="C:\Users\kullanici\DUNYATEK"
           />
           <span className="onboard-hint">
             Created if it doesn't exist, with images / recordings / documents subfolders.

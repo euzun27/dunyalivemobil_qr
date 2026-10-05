@@ -47,7 +47,7 @@ function TableBlock({ body }) {
   const [data, err] = parseJSON(body);
   if (err || !Array.isArray(data?.columns) || !Array.isArray(data?.rows)) {
     return (
-      <StateMessage variant="error">{err ?? "Missing or malformed columns/rows"}</StateMessage>
+      <StateMessage variant="error">{err ?? "Sütunlar/satırlar eksik veya hatalı"}</StateMessage>
     );
   }
   return (
@@ -82,7 +82,7 @@ function TableBlock({ body }) {
 function ScheduleBlock({ body }) {
   const [data, err] = parseJSON(body);
   if (err || !Array.isArray(data?.items)) {
-    return <StateMessage variant="error">{err ?? "Missing or malformed items"}</StateMessage>;
+    return <StateMessage variant="error">{err ?? "Öğeler eksik veya hatalı"}</StateMessage>;
   }
   return (
     <div className="card sched-block">
@@ -110,7 +110,7 @@ function ScheduleBlock({ body }) {
 function FlowchartBlock({ body }) {
   const [data, err] = parseJSON(body);
   if (err || !Array.isArray(data?.nodes)) {
-    return <StateMessage variant="error">{err ?? "Missing or malformed nodes"}</StateMessage>;
+    return <StateMessage variant="error">{err ?? "Düğümler eksik veya hatalı"}</StateMessage>;
   }
 
   // Build an outgoing-edge-label map so arrows can carry "yes/no" style labels.
@@ -211,14 +211,14 @@ function ActionCard({ results, runAction }) {
           {r.image &&
             (r.type === "generate_image" ? (
               <div className="action-image-wrap">
-                <img className="action-image" src={r.image} alt="generated image" />
+                <img className="action-image" src={r.image} alt="oluşturulan görsel" />
                 <div className="action-img-btns">
                   <button
                     type="button"
                     className="action-dl"
                     onClick={() => downloadDataUrl(r.image, r.message)}
                   >
-                    ⬇ Download
+                    ⬇ İndir
                   </button>
                   {/* Reliable fallback when the in-webview download fails: the
                       backend already saved the file, so open it from disk (the
@@ -229,13 +229,13 @@ function ActionCard({ results, runAction }) {
                       className="action-dl"
                       onClick={() => runAction({ type: "open_file", target: r.target })}
                     >
-                      📂 Open
+                      📂 Aç
                     </button>
                   )}
                 </div>
               </div>
             ) : (
-              <img className="action-qr" src={r.image} alt="QR code" />
+              <img className="action-qr" src={r.image} alt="QR kodu" />
             ))}
           {Array.isArray(r.sources) && r.sources.length > 0 && (
             <div className="action-sources">
@@ -248,7 +248,7 @@ function ActionCard({ results, runAction }) {
           )}
           {Array.isArray(r.findings) && r.findings.length > 0 && (
             <div className="action-findings">
-              <div className="action-findings-h">What I found</div>
+              <div className="action-findings-h">Bulduklarım</div>
               <ul>
                 {r.findings.map((f, j) => (
                   <li key={j}>{f}</li>

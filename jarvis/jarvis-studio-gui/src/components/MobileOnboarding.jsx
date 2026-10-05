@@ -48,8 +48,8 @@ export default function MobileOnboarding({ sysInfo, onSave }) {
     <div className="onboard-overlay">
       <div className="onboard-panel" role="dialog" aria-label="DUNYATEK'e hoş geldiniz">
         <div className="onboard-hd">
-          <span className="onboard-kicker">FIRST-RUN SETUP</span>
-          <h2>Hoş geldiniz DUNYATEK</h2>
+          <span className="onboard-kicker">İLK KURULUM</span>
+          <h2>DUNYATEK’e hoş geldiniz</h2>
           <p className="onboard-sub">
             DUNYATEK'i yapay zekâ sağlayıcınıza bağlayın. Anahtarlar yalnızca bu cihazda kalır.
           </p>
@@ -60,93 +60,95 @@ export default function MobileOnboarding({ sysInfo, onSave }) {
             className={`onboard-mode-btn${mode === "vertex" ? " onboard-mode-btn--active" : ""}`}
             onClick={() => setMode("vertex")}
           >
-            Vertex AI ($300 Credit)
+            Vertex AI (300 $ kredi)
           </button>
           <button
             className={`onboard-mode-btn${mode === "keys" ? " onboard-mode-btn--active" : ""}`}
             onClick={() => setMode("keys")}
           >
-            Free API Keys
+            Ücretsiz API anahtarları
           </button>
         </div>
 
         {mode === "vertex" ? (
           <div className="onboard-sec">
             <label>
-              Service Account JSON (Recommended){" "}
-              {sysInfo.has_vertex_sa && <span className="onboard-ok">✓ set</span>}
+              Hizmet hesabı JSON’u (önerilen){" "}
+              {sysInfo.has_vertex_sa && <span className="onboard-ok">✓ ayarlı</span>}
             </label>
             <textarea
               value={vertexSaJson}
               onChange={(e) => setVertexSaJson(e.target.value)}
-              placeholder="Paste the entire JSON file contents here..."
+              placeholder="JSON dosyasının tüm içeriğini buraya yapıştırın..."
             />
             {project && (
               <div className="onboard-ok" style={{ marginTop: 8 }}>
-                ✓ Project: {project}
+                ✓ Proje: {project}
               </div>
             )}
             <div className="onboard-hint">
-              Uses your Google Cloud $300 free trial credits for Gemini chat and Cloud
-              Speech-to-Text (Chirp).
+              Gemini sohbeti ve Cloud Speech-to-Text (Chirp) için Google Cloud’un 300 $’lık ücretsiz
+              deneme kredinizi kullanır.
             </div>
 
             <label style={{ marginTop: 16 }}>
-              Groq API keys (optional — better voice){" "}
-              {sysInfo.has_groq_key && <span className="onboard-ok">✓ set</span>}
+              Groq API anahtarları (isteğe bağlı — daha iyi ses){" "}
+              {sysInfo.has_groq_key && <span className="onboard-ok">✓ ayarlı</span>}
             </label>
             <textarea
               className="onboard-keys"
               rows={2}
               value={groqKey}
               onChange={(e) => setGroqKey(e.target.value)}
-              placeholder="gsk_…  (console.groq.com/keys — one per line)"
+              placeholder="gsk_…  (console.groq.com/keys — her satıra bir tane)"
               autoComplete="off"
             />
             <div className="onboard-hint">
-              Optional. Adds Whisper Large v3 Turbo for voice input and “Hey Jarvis” (used instead
-              of Vertex Chirp when set). Chat still runs on Vertex Gemini. Free-tier limits are per
-              key — paste several, one per line, and I'll rotate through them.
+              İsteğe bağlı. Sesli giriş ve “Hey Jarvis” için Whisper Large v3 Turbo ekler
+              (girildiğinde Vertex Chirp yerine kullanılır). Sohbet yine Vertex Gemini üzerinde
+              çalışır. Ücretsiz katman sınırları anahtar başınadır — her satıra bir tane olmak üzere
+              birkaç anahtar yapıştırın, sırayla kullanırım.
             </div>
           </div>
         ) : (
           <>
             <div className="onboard-sec">
               <label>
-                Groq API keys (required){" "}
-                {sysInfo.has_groq_key && <span className="onboard-ok">✓ set</span>}
+                Groq API anahtarları (zorunlu){" "}
+                {sysInfo.has_groq_key && <span className="onboard-ok">✓ ayarlı</span>}
               </label>
               <textarea
                 className="onboard-keys"
                 rows={2}
                 value={groqKey}
                 onChange={(e) => setGroqKey(e.target.value)}
-                placeholder="gsk_…  (console.groq.com/keys — one per line)"
+                placeholder="gsk_…  (console.groq.com/keys — her satıra bir tane)"
                 autoComplete="off"
               />
               <div className="onboard-hint">
-                Powers voice input and “Hey Jarvis” via Whisper Large v3 Turbo, and Groq chat models
-                on the free tier. Free-tier limits are counted per key — paste as many as you have,
-                one per line, and I'll rotate through them instead of stopping at a rate limit.
+                Whisper Large v3 Turbo ile sesli girişi ve “Hey Jarvis”i, ücretsiz katmanda da Groq
+                sohbet modellerini çalıştırır. Ücretsiz katman sınırları anahtar başına sayılır —
+                her satıra bir tane olmak üzere elinizdeki tüm anahtarları yapıştırın; kullanım
+                sınırına takılmak yerine aralarında geçiş yaparım.
               </div>
             </div>
 
             <div className="onboard-sec">
               <label>
-                Google Gemini API keys (optional){" "}
-                {sysInfo.has_gemini_key && <span className="onboard-ok">✓ set</span>}
+                Google Gemini API anahtarları (isteğe bağlı){" "}
+                {sysInfo.has_gemini_key && <span className="onboard-ok">✓ ayarlı</span>}
               </label>
               <textarea
                 className="onboard-keys"
                 rows={2}
                 value={geminiKey}
                 onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder="AIza…  (aistudio.google.com — one per line)"
+                placeholder="AIza…  (aistudio.google.com — her satıra bir tane)"
                 autoComplete="off"
               />
               <div className="onboard-hint">
-                Optional — unlocks Gemini free-tier models in Settings. Several keys are fine here
-                too. Voice always uses Groq Whisper.
+                İsteğe bağlı — Ayarlar’da Gemini ücretsiz katman modellerini açar. Burada da birden
+                fazla anahtar girebilirsiniz. Ses her zaman Groq Whisper kullanır.
               </div>
             </div>
           </>
@@ -155,8 +157,8 @@ export default function MobileOnboarding({ sysInfo, onSave }) {
         {touched && !canFinish && (
           <div className="onboard-warn">
             {mode === "vertex"
-              ? "Paste a valid Service Account JSON to continue."
-              : "Add your Groq or Gemini API key to continue."}
+              ? "Devam etmek için geçerli bir hizmet hesabı JSON’u yapıştırın."
+              : "Devam etmek için Groq veya Gemini API anahtarınızı ekleyin."}
           </div>
         )}
 

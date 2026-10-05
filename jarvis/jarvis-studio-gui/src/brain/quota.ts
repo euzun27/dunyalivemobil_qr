@@ -408,20 +408,20 @@ export function soonestReset(): number | null {
 
 /** A spoken-language ETA. JARVIS talks, so "4 minutes" beats "243000ms". */
 export function formatEta(ms: number | null): string {
-  if (ms == null || ms <= 0) return "shortly";
-  if (ms < 90_000) return "under a minute";
-  if (ms < HOUR) return `about ${Math.round(ms / MINUTE)} minutes`;
+  if (ms == null || ms <= 0) return "kısa süre içinde";
+  if (ms < 90_000) return "bir dakikadan kısa sürede";
+  if (ms < HOUR) return `yaklaşık ${Math.round(ms / MINUTE)} dakika içinde`;
   if (ms < DAY) {
     const hours = Math.round(ms / HOUR);
-    return hours <= 1 ? "about an hour" : `about ${hours} hours`;
+    return hours <= 1 ? "yaklaşık bir saat içinde" : `yaklaşık ${hours} saat içinde`;
   }
-  return "tomorrow";
+  return "yarın";
 }
 
 /** The only rate-limit sentence the user should ever see — and only once every
  *  route is genuinely spent, with a real time rather than "give me a moment". */
-export function exhaustedMessage(what = "every model I can reach"): string {
-  return `I've used up the free quota on ${what}, sir. It should free up ${formatEta(soonestReset())}.`;
+export function exhaustedMessage(what = "Erişebildiğim tüm modeller"): string {
+  return `${what} için ücretsiz kotayı kullanıp bitirdim efendim. Kota ${formatEta(soonestReset())} yeniden açılmalı.`;
 }
 
 /**

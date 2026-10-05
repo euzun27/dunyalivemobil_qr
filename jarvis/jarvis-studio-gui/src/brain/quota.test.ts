@@ -230,16 +230,16 @@ describe("exhaustion reporting", () => {
     const soonest = quota.soonestReset()!;
     expect(soonest).toBeGreaterThan(110_000);
     expect(soonest).toBeLessThanOrEqual(120_000);
-    expect(quota.exhaustedMessage()).toContain("2 minutes");
+    expect(quota.exhaustedMessage()).toContain("2 dakika");
   });
 
   it("words each magnitude sensibly", () => {
-    expect(quota.formatEta(null)).toBe("shortly");
-    expect(quota.formatEta(30_000)).toBe("under a minute");
-    expect(quota.formatEta(4 * quota.MINUTE)).toBe("about 4 minutes");
-    expect(quota.formatEta(quota.HOUR)).toBe("about an hour");
-    expect(quota.formatEta(5 * quota.HOUR)).toBe("about 5 hours");
-    expect(quota.formatEta(2 * quota.DAY)).toBe("tomorrow");
+    expect(quota.formatEta(null)).toBe("kısa süre içinde");
+    expect(quota.formatEta(30_000)).toBe("bir dakikadan kısa sürede");
+    expect(quota.formatEta(4 * quota.MINUTE)).toBe("yaklaşık 4 dakika içinde");
+    expect(quota.formatEta(quota.HOUR)).toBe("yaklaşık bir saat içinde");
+    expect(quota.formatEta(5 * quota.HOUR)).toBe("yaklaşık 5 saat içinde");
+    expect(quota.formatEta(2 * quota.DAY)).toBe("yarın");
   });
 });
 

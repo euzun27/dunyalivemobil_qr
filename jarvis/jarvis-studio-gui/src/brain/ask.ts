@@ -138,8 +138,8 @@ function exhausted(cfg: BrainConfig, attemptedModel = cfg.model): ExhaustedError
   );
   if (cfg.autoSwitchModels === false && attemptedModel) {
     return new ExhaustedError(
-      `${quota.exhaustedMessage(attemptedModel)} Automatic model switching is off, so I didn't ` +
-        `try any other model — turn it on in Settings if you'd rather I fall back.`,
+      `${quota.exhaustedMessage(attemptedModel)} Otomatik model geçişi kapalı olduğu için başka bir ` +
+        `model denemedim — yedek modele geçmemi isterseniz Ayarlar’dan açabilirsiniz.`,
     );
   }
   return new ExhaustedError(quota.exhaustedMessage());
@@ -213,9 +213,9 @@ export async function chatOverLadder(
           // quota had already benched it — say that instead of printing "null".
           const why = lastError
             ? String((lastError as Error)?.message ?? lastError)
-            : `${head.provider}/${head.model} is benched`;
+            : `${head.provider}/${head.model} geçici olarak devre dışı`;
           onFallback?.(
-            `Switched to ${route.provider}/${route.model} for this reply: ` + why.slice(0, 150),
+            `Bu yanıt için ${route.provider}/${route.model} modeline geçildi: ` + why.slice(0, 150),
           );
         }
         return reply;
