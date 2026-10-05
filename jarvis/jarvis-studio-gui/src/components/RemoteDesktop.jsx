@@ -105,7 +105,7 @@ function GamePad({ onKey }) {
         </div>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", maxWidth: 210 }}>
-        <GameKey label="␣ Space" keyName="space" onKey={onKey} wide />
+        <GameKey label="␣ Boşluk" keyName="space" onKey={onKey} wide />
         <GameKey label="⇧ Shift" keyName="shift" onKey={onKey} wide />
         <GameKey label="Ctrl" keyName="ctrl" onKey={onKey} />
         <GameKey label="E" keyName="e" onKey={onKey} />
@@ -386,12 +386,12 @@ export default function RemoteDesktop({
   const streaming = screenState === "streaming";
   const stateLabel =
     screenState === "connecting"
-      ? "Connecting…"
+      ? "Bağlanıyor…"
       : screenState === "streaming"
-        ? "Live"
+        ? "Canlı"
         : screenState === "failed"
-          ? "Couldn't connect"
-          : "Idle";
+          ? "Bağlanılamadı"
+          : "Boşta";
 
   return (
     <div
@@ -420,7 +420,7 @@ export default function RemoteDesktop({
         }}
       >
         <span style={{ fontWeight: 700, letterSpacing: 0.4, color: "#8fd0ff" }}>
-          REMOTE DESKTOP
+          UZAK MASAÜSTÜ
         </span>
         <span style={{ fontSize: 12, opacity: 0.65 }}>{hostLabel}</span>
         <span
@@ -447,9 +447,9 @@ export default function RemoteDesktop({
             letterSpacing: 0.5,
           }}
         >
-          ■ STOP
+          ■ DURDUR
         </button>
-        <button className="settings-x" onClick={onClose} style={{ marginLeft: 6 }}>
+        <button className="settings-x" onClick={onClose} aria-label="Kapat" style={{ marginLeft: 6 }}>
           ✕
         </button>
       </div>
@@ -508,10 +508,10 @@ export default function RemoteDesktop({
               </div>
             )}
             {screenState === "connecting"
-              ? screenDetail || "Connecting to your PC…"
+              ? screenDetail || "Bilgisayarınıza bağlanılıyor…"
               : screenState === "failed"
-                ? "Couldn't connect to your PC's screen. Make sure it's turned on and on the same Wi-Fi — if you're on a different network, turn on the extra relay option in Remote PC settings."
-                : "Starting…"}
+                ? "Bilgisayarınızın ekranına bağlanılamadı. Bilgisayarın açık ve aynı Wi-Fi ağında olduğundan emin olun — farklı bir ağdaysanız Uzak Bilgisayar ayarlarında ek aktarma (relay) seçeneğini açın."
+                : "Başlatılıyor…"}
           </div>
         )}
 
@@ -541,7 +541,7 @@ export default function RemoteDesktop({
       >
         <button
           onClick={onTriggerListen}
-          title={listening ? "Listening… tap to stop" : "DUNYATEK'e sesli komut verin"}
+          title={listening ? "Dinliyorum… durdurmak için dokunun" : "DUNYATEK'e sesli komut verin"}
           style={{
             width: 36,
             height: 36,
@@ -584,7 +584,7 @@ export default function RemoteDesktop({
             opacity: !cmdText.trim() || thinking ? 0.5 : 1,
           }}
         >
-          Send
+          Gönder
         </button>
       </div>
 
@@ -602,28 +602,28 @@ export default function RemoteDesktop({
         {controlArmed ? (
           <>
             <span style={{ fontSize: 12, color: "#36d399", fontWeight: 600 }}>
-              ● Control armed{controlSecondsLeft ? ` · ${Math.ceil(controlSecondsLeft / 60)}m` : ""}
+              ● Kontrol etkin{controlSecondsLeft ? ` · ${Math.ceil(controlSecondsLeft / 60)} dk` : ""}
             </span>
             <button className="dirlist-addbtn" onClick={onDisarm} style={{ marginLeft: "auto" }}>
-              Disarm
+              Kontrolü kapat
             </button>
           </>
         ) : (
           <>
-            <span style={{ fontSize: 12, color: "#e0a800" }}>View only — arm to control</span>
+            <span style={{ fontSize: 12, color: "#e0a800" }}>Yalnızca izleme — kontrol için etkinleştirin</span>
             <button
               className="settings-save"
               onClick={() => onArm(15)}
               style={{ marginLeft: "auto", width: "auto", padding: "8px 16px" }}
               disabled={!streaming}
             >
-              Arm control (15m)
+              Kontrolü etkinleştir (15 dk)
             </button>
           </>
         )}
         <button
           className="hud-fixed-btn"
-          title="Show keyboard"
+          title="Klavyeyi göster"
           onClick={focusKeyboard}
           disabled={!controlArmed}
           style={{ opacity: controlArmed ? 1 : 0.4 }}
@@ -632,7 +632,7 @@ export default function RemoteDesktop({
         </button>
         <button
           className="hud-fixed-btn"
-          title={gamepad ? "Hide game controls" : "Show game controls (WASD + keys)"}
+          title={gamepad ? "Oyun kontrollerini gizle" : "Oyun kontrollerini göster (WASD + tuşlar)"}
           onClick={() => setGamepad((v) => !v)}
           disabled={!controlArmed}
           style={{ opacity: controlArmed ? 1 : 0.4, background: gamepad ? "rgba(80,180,255,0.4)" : undefined }}

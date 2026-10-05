@@ -39,7 +39,7 @@ describe("Android Task Center reducer", () => {
       expect.objectContaining({
         id: "native:native-123",
         nativeTaskId: "native-123",
-        goal: "Recovered phone task",
+        goal: "Kurtarılan telefon görevi",
         status: "recovering",
       }),
     ]);
@@ -83,7 +83,7 @@ describe("Android Task Center reducer", () => {
       expect.objectContaining({
         id: "pc-task-7",
         source: "pc",
-        goal: "Recovered PC task",
+        goal: "Kurtarılan bilgisayar görevi",
         status: "recovering",
         lastSeq: 9,
       }),
@@ -115,7 +115,7 @@ describe("Android Task Center reducer", () => {
       nativeEventSeq: 8,
       recovered: true,
     });
-    expect(tasks[0].recoveryInfo).toMatch(/safely suspended/i);
+    expect(tasks[0].recoveryInfo).toMatch(/güvenle askıya alındı/i);
 
     tasks = reduceNativeStatus(tasks, {
       ok: true,
@@ -161,7 +161,7 @@ describe("Android Task Center reducer", () => {
 
     expect(tasks[0].status).toBe("failed");
     expect(tasks[0].proof).toBe("");
-    expect(tasks[0].summary).toMatch(/withheld.*no verified evidence/i);
+    expect(tasks[0].summary).toMatch(/doğrulanmış kanıt bulunmadığı için tamamlanma bildirilmedi/i);
   });
 
   it("correlates interleaved PC tasks and deduplicates replay sequences", () => {

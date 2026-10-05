@@ -258,7 +258,7 @@ export async function transcribe(
   const saJson = (keys.vertexSaJson || "").trim();
   if (!groqKey && !saJson) {
     throw new Error(
-      "Voice needs either a Vertex AI service account (recommended) or a Groq API key. Add one in Settings.",
+      "Sesli giriş için bir Vertex AI hizmet hesabı (önerilen) ya da bir Groq API anahtarı gerekiyor. Ayarlar’dan birini ekleyin.",
     );
   }
   if (groqKey) {

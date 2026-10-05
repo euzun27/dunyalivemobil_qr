@@ -110,7 +110,7 @@ export function reduceTaskCenterAgentEvent(prev, event, opts = {}) {
         state: terminal ? durableState : "verifying",
         summary: terminal
           ? existing.summary || task.summary
-          : "Executor finished; waiting for durable verification evidence.",
+          : "Yürütme tamamlandı; kalıcı doğrulama kanıtı bekleniyor.",
         updatedAt: Date.now(),
       };
     }
@@ -146,7 +146,7 @@ export function bindNativeTask(prev, spec) {
     durable: true,
     source: "phone",
     kind: "phone",
-    goal: spec.goal || existing?.goal || "Recovered phone task",
+    goal: spec.goal || existing?.goal || "Kurtarılan telefon görevi",
     status: "planning",
     state: "planning",
     risk: spec.risk || existing?.risk || "R1",
@@ -170,7 +170,9 @@ export function reduceNativeCheckpoint(prev, checkpoint) {
   const step = Math.max(0, numeric(checkpoint.step, existing?.currentStep || 0));
   const receipt = textOf(checkpoint.receipt);
   const waitingReason =
-    state === "suspended" ? receipt.replace(/^approval:/i, "") || "Task safely suspended." : "";
+    state === "suspended"
+      ? receipt.replace(/^approval:/i, "") || "Görev güvenle askıya alındı."
+      : "";
   const task = {
     ...(existing || {}),
     id: existing?.id || `native:${id}`,
@@ -178,7 +180,7 @@ export function reduceNativeCheckpoint(prev, checkpoint) {
     durable: true,
     source: "phone",
     kind: "phone",
-    goal: existing?.goal || "Recovered phone task",
+    goal: existing?.goal || "Kurtarılan telefon görevi",
     status: state,
     state,
     currentStep: step,
@@ -220,11 +222,11 @@ export function reduceNativeStatus(prev, status, { recovered = false } = {}) {
   const unverifiedSuccess = state === "succeeded" && !verified;
   if (unverifiedSuccess) state = "failed";
   const result = unverifiedSuccess
-    ? "Completion was withheld because the native record has no verified evidence. Please run the task again."
+    ? "Yerel kayıtta doğrulanmış kanıt bulunmadığı için tamamlanma bildirilmedi. Lütfen görevi yeniden çalıştırın."
     : textOf(status.result);
   const terminal = TERMINAL_TASK_STATES.has(state);
   const waitingReason =
-    state === "suspended" ? receipt.replace(/^approval:/i, "") || "Safely suspended." : "";
+    state === "suspended" ? receipt.replace(/^approval:/i, "") || "Güvenle askıya alındı." : "";
   const task = {
     ...(existing || {}),
     id: existing?.id || `native:${status.taskId}`,
@@ -232,7 +234,7 @@ export function reduceNativeStatus(prev, status, { recovered = false } = {}) {
     durable: true,
     source: "phone",
     kind: "phone",
-    goal: existing?.goal || "Recovered phone task",
+    goal: existing?.goal || "Kurtarılan telefon görevi",
     status: state,
     state,
     currentStep: Math.max(0, numeric(status.step, existing?.currentStep || 0)),
@@ -241,7 +243,7 @@ export function reduceNativeStatus(prev, status, { recovered = false } = {}) {
     summary: result || existing?.summary || "",
     proof:
       state === "succeeded"
-        ? verificationReceipt || `Verification receipt SHA-256: ${verificationDigest}`
+        ? verificationReceipt || `Doğrulama makbuzu SHA-256: ${verificationDigest}`
         : "",
     verified,
     verifiedAt: numeric(status.verifiedAtMs, existing?.verifiedAt || 0),
@@ -258,10 +260,10 @@ export function reduceNativeStatus(prev, status, { recovered = false } = {}) {
         : existing?.approval,
     recoveryInfo: recovered
       ? state === "suspended"
-        ? "Recovered after interface/process loss and left safely suspended for re-observation."
+        ? "Arayüz/işlem kaybından sonra kurtarıldı ve yeniden gözlem için güvenle askıya alındı."
         : terminal
-          ? "Recovered from the native task journal."
-          : "Reattached to the native supervisor after the interface restarted."
+          ? "Yerel görev günlüğünden kurtarıldı."
+          : "Arayüz yeniden başlatıldıktan sonra yerel denetleyiciye yeniden bağlanıldı."
       : existing?.recoveryInfo || "",
     recovered: recovered || Boolean(existing?.recovered),
     updatedAt: numeric(status.updatedAtMs, Date.now()),
@@ -328,8 +330,13 @@ export function reduceRemoteTaskEvent(prev, event) {
   // generic "Waiting for attention on the PC" fallback below, with no way to
   // learn what was actually being asked.
   const reason = textOf(
-    payload.question, nested.question, data.question,
-    payload.reason, nested.reason, data.reason, line,
+    payload.question,
+    nested.question,
+    data.question,
+    payload.reason,
+    nested.reason,
+    data.reason,
+    line,
   );
   const summary = textOf(payload.summary, nested.summary, data.summary, existing?.summary);
   const proof =
@@ -369,7 +376,7 @@ export function reduceRemoteTaskEvent(prev, event) {
     durable: true,
     source: "pc",
     kind: textOf(data.task_kind, payload.task_kind, existing?.kind, "computer"),
-    goal: textOf(data.goal, payload.goal, nested.goal, existing?.goal, "Remote PC task"),
+    goal: textOf(data.goal, payload.goal, nested.goal, existing?.goal, "Uzak bilgisayar görevi"),
     status: state,
     state,
     summary,
@@ -378,7 +385,7 @@ export function reduceRemoteTaskEvent(prev, event) {
     plan: data.plan || payload.plan || nested.plan || existing?.plan,
     retryInfo: textOf(payload.retry, nested.retry, data.retry, existing?.retryInfo),
     recoveryInfo: textOf(payload.recovery, nested.recovery, data.recovery, existing?.recoveryInfo),
-    waitingReason: isWaiting ? reason || "Waiting for attention on the PC." : "",
+    waitingReason: isWaiting ? reason || "Bilgisayarda ilginiz bekleniyor." : "",
     approval,
     items: appendReceipt(existing?.items, line, receiptKey, state !== "failed"),
     lastSeq: seq > 0 ? seq : (existing?.lastSeq ?? -1),
@@ -408,7 +415,7 @@ export function reduceRemoteTaskSnapshot(prev, event) {
         ? {
             ...task,
             recovered: true,
-            recoveryInfo: "Recovered from the Windows host's durable task index.",
+            recoveryInfo: "Windows bilgisayarın kalıcı görev dizininden kurtarıldı.",
           }
         : task,
     );
@@ -489,10 +496,10 @@ export function loadRecoveredTaskShells(storage = globalThis.localStorage) {
       recovered: true,
       source: "phone",
       kind: "phone",
-      goal: "Recovered phone task",
+      goal: "Kurtarılan telefon görevi",
       status: "recovering",
       state: "recovering",
-      summary: "Reading the verified native checkpoint…",
+      summary: "Doğrulanmış yerel kontrol noktası okunuyor…",
       items: [],
       nativeEventSeq: -1,
       updatedAt: 0,
@@ -503,10 +510,10 @@ export function loadRecoveredTaskShells(storage = globalThis.localStorage) {
       recovered: true,
       source: "pc",
       kind: "computer",
-      goal: "Recovered PC task",
+      goal: "Kurtarılan bilgisayar görevi",
       status: "recovering",
       state: "recovering",
-      summary: "Reconnecting to the Windows host for verified status…",
+      summary: "Doğrulanmış durum için Windows bilgisayara yeniden bağlanılıyor…",
       items: [],
       lastSeq,
       updatedAt: 0,

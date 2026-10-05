@@ -12,11 +12,14 @@ const QrScanner = lazy(() => import("./QrScanner"));
  */
 
 const STATE_META = {
-  idle: { label: "Eslesmedi", color: "#7a8aa0" },
-  connecting: { label: "Baglaniyor...", color: "#e0a800" },
-  online: { label: "Cevrimici", color: "#36d399" },
-  offline: { label: "PC'ye ulasilamiyor", color: "#f06a4d" },
-  unauthorized: { label: "PC bu telefonu tanimiyor - QR kodu yeniden okutun", color: "#f0455a" },
+  idle: { label: "Eşleşmedi", color: "#7a8aa0" },
+  connecting: { label: "Bağlanıyor...", color: "#e0a800" },
+  online: { label: "Çevrimiçi", color: "#36d399" },
+  offline: { label: "Bilgisayara ulaşılamıyor", color: "#f06a4d" },
+  unauthorized: {
+    label: "Bilgisayar bu telefonu tanımıyor — QR kodu yeniden okutun",
+    color: "#f0455a",
+  },
 };
 
 function parsePairingUrl(text) {
@@ -64,7 +67,7 @@ export default function MobileRemotePC({ onClose }) {
     const parsed = parsePairingUrl(rawText);
     if (!parsed) {
       setScanError(
-        "Bu kod DUNYATEK eslestirme kodu degil - PC'deki Remote Access ekranindaki kodu okutun.",
+        "Bu kod bir DUNYATEK eşleştirme kodu değil — bilgisayardaki Remote Access ekranındaki kodu okutun.",
       );
       return;
     }
@@ -74,7 +77,7 @@ export default function MobileRemotePC({ onClose }) {
     setPairing(false);
     if (!ok) {
       setScanError(
-        "Baglanilamadi - PC'de DUNYATEK acik mi? Anahtarin suresi dolmus olabilir; PC'de Remote Control'e yeniden basip yeni kodu okutun.",
+        "Bağlanılamadı — bilgisayarda DUNYATEK açık mı? Anahtarın süresi dolmuş olabilir; bilgisayarda Remote Control’e yeniden basıp yeni kodu okutun.",
       );
     }
   };
@@ -105,12 +108,14 @@ export default function MobileRemotePC({ onClose }) {
     try {
       const ok = await startVoice();
       if (!ok)
-        setVoiceError("Ses baglantisi kurulamadi - PC programinin acik oldugundan emin olun.");
+        setVoiceError(
+          "Ses bağlantısı kurulamadı — bilgisayardaki programın açık olduğundan emin olun.",
+        );
     } catch (e) {
       setVoiceError(
         e?.name === "NotAllowedError"
-          ? "Mikrofon izni verilmedi - telefon ayarlarindan DUNYATEK icin mikrofona izin verin."
-          : "Mikrofon acilamadi: " + (e?.message || e),
+          ? "Mikrofon izni verilmedi — telefon ayarlarından DUNYATEK için mikrofona izin verin."
+          : "Mikrofon açılamadı: " + (e?.message || e),
       );
     } finally {
       setVoiceStarting(false);
@@ -122,14 +127,14 @@ export default function MobileRemotePC({ onClose }) {
 
   if (scanning) {
     return (
-      <Suspense fallback={<ModalPanel title="Kod taraniyor">Kamera aciliyor...</ModalPanel>}>
+      <Suspense fallback={<ModalPanel title="Kod taranıyor">Kamera açılıyor...</ModalPanel>}>
         <QrScanner onResult={handleScanned} onCancel={() => setScanning(false)} />
       </Suspense>
     );
   }
 
   return (
-    <ModalPanel title="Uzak PC" onClose={onClose}>
+    <ModalPanel title="Uzak Bilgisayar" onClose={onClose}>
       <div className="settings-sec">
         <div
           style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600 }}
@@ -143,7 +148,7 @@ export default function MobileRemotePC({ onClose }) {
               boxShadow: `0 0 8px ${meta.color}`,
             }}
           />
-          <span>{paired ? meta.label : "PC eslesmedi"}</span>
+          <span>{paired ? meta.label : "Bilgisayar eşleşmedi"}</span>
           {paired && (
             <span style={{ marginLeft: "auto", opacity: 0.6, fontWeight: 400 }}>
               {config.host}:{config.port}
@@ -151,17 +156,17 @@ export default function MobileRemotePC({ onClose }) {
           )}
         </div>
         <div className="settings-hint">
-          Bir kez QR kodu okutun; sonra bu ekrani her actiginizda PC'ye kendiliginden baglanir.
-          Evden/disaridan baglanmak icin PC'de ve telefonda Tailscale acik olmali.
+          Bir kez QR kodu okutun; sonra bu ekranı her açtığınızda bilgisayara kendiliğinden
+          bağlanır. Evden/dışarıdan bağlanmak için bilgisayarda ve telefonda Tailscale açık olmalı.
         </div>
         {paired && state !== "online" && lastError && (
           <div className="settings-hint" style={{ opacity: 0.7, fontSize: 11 }}>
-            Ayrinti: {lastError} - 5 sn'de bir kendiliginden yeniden deneniyor.
+            Ayrıntı: {lastError} — 5 saniyede bir kendiliğinden yeniden deneniyor.
           </div>
         )}
         {paired && config?.deviceToken && state !== "online" && state !== "connecting" && (
           <button className="settings-save" style={{ marginTop: 8 }} onClick={() => reconnect()}>
-            Yeniden baglan
+            Yeniden bağlan
           </button>
         )}
       </div>
@@ -175,11 +180,12 @@ export default function MobileRemotePC({ onClose }) {
           }}
           disabled={pairing}
         >
-          <Icon name="camera" size={16} /> {paired ? "Kodu yeniden tara" : "PC'deki kodu tara"}
+          <Icon name="camera" size={16} />{" "}
+          {paired ? "Kodu yeniden tara" : "Bilgisayardaki kodu tara"}
         </button>
 
         <div className="settings-hint" style={{ marginTop: 8 }}>
-          Ya da baglanti adresini elle yapistirin (ornek:
+          Ya da bağlantı adresini elle yapıştırın (örnek:
           https://192.168.1.45:8000/auto-login?key=XXXXXX):
         </div>
         <input
@@ -196,11 +202,11 @@ export default function MobileRemotePC({ onClose }) {
           onClick={handleManualSubmit}
           disabled={pairing || !manualUrl.trim()}
         >
-          Baglan
+          Bağlan
         </button>
 
         {scanError && <div className="settings-warn">{scanError}</div>}
-        {pairing && <div className="settings-hint">Baglaniliyor...</div>}
+        {pairing && <div className="settings-hint">Bağlanılıyor...</div>}
       </div>
 
       {paired && online && (
@@ -216,15 +222,15 @@ export default function MobileRemotePC({ onClose }) {
             }}
           >
             {voiceStarting
-              ? "Mikrofon aciliyor..."
+              ? "Mikrofon açılıyor..."
               : voice
-                ? "Konusmayi bitir"
-                : "Konus (PC ile sesli gorus)"}
+                ? "Konuşmayı bitir"
+                : "Konuş (bilgisayarla sesli görüşme)"}
           </button>
           <div className="settings-hint" style={{ marginTop: 6 }}>
             {voice
-              ? "Canli gorusme acik - konusun, DUNYATEK cevabi telefondan duyacaksiniz."
-              : "Gorusme kapali. Tekrar baslatmak icin dugmeye basin."}
+              ? "Canlı görüşme açık — konuşun, DUNYATEK’in yanıtını telefondan duyacaksınız."
+              : "Görüşme kapalı. Yeniden başlatmak için düğmeye basın."}
           </div>
           {voiceError && <div className="settings-warn">{voiceError}</div>}
           {chat.length > 0 && (
@@ -241,18 +247,18 @@ export default function MobileRemotePC({ onClose }) {
 
       {paired && online && (
         <div className="settings-sec">
-          <div className="settings-hint">Ya da yazarak komut gonderin:</div>
+          <div className="settings-hint">Ya da yazarak komut gönderin:</div>
           <input
             className="settings-model-id"
             type="text"
-            placeholder="Orn: bugunku haberleri ozetle"
+            placeholder="Örn: bugünkü haberleri özetle"
             value={command}
             onChange={(e) => setCommand(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSendCommand()}
             style={{ marginTop: 6 }}
           />
           <button className="settings-save" style={{ marginTop: 8 }} onClick={handleSendCommand}>
-            Gonder
+            Gönder
           </button>
         </div>
       )}
@@ -266,7 +272,7 @@ export default function MobileRemotePC({ onClose }) {
             onClose();
           }}
         >
-          Bu PC eslesmesini kaldir
+          Bu bilgisayarla eşleşmeyi kaldır
         </button>
       )}
     </ModalPanel>

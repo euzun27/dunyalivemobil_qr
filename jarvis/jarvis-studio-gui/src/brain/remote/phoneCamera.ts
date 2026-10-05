@@ -34,11 +34,11 @@ export interface Frame {
 export function errorMessage(e: unknown): string {
   const name = (e as { name?: string } | null)?.name ?? "";
   if (name === "NotAllowedError" || name === "SecurityError") return "Kamera izni verilmedi.";
-  if (name === "NotFoundError" || name === "OverconstrainedError") return "Telefonda kamera bulunamadi.";
+  if (name === "NotFoundError" || name === "OverconstrainedError") return "Telefonda kamera bulunamadı.";
   if (name === "NotReadableError" || name === "AbortError")
-    return "Kamera baska bir uygulama tarafindan kullaniliyor.";
-  if (name === "TimeoutError") return "Kamera zamaninda acilamadi.";
-  return "Kare cekilemedi.";
+    return "Kamera başka bir uygulama tarafından kullanılıyor.";
+  if (name === "TimeoutError") return "Kamera zamanında açılamadı.";
+  return "Kare çekilemedi.";
 }
 
 /** Uzun-kenari `maxSide`'i asmayacak sekilde olcek (en-boy orani korunur). */
@@ -142,7 +142,7 @@ export async function handleCameraRequest(
   const id = typeof req?.id === "string" ? req.id : "";
   if (!id || req?.type !== "camera_capture") return;
   if (busy) {
-    send({ type: "camera_result", id, ok: false, summary: "Kamera su an mesgul." });
+    send({ type: "camera_result", id, ok: false, summary: "Kamera şu an meşgul." });
     return;
   }
   busy = true;

@@ -174,13 +174,13 @@ export function SysStatsPanel({ d, collapsible, open, onToggle }) {
       </CornerBox>
     );
   }
-  const tempSub = d.temp != null ? `${n0(d.temp).toFixed(0)}°C` : `${n0(d.cpu).toFixed(0)}% load`;
+  const tempSub = d.temp != null ? `${n0(d.temp).toFixed(0)}°C` : `%${n0(d.cpu).toFixed(0)} yük`;
   const ramSub = d.ramTotalGb
     ? `${Math.round((n0(d.ram) / 100) * d.ramTotalGb * 10) / 10} / ${Math.round(d.ramTotalGb)} GB`
-    : `${n0(d.ram).toFixed(0)}% used`;
+    : `%${n0(d.ram).toFixed(0)} dolu`;
   return (
     <CornerBox
-      title="System"
+      title="Sistem"
       code="SYS·01"
       slot="sysstats"
       collapsible={collapsible}
@@ -200,19 +200,19 @@ export function SysStatsPanel({ d, collapsible, open, onToggle }) {
         />
         <MiniRadial
           value={d.diskActivity ?? 0}
-          label="DISK"
+          label="DİSK"
           size={60}
           sub={
             d.diskTotalGb
               ? `${Math.round(n0(d.diskUsedGb))} / ${Math.round(n0(d.diskTotalGb))} GB`
-              : `${n0(d.disk).toFixed(0)}% used`
+              : `%${n0(d.disk).toFixed(0)} dolu`
           }
         />
         <MiniRadial
           value={d.net ?? 0}
-          label="NET"
+          label="AĞ"
           size={60}
-          sub={d.down > 0 ? `${fmtMbps(d.down)} Mbps` : d.linkLabel || "ONLINE"}
+          sub={d.down > 0 ? `${fmtMbps(d.down)} Mbps` : d.linkLabel || "ÇEVRİMİÇİ"}
         />
       </div>
     </CornerBox>
@@ -473,7 +473,10 @@ export function TerminalPanel({ commands = [], onClear, open, onToggle }) {
             aria-expanded={c.message ? expanded === i : undefined}
           >
             <span className="term-head">
-              <span className="term-prompt" aria-label={c.ok === false ? "Failed" : "Done"}>
+              <span
+                className="term-prompt"
+                aria-label={c.ok === false ? "Başarısız" : "Tamamlandı"}
+              >
                 {c.ok === false ? "✗" : "›"}
               </span>
               <span className="term-cmd">
@@ -562,38 +565,38 @@ export function SkillsOverlay({
   };
 
   return (
-    <Sheet open={open} title="Skills" onClose={onClose}>
+    <Sheet open={open} title="Araçlar" onClose={onClose}>
       <div className="sp-sheet">
-        <Group title="QR code">
-          <Field hint="Anyone who scans it gets this link or text.">
+        <Group title="QR kod">
+          <Field hint="Kodu tarayan herkes bu bağlantıya veya metne ulaşır.">
             <div className="sp-inline">
               <input
                 className="sp-input"
                 value={qrText}
-                placeholder="Link or text"
+                placeholder="Bağlantı veya metin"
                 onChange={(e) => setQrText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && makeQr()}
-                aria-label="QR code contents"
+                aria-label="QR kod içeriği"
               />
               <button type="button" className="sp-btn" onClick={makeQr} disabled={!qrText.trim()}>
-                Make
+                Oluştur
               </button>
             </div>
           </Field>
           {qr && (
             <div className="sp-field skill-qr">
-              <img src={qr.imageUrl} alt={`QR code for ${qr.text}`} width="200" height="200" />
+              <img src={qr.imageUrl} alt={`${qr.text} için QR kod`} width="200" height="200" />
               <span className="sp-desc">{qr.text}</span>
             </div>
           )}
         </Group>
 
         {IS_MOBILE && (
-          <Group title="Clipboard">
+          <Group title="Pano">
             <ActionRow
               icon="clipboard"
-              title="Read clipboard"
-              desc="Shows the last thing you copied."
+              title="Panoyu oku"
+              desc="En son kopyaladığınız şeyi gösterir."
               onClick={async () => setClip(await run({ type: "clipboard" }))}
             />
             {clip && (
@@ -608,11 +611,11 @@ export function SkillsOverlay({
 
         {!IS_MOBILE && (
           <>
-            <Group title="Recording">
+            <Group title="Kayıt">
               {[
-                ["audio", "Microphone"],
-                ["video", "Webcam"],
-                ["screen", "Screen"],
+                ["audio", "Mikrofon"],
+                ["video", "Web kamerası"],
+                ["screen", "Ekran"],
               ].map(([media, label]) => (
                 <Toggle
                   key={media}
@@ -623,22 +626,22 @@ export function SkillsOverlay({
               ))}
               <div className="sp-field">
                 <span className="sp-desc">
-                  Runs until you switch it off. Saved to your Jarvis storage folder.
+                  Siz kapatana kadar sürer. DUNYATEK kayıt klasörünüze kaydedilir.
                 </span>
               </div>
             </Group>
-            <Group title="Quick tools">
+            <Group title="Hızlı araçlar">
               <ActionRow
                 icon="camera"
-                title="Take a screenshot"
+                title="Ekran görüntüsü al"
                 onClick={() => run({ type: "screenshot" })}
               />
-              <Field label="List an approved folder">
+              <Field label="Onaylı bir klasörü listele">
                 <div className="sp-inline">
                   <input
                     className="sp-input sp-mono"
                     value={dirPath}
-                    placeholder="C:\Users\you\Documents"
+                    placeholder="C:\Users\siz\Belgeler"
                     onChange={(e) => setDirPath(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && listDir()}
                   />
@@ -648,17 +651,17 @@ export function SkillsOverlay({
                     disabled={!dirPath.trim()}
                     onClick={listDir}
                   >
-                    List
+                    Listele
                   </button>
                 </div>
               </Field>
             </Group>
             <Group title="DUNYATEK'in okuyabileceği klasörler">
-              <Field hint="It can list these and read files inside, asking you each time. It can never run, write, move or delete anything.">
+              <Field hint="Bu klasörleri listeleyebilir ve içindeki dosyaları her seferinde size sorarak okuyabilir. Hiçbir şeyi çalıştıramaz, yazamaz, taşıyamaz veya silemez.">
                 <div className="dirlist">
                   {allowedDirs.length === 0 && (
-                    <StateMessage variant="empty" icon="folder" title="No folders yet">
-                      Add one to let JARVIS read files from it.
+                    <StateMessage variant="empty" icon="folder" title="Henüz klasör yok">
+                      DUNYATEK’in dosyalarını okuyabilmesi için bir klasör ekleyin.
                     </StateMessage>
                   )}
                   {allowedDirs.map((d) => (
@@ -668,7 +671,7 @@ export function SkillsOverlay({
                       </span>
                       <button
                         className="dirlist-rm"
-                        aria-label={`Remove ${d}`}
+                        aria-label={`${d} klasörünü kaldır`}
                         onClick={() => onSaveDirs(allowedDirs.filter((x) => x !== d))}
                       >
                         <Icon name="close" size={14} />
@@ -680,12 +683,12 @@ export function SkillsOverlay({
                   <input
                     className="sp-input sp-mono"
                     value={newDir}
-                    placeholder="C:\Users\you\Documents"
+                    placeholder="C:\Users\siz\Belgeler"
                     onChange={(e) => setNewDir(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addDir()}
                   />
                   <button type="button" className="sp-btn" onClick={addDir}>
-                    Add
+                    Ekle
                   </button>
                 </div>
               </Field>
@@ -702,59 +705,107 @@ export function SkillsOverlay({
 // never sends straight away: "Remind me at 6 pm" would really set a reminder.
 const MOBILE_CAPABILITIES = [
   {
-    group: "Talk and remember",
+    group: "Konuşma ve hafıza",
     items: [
-      { t: "Answer questions and explain things", say: "Explain how a heat pump works" },
-      { t: "Remember things you tell it", say: "What do you remember about me?" },
+      { t: "Soruları yanıtlar, konuları açıklar", say: "Isı pompası nasıl çalışır, kısaca anlat" },
+      { t: "Söylediklerinizi hatırlar", say: "Benim hakkımda neleri hatırlıyorsun?" },
+      { t: "İstediğinizi unutur", say: "Doğum günümü unut" },
       {
-        t: "Short, chatty replies",
-        note: "Turn on conversation mode with the speech-bubble button at the top.",
+        t: "Kısa ve doğal sohbet",
+        note: "Üstteki konuşma balonu düğmesiyle sohbet modunu açın.",
       },
     ],
   },
   {
-    group: "On this phone",
+    group: "WhatsApp",
     items: [
-      { t: "Open apps and websites", say: "Open YouTube" },
       {
-        t: "Do tasks inside other apps",
-        say: "Open Spotify and play lofi beats",
-        note: "Needs app control, in Device.",
+        t: "Mesaj taslağı hazırlar",
+        say: "Ahmet Bey’e cihazının hazır olduğunu bildiren WhatsApp mesajı taslağı hazırla",
+        note: "Taslak size okunur; siz “evet” demeden gönderilmez.",
       },
-      { t: "Set media volume or mute", say: "Set the volume to 30%" },
-      { t: "Read your clipboard", say: "What's on my clipboard?" },
+      { t: "Gelen mesajları özetler", say: "Bugün WhatsApp’tan gelen mesajları özetle" },
     ],
   },
   {
-    group: "Out in the world",
+    group: "Servis kayıtları",
     items: [
-      { t: "Weather and forecasts", say: "Will it rain tomorrow?" },
-      { t: "News headlines", say: "What's in the tech news today?" },
-      { t: "Places nearby and directions", say: "Find a pharmacy near me" },
-      { t: "Search the web", say: "Search the web for budget wireless earbuds" },
+      { t: "Yeni servis kaydı açar", say: "Mehmet Bey’in yazıcısı için yeni servis kaydı aç" },
+      { t: "Açık kayıtları okur", say: "Açık servis kayıtlarını oku" },
     ],
   },
   {
-    group: "Agenda and alarms",
-    items: [
-      { t: "Reminders with a real alarm", say: "Remind me at 6 pm to call Mum" },
-      { t: "Timers and alarms in your Clock app", say: "Set a timer for 10 minutes" },
-      { t: "Today's agenda", say: "What's on my agenda today?" },
-    ],
-  },
-  {
-    group: "Your PC",
+    group: "Yenilemeler",
     items: [
       {
-        t: "Run tasks on your paired Windows PC",
-        say: "On my PC, open Notepad",
-        note: "Pair it with the monitor button at the top.",
+        t: "Domain, hosting, SSL ve lisans tarihlerini takip eder",
+        say: "Bu ay yenilemesi gelen müşteriler kimler?",
+        note: "Süresi yaklaşanlar için 30, 15, 7 ve 1 gün kala uyarır.",
       },
     ],
   },
   {
-    group: "This screen",
-    items: [{ t: "Restyle the home screen", say: "Make the accent colour amber" }],
+    group: "Sosyal medya",
+    items: [
+      {
+        t: "Instagram, Facebook ve YouTube özeti",
+        say: "Sosyal medya hesaplarımızın bu haftaki özetini ver",
+      },
+      {
+        t: "Paylaşım taslağı hazırlar",
+        say: "Yeni kampanya için Instagram gönderisi taslağı hazırla",
+        note: "Yayın onayı yalnızca Yönetim Paneli’nden verilir.",
+      },
+    ],
+  },
+  {
+    group: "SMS",
+    items: [
+      {
+        t: "Telefonunuzun hattından SMS gönderir",
+        say: "Ayşe Hanım’a yarınki randevuyu hatırlatan SMS taslağı hazırla",
+        note: "Taslak okunur; onayınızdan sonra bu telefonun hattından gider.",
+      },
+    ],
+  },
+  {
+    group: "Kamera",
+    items: [
+      {
+        t: "Telefon kamerasıyla bakar",
+        say: "Telefonun kamerasına bak, bu cihazın modeli ne?",
+        note: "Bilgisayardaki DUNYATEK telefonun kamerasından tek kare alır.",
+      },
+    ],
+  },
+  {
+    group: "Bilgisayarınız",
+    items: [
+      {
+        t: "Bilgisayarda görev çalıştırır",
+        say: "Bilgisayarda Not Defteri’ni aç",
+        note: "Üstteki ekran düğmesiyle bilgisayarı eşleştirin. Eşleşince yazdıklarınız ve sesiniz bilgisayardaki DUNYATEK’e gider.",
+      },
+      { t: "Canlı sesli görüşme", note: "Bilgisayar ekranından mikrofon düğmesine dokunun." },
+    ],
+  },
+  {
+    group: "Bu telefonda",
+    items: [
+      { t: "Uygulama ve site açar", say: "YouTube’u aç" },
+      {
+        t: "Başka uygulamalarda iş yapar",
+        say: "Spotify’ı aç ve lofi müzik çal",
+        note: "Cihaz bölümünden uygulama kontrolünü açın.",
+      },
+      { t: "Ses düzeyini ayarlar", say: "Sesi yüzde 30 yap" },
+      { t: "Hava durumu ve haberler", say: "Yarın yağmur yağacak mı?" },
+      { t: "Yakındaki yerler ve yol tarifi", say: "Yakınımdaki eczaneyi bul" },
+      { t: "Gerçek alarmlı hatırlatıcılar", say: "Akşam 6’da annemi aramamı hatırlat" },
+      { t: "Saat uygulamasında zamanlayıcı", say: "10 dakikalık zamanlayıcı kur" },
+      { t: "Günlük gündem", say: "Bugün gündemimde neler var?" },
+      { t: "Ana ekranı yeniden düzenler", say: "Vurgu rengini kehribar yap" },
+    ],
   },
 ];
 
@@ -855,11 +906,13 @@ const CAPABILITIES = [
 export function CapabilitiesOverlay({ open, onClose, onTry }) {
   const caps = IS_MOBILE ? MOBILE_CAPABILITIES : CAPABILITIES;
   return (
-    <Sheet open={open} title="Capabilities" onClose={onClose}>
+    <Sheet open={open} title="Yetenekler" onClose={onClose}>
       <div className="sp-sheet">
         <p className="sp-lede">
-          Ask in your own words, by voice or text.
-          {onTry && IS_MOBILE ? " Tap an example to put it in the chat box." : ""}
+          Sesli ya da yazılı, kendi cümlelerinizle isteyin.
+          {onTry && IS_MOBILE
+            ? " Bir örneğe dokunursanız sohbet kutusuna yazılır; göndermeden önce düzenleyebilirsiniz."
+            : ""}
         </p>
         {caps.map((c) => (
           <Group key={c.group} title={c.group}>
@@ -878,7 +931,7 @@ export function CapabilitiesOverlay({ open, onClose, onTry }) {
                   key={item.t}
                   className="sp-field cap-row"
                   onClick={() => onTry(item.say)}
-                  aria-label={`${item.t}. Try: ${item.say}`}
+                  aria-label={`${item.t}. Örnek: ${item.say}`}
                 >
                   <span className="cap-text">{body}</span>
                   <Icon name="chat" size={18} className="cap-go" />
@@ -903,30 +956,30 @@ const MEM_KINDS = [
   {
     key: "facts",
     kind: "fact",
-    label: "About you",
+    label: "Hakkınızda",
     color: "var(--ac)",
     note: "DUNYATEK her cevaptan önce bunları okur.",
   },
   {
     key: "playbooks",
     kind: "playbook",
-    label: "Playbooks",
+    label: "Senaryolar",
     color: "#6ee7a8",
-    note: "DUNYATEK'e öğrettiğiniz rutinler. Bir rutin, üç kez doğrulanmış başarıdan sonra kendi kendine çalışır.",
+    note: "DUNYATEK'e öğrettiğiniz senaryolar. Bir senaryo, üç kez doğrulanmış başarıdan sonra kendi kendine çalışır.",
   },
   {
     key: "conversations",
     kind: "conversation",
-    label: "Saved chats",
+    label: "Kayıtlı sohbetler",
     color: "#8fa9bd",
-    note: "Past conversations. Open one to pick up where you left off.",
+    note: "Geçmiş sohbetler. Kaldığınız yerden devam etmek için birini açın.",
   },
 ];
 const PLAYBOOK_STATUS = {
-  draft: "Reference",
-  candidate: "Learning",
-  promoted: "Verified",
-  disabled: "Disabled",
+  draft: "Taslak",
+  candidate: "Öğreniliyor",
+  promoted: "Doğrulandı",
+  disabled: "Devre dışı",
 };
 
 const memTitle = (key, x) =>
@@ -996,7 +1049,7 @@ export function MemoryOverlay({
     setArmed(null);
     mainRef.current?.scrollTo(0, 0);
   };
-  const forgetBtn = (kind, id, label = "Forget") => (
+  const forgetBtn = (kind, id, label = "Unut") => (
     <button
       type="button"
       className={`memx-forget ${armed === id ? "is-armed" : ""}`}
@@ -1007,7 +1060,7 @@ export function MemoryOverlay({
       }}
       onBlur={() => armed === id && setArmed(null)}
     >
-      {armed === id ? "Confirm" : label}
+      {armed === id ? "Onayla" : label}
     </button>
   );
   const remember = (e) => {
@@ -1024,14 +1077,14 @@ export function MemoryOverlay({
   return (
     <div className={`memx ${open ? "open" : ""}`} aria-hidden={!open}>
       <div className="memx-scrim" onClick={onClose} />
-      <section className="memx-panel" role="dialog" aria-label="Memory">
+      <section className="memx-panel" role="dialog" aria-label="Hafıza">
         <header className="memx-hd">
           <div className="memx-hd-txt">
-            <span className="memx-kicker">MEMORY</span>
-            <h2 className="memx-title">DUNYATEK'in bildikleri</h2>
-            <p className="memx-loc">Kept on this phone only.</p>
+            <span className="memx-kicker">HAFIZA</span>
+            <h2 className="memx-title">DUNYATEK’in bildikleri</h2>
+            <p className="memx-loc">Yalnızca bu telefonda saklanır.</p>
           </div>
-          <button className="memx-close" onClick={onClose} aria-label="Close memory">
+          <button className="memx-close" onClick={onClose} aria-label="Hafızayı kapat">
             <Icon name="close" size={18} />
           </button>
         </header>
@@ -1055,12 +1108,12 @@ export function MemoryOverlay({
           </div>
           <div className="memx-tl-axis">
             <span>{memDate(t0)}</span>
-            <span>Today</span>
+            <span>Bugün</span>
           </div>
         </div>
 
         <div className="memx-body">
-          <nav className="memx-nav" aria-label="Memory sections">
+          <nav className="memx-nav" aria-label="Hafıza bölümleri">
             {MEM_KINDS.map((k) => (
               <button
                 key={k.key}
@@ -1074,9 +1127,7 @@ export function MemoryOverlay({
                 <span className="memx-count">{memory ? lists[k.key].length : "–"}</span>
               </button>
             ))}
-            <p className="memx-navnote">
-              Forgetting is permanent. You can also say “forget that…”.
-            </p>
+            <p className="memx-navnote">Unutma işlemi kalıcıdır. “Bunu unut…” da diyebilirsiniz.</p>
           </nav>
 
           <div className="memx-main" ref={mainRef}>
@@ -1090,35 +1141,37 @@ export function MemoryOverlay({
                 <input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  aria-label="New fact"
+                  aria-label="Yeni bilgi"
                   placeholder="DUNYATEK'in her zaman bilmesi gereken bir şey — ör. Vejetaryenim"
                   maxLength={300}
                 />
                 <button type="submit" disabled={!draft.trim()}>
-                  Remember
+                  Hatırla
                 </button>
               </form>
             )}
 
             {tab === "conversations" && currentCount > 0 && (
               <div className="memx-row memx-row--current">
-                <span className="memx-text">This conversation</span>
-                <span className="memx-meta">{currentCount} messages</span>
+                <span className="memx-text">Bu sohbet</span>
+                <span className="memx-meta">{currentCount} mesaj</span>
                 <button type="button" className="memx-open" onClick={onOpenChat}>
-                  Open
+                  Aç
                 </button>
               </div>
             )}
 
-            {!memory && <p className="memx-empty">Reading memory…</p>}
+            {!memory && <p className="memx-empty">Hafıza okunuyor…</p>}
             {memory && list.length === 0 && (
               <p className="memx-empty">
                 {
                   {
-                    facts: "Henüz bir şey yok. DUNYATEK'e “şunu hatırla…” deyin ya da yukarıdan ekleyin.",
-                    playbooks: "No playbooks. Teach one by saying “learn a playbook called…”.",
+                    facts:
+                      "Henüz bir şey yok. DUNYATEK'e “şunu hatırla…” deyin ya da yukarıdan ekleyin.",
+                    playbooks:
+                      "Henüz senaryo yok. “… adlı bir senaryo öğren” diyerek öğretebilirsiniz.",
                     conversations:
-                      "No saved chats. Starting a new chat saves the current one here.",
+                      "Kayıtlı sohbet yok. Yeni bir sohbet başlattığınızda mevcut sohbet buraya kaydedilir.",
                   }[tab]
                 }
               </p>
@@ -1144,11 +1197,11 @@ export function MemoryOverlay({
                         <span className="memx-name">{p.name}</span>
                         <span className="memx-badge">{PLAYBOOK_STATUS[p.status] || p.status}</span>
                         <span className="memx-meta">{memDate(p.ts)}</span>
-                        {forgetBtn("playbook", p.id, "Remove")}
+                        {forgetBtn("playbook", p.id, "Kaldır")}
                       </div>
                       {p.triggers.length > 0 && (
                         <div className="memx-trig">
-                          <span>When you say</span>
+                          <span>Şunu dediğinizde</span>
                           {p.triggers.map((t) => (
                             <em key={t}>{t}</em>
                           ))}
@@ -1165,15 +1218,15 @@ export function MemoryOverlay({
                     <div className="memx-row">
                       <span className="memx-text">{c.title}</span>
                       <span className="memx-meta">
-                        {c.count} messages · {memDate(c.ts)}
+                        {c.count} mesaj · {memDate(c.ts)}
                       </span>
-                      {forgetBtn("conversation", c.id, "Delete")}
+                      {forgetBtn("conversation", c.id, "Sil")}
                       <button
                         type="button"
                         className="memx-open"
                         onClick={() => onOpenConversation(c.id)}
                       >
-                        Open
+                        Aç
                       </button>
                     </div>
                   </li>
@@ -1190,9 +1243,9 @@ export function MemoryOverlay({
 /** "WIFI" / "4G" / "OFFLINE" … from deviceTelemetry → a readout for the Wi-Fi row. */
 function networkReadout(label) {
   if (!label) return null;
-  if (label === "WIFI") return { text: "On Wi-Fi", tone: "on" };
-  if (/^[2-5]G$/.test(label)) return { text: `On ${label}`, tone: "on" };
-  if (label === "OFFLINE") return { text: "Offline", tone: "warn" };
+  if (label === "WIFI") return { text: "Wi-Fi bağlı", tone: "on" };
+  if (/^[2-5]G$/.test(label)) return { text: `${label} bağlı`, tone: "on" };
+  if (label === "OFFLINE") return { text: "Çevrimdışı", tone: "warn" };
   return null;
 }
 
@@ -1210,22 +1263,27 @@ export function PowerOverlay({ open, onClose, runAction, d = {} }) {
 
   if (!IS_MOBILE) {
     return (
-      <Sheet open={open} title="Power" onClose={onClose}>
+      <Sheet open={open} title="Güç" onClose={onClose}>
         <div className="sp-sheet">
-          <Group title="This PC">
-            <ActionRow icon="lock" title="Lock" onClick={() => power("lock")} />
-            <ActionRow icon="moon" title="Sleep" onClick={() => power("sleep")} />
+          <Group title="Bu bilgisayar">
+            <ActionRow icon="lock" title="Kilitle" onClick={() => power("lock")} />
+            <ActionRow icon="moon" title="Uyku" onClick={() => power("sleep")} />
           </Group>
-          <Group title="Asks before it runs">
-            <ActionRow icon="restart" title="Restart" onClick={() => power("restart")} />
+          <Group title="Çalıştırmadan önce sorar">
+            <ActionRow icon="restart" title="Yeniden başlat" onClick={() => power("restart")} />
             <ActionRow
               icon="moon"
-              title="Hibernate"
-              desc="Saves your session, then powers off."
+              title="Hazırda beklet"
+              desc="Oturumunuzu kaydeder, ardından kapatır."
               onClick={() => power("hibernate")}
             />
-            <ActionRow icon="logout" title="Log off" onClick={() => power("logoff")} />
-            <ActionRow icon="power" title="Shut down" danger onClick={() => power("shutdown")} />
+            <ActionRow icon="logout" title="Oturumu kapat" onClick={() => power("logoff")} />
+            <ActionRow
+              icon="power"
+              title="Bilgisayarı kapat"
+              danger
+              onClick={() => power("shutdown")}
+            />
           </Group>
         </div>
       </Sheet>
@@ -1238,14 +1296,14 @@ export function PowerOverlay({ open, onClose, runAction, d = {} }) {
     pct == null
       ? null
       : {
-          text: `${Math.round(pct)}%${d.charging ? ", charging" : ""}`,
+          text: `%${Math.round(pct)}${d.charging ? ", şarj oluyor" : ""}`,
           tone: pct < 20 && !d.charging ? "warn" : "on",
         };
 
   return (
-    <Sheet open={open} title="Device" onClose={onClose}>
+    <Sheet open={open} title="Cihaz" onClose={onClose}>
       <div className="sp-sheet">
-        <Group title="Connections">
+        <Group title="Bağlantılar">
           <ActionRow
             icon="wifi"
             title="Wi-Fi"
@@ -1261,11 +1319,11 @@ export function PowerOverlay({ open, onClose, runAction, d = {} }) {
             onClick={() => openSettings("bluetooth")}
           />
         </Group>
-        <Group title="Sound">
+        <Group title="Ses">
           <ActionRow
             icon="volumeOff"
-            title="Mute media"
-            desc="Sets music and video volume to zero. Calls and alarms still ring."
+            title="Medyayı sessize al"
+            desc="Müzik ve video sesini sıfıra indirir. Aramalar ve alarmlar yine çalar."
             onClick={async () => setNote(await runAction({ type: "power", command: "mute" }))}
           />
           {note?.summary && (
@@ -1277,25 +1335,25 @@ export function PowerOverlay({ open, onClose, runAction, d = {} }) {
           )}
           <ActionRow
             icon="volume"
-            title="Sound settings"
+            title="Ses ayarları"
             leaves
             onClick={() => openSettings("sound")}
           />
         </Group>
-        <Group title="Battery">
+        <Group title="Pil">
           <ActionRow
             icon="battery"
-            title="Battery settings"
+            title="Pil ayarları"
             readout={battery?.text}
             tone={battery?.tone}
             leaves
             onClick={() => openSettings("battery")}
           />
         </Group>
-        <Group title="Phone">
+        <Group title="Telefon">
           <ActionRow
             icon="hand"
-            title="App control"
+            title="Uygulama kontrolü"
             desc="DUNYATEK'in diğer uygulamalarda dokunup yazmasını sağlar. Erişilebilirlik ayarlarında DUNYATEK'i açın."
             leaves
             onClick={() => {
@@ -1305,13 +1363,13 @@ export function PowerOverlay({ open, onClose, runAction, d = {} }) {
           />
           <ActionRow
             icon="settings"
-            title="All settings"
+            title="Tüm ayarlar"
             leaves
             onClick={() => openSettings("settings")}
           />
         </Group>
         <p className="sp-desc sp-sheet-note">
-          Android doesn&apos;t let apps shut down or restart the phone.
+          Android, uygulamaların telefonu kapatmasına veya yeniden başlatmasına izin vermez.
         </p>
       </div>
     </Sheet>
@@ -1342,29 +1400,19 @@ const ChatMessage = memo(function ChatMessage({ m, runAction }) {
 function timeAgo(ts) {
   if (!ts) return "";
   const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-  if (s < 60) return "just now";
+  if (s < 60) return "az önce";
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m} min ago`;
+  if (m < 60) return `${m} dk önce`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} h ago`;
+  if (h < 24) return `${h} sa önce`;
   const d = Math.floor(h / 24);
-  if (d < 7) return d === 1 ? "yesterday" : `${d} days ago`;
-  return `${Math.floor(d / 7)} wk ago`;
+  if (d < 7) return d === 1 ? "dün" : `${d} gün önce`;
+  return `${Math.floor(d / 7)} hf önce`;
 }
 
 const STARTERS = IS_MOBILE
-  ? [
-      "What's the weather today?",
-      "What's on my agenda today?",
-      "Open YouTube",
-      "What's in the news?",
-    ]
-  : [
-      "What's the weather today?",
-      "Summarise my agenda",
-      "Take a screenshot",
-      "What's in the news?",
-    ];
+  ? ["Bugün hava nasıl?", "Bugün ajandamda ne var?", "YouTube'u aç", "Gündemde neler var?"]
+  : ["Bugün hava nasıl?", "Ajandamı özetle", "Ekran görüntüsü al", "Gündemde neler var?"];
 
 export function ChatOverlay({
   open,
@@ -1450,37 +1498,37 @@ export function ChatOverlay({
     return (
       <Sheet
         open={open}
-        title="History"
+        title="Geçmiş"
         onClose={onClose}
         onBack={() => setHistOpen(false)}
-        backLabel="Conversation"
+        backLabel="Sohbet"
       >
         <div className="sp-sheet">
-          <h2 className="sp-page-title">History</h2>
+          <h2 className="sp-page-title">Geçmiş</h2>
           <button type="button" className="sp-btn cv-newchat" onClick={startNewChat}>
             <Icon name="plus" size={16} />
-            New chat
+            Yeni sohbet
           </button>
           {conversations.length === 0 ? (
-            <StateMessage variant="empty" icon="history" title="No saved chats yet">
-              Start a new chat and the current one is saved here.
+            <StateMessage variant="empty" icon="history" title="Henüz kayıtlı sohbet yok">
+              Yeni bir sohbet başlattığınızda mevcut sohbet buraya kaydedilir.
             </StateMessage>
           ) : (
-            <Group title="Saved chats">
+            <Group title="Kayıtlı sohbetler">
               {conversations.map((c) => (
                 <div key={c.id} className="sp-field cv-hist-row">
                   <button type="button" className="cv-hist-open" onClick={() => openConv(c.id)}>
                     <span className="sp-label">{c.title}</span>
                     <span className="sp-desc">
                       {timeAgo(c.ts)}
-                      {c.count ? `, ${c.count} message${c.count === 1 ? "" : "s"}` : ""}
+                      {c.count ? `, ${c.count} mesaj` : ""}
                     </span>
                   </button>
                   <button
                     type="button"
                     className="cv-hist-del"
-                    aria-label={`Delete “${c.title}”`}
-                    title="Delete"
+                    aria-label={`“${c.title}” sohbetini sil`}
+                    title="Sil"
                     onClick={() => onDeleteConversation?.(c.id)}
                   >
                     <Icon name="trash" size={17} />
@@ -1496,7 +1544,7 @@ export function ChatOverlay({
               onClick={clearAll}
               onBlur={() => setConfirmClear(false)}
             >
-              {confirmClear ? "Tap again to delete all" : "Delete all saved chats"}
+              {confirmClear ? "Tümünü silmek için tekrar dokunun" : "Tüm kayıtlı sohbetleri sil"}
             </button>
           )}
         </div>
@@ -1507,14 +1555,18 @@ export function ChatOverlay({
   return (
     <Sheet
       open={open}
-      title="Conversation"
+      title="Sohbet"
       onClose={onClose}
       className="sp--chat"
       bodyRef={bodyRef}
       actions={
         <>
-          <HeaderButton icon="history" label="Chat history" onClick={showHistory} />
-          <HeaderButton icon="plus" label="New chat (saves this one)" onClick={startNewChat} />
+          <HeaderButton icon="history" label="Sohbet geçmişi" onClick={showHistory} />
+          <HeaderButton
+            icon="plus"
+            label="Yeni sohbet (bu sohbet kaydedilir)"
+            onClick={startNewChat}
+          />
         </>
       }
       footer={
@@ -1531,8 +1583,8 @@ export function ChatOverlay({
               <button
                 type="button"
                 className="cv-attach"
-                aria-label="Attach an image or document"
-                title="Attach an image or document"
+                aria-label="Görsel veya belge ekle"
+                title="Görsel veya belge ekle"
                 onClick={() => fileRef.current?.click()}
               >
                 <Icon name="paperclip" size={20} />
@@ -1552,7 +1604,7 @@ export function ChatOverlay({
             <button
               type="button"
               className="cv-send cv-send--stop"
-              aria-label="Stop"
+              aria-label="Durdur"
               onClick={onStop}
             >
               <Icon name="stop" size={18} />
@@ -1561,7 +1613,7 @@ export function ChatOverlay({
             <button
               type="button"
               className="cv-send"
-              aria-label="Send"
+              aria-label="Gönder"
               disabled={!draft.trim()}
               onClick={() => send()}
             >
@@ -1574,7 +1626,7 @@ export function ChatOverlay({
       <div className="cv" aria-live="polite">
         {messages.length === 0 ? (
           <div className="cv-empty">
-            <p className="cv-empty-title">DUNYATEK'e her şeyi sorabilirsiniz</p>
+            <p className="cv-empty-title">DUNYATEK’e her şeyi sorabilirsiniz</p>
             <p className="sp-desc">Aşağıya yazın, mikrofona dokunun ya da “Hey Jarvis” deyin.</p>
             <div className="cv-starters">
               {STARTERS.map((t) => (

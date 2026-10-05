@@ -421,9 +421,9 @@ class PhonePlugin(private val activity: Activity) : Plugin(activity) {
             val nm = activity.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel = NotificationChannel(
                 REMINDER_CHANNEL_ID,
-                "JARVIS Reminders",
+                "DUNYATEK Hatırlatıcıları",
                 NotificationManager.IMPORTANCE_HIGH,
-            ).apply { description = "Reminders and timers you asked JARVIS to set." }
+            ).apply { description = "DUNYATEK’e kurdurduğunuz hatırlatıcı ve zamanlayıcılar." }
             nm.createNotificationChannel(channel)
         }
     }

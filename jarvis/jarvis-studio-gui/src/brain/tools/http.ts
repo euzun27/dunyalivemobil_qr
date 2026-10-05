@@ -25,7 +25,7 @@ import { wmo } from "../wmoCodes";
 /** Swap in a single clear message when the device has no connectivity at all —
  *  otherwise keep the tool's own (already user-facing) failure summary. */
 function offlineOr(fallback: string): string {
-  return isOffline() ? "You're offline, sir — I can't reach the internet right now." : fallback;
+  return isOffline() ? "Çevrimdışısınız efendim — şu an internete erişemiyorum." : fallback;
 }
 
 /** What the HTTP tools need beyond their call args. Built by tools/dispatch.ts. */
@@ -64,7 +64,7 @@ export async function getWeather(ctx: HttpToolCtx): Promise<ToolResult> {
     return {
       ok: false,
       summary:
-        "I don't know where you are yet, sir — allow location access or pin a place, and try again.",
+        "Henüz nerede olduğunuzu bilmiyorum efendim — konum erişimine izin verin ya da bir konum sabitleyin, sonra tekrar deneyin.",
     };
   }
   const days = 3;
@@ -85,30 +85,30 @@ export async function getWeather(ctx: HttpToolCtx): Promise<ToolResult> {
   try {
     data = await getJson<OpenMeteo>(url, { timeoutMs: 8000 });
   } catch {
-    return { ok: false, summary: offlineOr("I couldn't fetch the weather just now, sir.") };
+    return { ok: false, summary: offlineOr("Şu an hava durumunu alamadım efendim.") };
   }
 
   const cur = data.current ?? {};
   const cond = condText(cur.weather_code);
-  const where = loc.place && loc.place !== "—" ? ` in ${loc.place}` : "";
+  const where = loc.place && loc.place !== "—" ? ` ${loc.place} için` : "";
   const parts: string[] = [];
   if (typeof cur.temperature_2m === "number") {
     const feels =
       typeof cur.apparent_temperature === "number"
-        ? ` (feels like ${Math.round(cur.apparent_temperature)}°C)`
+        ? ` (hissedilen ${Math.round(cur.apparent_temperature)}°C)`
         : "";
     const hum = cur.relative_humidity_2m ?? "—";
     const wind = Math.round(cur.wind_speed_10m ?? 0);
     parts.push(
-      `Right now${where} it's ${Math.round(cur.temperature_2m)}°C${feels} and ${cond}, ` +
-        `humidity ${hum}%, wind ${wind} mph.`,
+      `Şu an${where} hava ${Math.round(cur.temperature_2m)}°C${feels}, ${cond}; ` +
+        `nem %${hum}, rüzgâr ${wind} mil/saat.`,
     );
   }
   // Day labels anchored to the location's local date (timezone=auto), as in Python.
   const daily = data.daily ?? {};
   const dTime = daily.time ?? [];
   const base = new Date((cur.time ?? "").slice(0, 10) || Date.now());
-  const labels = ["Today", "Tomorrow"];
+  const labels = ["Bugün", "Yarın"];
   for (let i = 2; i < days; i++) {
     const d = new Date(base);
     d.setDate(base.getDate() + i);
@@ -119,11 +119,11 @@ export async function getWeather(ctx: HttpToolCtx): Promise<ToolResult> {
     const lo = Math.round(daily.temperature_2m_min?.[i] ?? 0);
     const hi = Math.round(daily.temperature_2m_max?.[i] ?? 0);
     const pop = daily.precipitation_probability_max?.[i];
-    const rain = typeof pop === "number" ? `, ${pop}% chance of rain` : "";
+    const rain = typeof pop === "number" ? `, yağış ihtimali %${pop}` : "";
     parts.push(`${labels[i]}: ${lo}–${hi}°C, ${cc}${rain}.`);
   }
   if (!parts.length) {
-    return { ok: false, summary: "I couldn't read the forecast just now, sir." };
+    return { ok: false, summary: "Şu an hava tahminini okuyamadım efendim." };
   }
   return {
     ok: true,
@@ -162,7 +162,7 @@ export async function getNews(topic: string): Promise<ToolResult> {
   try {
     xml = await getText(newsFeedUrl(topic), { timeoutMs: 9000 });
   } catch {
-    return { ok: false, summary: offlineOr("I couldn't fetch the news just now, sir.") };
+    return { ok: false, summary: offlineOr("Şu an haberleri alamadım efendim.") };
   }
   // Parse the RSS with the WebView's DOMParser (no XML lib needed).
   const items: Array<{ title: string; source: string }> = [];
@@ -182,13 +182,13 @@ export async function getNews(topic: string): Promise<ToolResult> {
       items.push({ title, source });
     }
   } catch {
-    return { ok: false, summary: "I couldn't read the news feed just now, sir." };
+    return { ok: false, summary: "Şu an haber akışını okuyamadım efendim." };
   }
-  if (!items.length) return { ok: true, summary: "I couldn't find any headlines right now, sir." };
+  if (!items.length) return { ok: true, summary: "Şu an hiç manşet bulamadım efendim." };
   const t = (topic ?? "").trim();
-  const label = t && !["news", "top", "latest"].includes(t.toLowerCase()) ? ` on ${t}` : "";
+  const label = t && !["news", "top", "latest"].includes(t.toLowerCase()) ? ` (${t})` : "";
   const spoken =
-    `Here are the top headlines${label}, sir: ` +
+    `Öne çıkan manşetler${label}, efendim: ` +
     items.map((h, i) => `${i + 1}. ${h.title}.`).join(" ");
   return { ok: true, summary: spoken, data: { items } };
 }
@@ -206,7 +206,7 @@ function groundingModel(cfg: BrainConfig): string {
 
 export async function webSearch(query: string, ctx: HttpToolCtx): Promise<ToolResult> {
   const q = (query ?? "").trim();
-  if (!q) return { ok: false, summary: "What should I look up, sir?" };
+  if (!q) return { ok: false, summary: "Neyi araştırayım efendim?" };
   // Grounded search is a one-shot side call, not a chat turn — it doesn't ride
   // the route ladder, so it just uses the user's primary Gemini key.
   const key = ctx.config.keys.gemini?.[0];
@@ -214,7 +214,7 @@ export async function webSearch(query: string, ctx: HttpToolCtx): Promise<ToolRe
     return {
       ok: false,
       summary:
-        "Live web search needs a Gemini key, sir — add one in Settings and I'll pull it straight from the web.",
+        "Canlı web araması için bir Gemini anahtarı gerekiyor efendim — Ayarlar’dan bir tane ekleyin, bilgiyi doğrudan web’den getireyim.",
     };
   }
   const today = new Date().toLocaleDateString(undefined, {
@@ -265,7 +265,7 @@ export async function webSearch(query: string, ctx: HttpToolCtx): Promise<ToolRe
   } catch (err) {
     return {
       ok: false,
-      summary: offlineOr(`I couldn't reach the web just now, sir. (${String(err)})`),
+      summary: offlineOr(`Şu an web’e erişemedim efendim. (${String(err)})`),
     };
   }
   const cand = json.candidates?.[0];
@@ -280,8 +280,8 @@ export async function webSearch(query: string, ctx: HttpToolCtx): Promise<ToolRe
     return {
       ok: false,
       summary: /SAFETY|BLOCK|PROHIBITED|RECITATION/i.test(why)
-        ? "That search came back blocked by Google's filters, sir."
-        : `I couldn't find a clear answer to that just now, sir.${why ? ` (${why})` : ""}`,
+        ? "Bu arama Google filtreleri tarafından engellendi efendim."
+        : `Şu an buna net bir yanıt bulamadım efendim.${why ? ` (${why})` : ""}`,
     };
   }
   // Dedup the grounding sources for the HUD/citations.
@@ -315,39 +315,43 @@ const CATEGORIES: Array<[string[], string, string]> = [
   [
     ["restaurant", "food", "eat", "dinner", "lunch", "place to eat", "diner"],
     '["amenity"="restaurant"]',
-    "restaurants",
+    "restoranlar",
   ],
-  [["cafe", "coffee", "café", "tea"], '["amenity"="cafe"]', "cafés"],
+  [["cafe", "coffee", "café", "tea"], '["amenity"="cafe"]', "kafeler"],
   [
     ["bakery", "bakeries", "croissant", "pastry", "bread", "cake", "donut", "doughnut", "baked"],
     '["shop"~"bakery|pastry|confectionery"]',
-    "bakeries",
+    "fırınlar ve pastaneler",
   ],
   [
     ["fast food", "burger", "mcdonald", "pizza", "takeaway", "take out"],
     '["amenity"="fast_food"]',
-    "fast-food spots",
+    "fast food mekânları",
   ],
-  [["bar", "pub", "drink", "beer"], '["amenity"~"bar|pub"]', "bars & pubs"],
-  [["pharmacy", "chemist", "drugstore", "medicine"], '["amenity"="pharmacy"]', "pharmacies"],
+  [["bar", "pub", "drink", "beer"], '["amenity"~"bar|pub"]', "barlar ve pub’lar"],
+  [["pharmacy", "chemist", "drugstore", "medicine"], '["amenity"="pharmacy"]', "eczaneler"],
   [
     ["hospital", "clinic", "doctor", "emergency", "urgent care"],
     '["amenity"~"hospital|clinic|doctors"]',
-    "medical facilities",
+    "sağlık kuruluşları",
   ],
-  [["atm", "cash machine"], '["amenity"="atm"]', "ATMs"],
-  [["bank"], '["amenity"="bank"]', "banks"],
-  [["fuel", "gas station", "petrol", "gas"], '["amenity"="fuel"]', "fuel stations"],
-  [["supermarket", "grocery", "groceries", "store"], '["shop"~"supermarket|convenience"]', "shops"],
+  [["atm", "cash machine"], '["amenity"="atm"]', "ATM’ler"],
+  [["bank"], '["amenity"="bank"]', "bankalar"],
+  [["fuel", "gas station", "petrol", "gas"], '["amenity"="fuel"]', "benzin istasyonları"],
+  [
+    ["supermarket", "grocery", "groceries", "store"],
+    '["shop"~"supermarket|convenience"]',
+    "marketler",
+  ],
   [
     ["hotel", "motel", "stay", "lodging"],
     '["tourism"~"hotel|motel|guest_house"]',
-    "places to stay",
+    "konaklama yerleri",
   ],
-  [["park", "garden"], '["leisure"="park"]', "parks"],
-  [["gym", "fitness"], '["leisure"~"fitness_centre|sports_centre"]', "gyms"],
-  [["parking"], '["amenity"="parking"]', "parking"],
-  [["school"], '["amenity"="school"]', "schools"],
+  [["park", "garden"], '["leisure"="park"]', "parklar"],
+  [["gym", "fitness"], '["leisure"~"fitness_centre|sports_centre"]', "spor salonları"],
+  [["parking"], '["amenity"="parking"]', "otoparklar"],
+  [["school"], '["amenity"="school"]', "okullar"],
 ];
 
 // Specific venues OSM has no clean category for → name search, not a loose category
@@ -384,9 +388,9 @@ function classify(query: string): [string, string] {
   }
   if (qx) {
     const safe = qx.replace(/"/g, "");
-    return [`["name"~"${safe}",i]`, `places matching “${query}”`];
+    return [`["name"~"${safe}",i]`, `“${query}” ile eşleşen yerler`];
   }
-  return ['["amenity"="restaurant"]', "restaurants"];
+  return ['["amenity"="restaurant"]', "restoranlar"];
 }
 
 // Overpass mirrors that send CORS headers (verified): the main .de endpoint and the
@@ -419,7 +423,8 @@ export async function findPlaces(query: string, ctx: HttpToolCtx): Promise<ToolR
   if (!loc) {
     return {
       ok: false,
-      summary: "I don't know where you are yet, sir — allow location access and try again.",
+      summary:
+        "Henüz nerede olduğunuzu bilmiyorum efendim — konum erişimine izin verip tekrar deneyin.",
     };
   }
   const [filt, label] = classify(query);
@@ -435,7 +440,7 @@ export async function findPlaces(query: string, ctx: HttpToolCtx): Promise<ToolR
     try {
       data = await overpass(q);
     } catch {
-      return { ok: false, summary: offlineOr("I couldn't reach the maps service just now, sir.") };
+      return { ok: false, summary: offlineOr("Şu an harita hizmetine erişemedim efendim.") };
     }
     const seen = new Set<string>();
     const rows: typeof items = [];
@@ -457,9 +462,9 @@ export async function findPlaces(query: string, ctx: HttpToolCtx): Promise<ToolR
       break;
     }
   }
-  if (!items.length) return { ok: true, summary: `I couldn't find any ${label} near you, sir.` };
+  if (!items.length) return { ok: true, summary: `Yakınınızda ${label} bulamadım efendim.` };
   const spoken =
-    `The nearest ${label}: ` +
+    `En yakın ${label}: ` +
     items.map((r) => `${r.name} (${r.distance}${r.extra ? ", " + r.extra : ""})`).join("; ") +
     ".";
   return { ok: true, summary: spoken, data: { items } };
@@ -481,12 +486,14 @@ export async function getDirections(destination: string, ctx: HttpToolCtx): Prom
   if (!loc) {
     return {
       ok: false,
-      summary: "I don't know your current location yet, sir — allow location access and try again.",
+      summary:
+        "Mevcut konumunuzu henüz bilmiyorum efendim — konum erişimine izin verip tekrar deneyin.",
     };
   }
   const dest = (destination ?? "").replace(GEO_QUESTION, "").trim();
   const target = await geocode(dest, loc.lat, loc.lon).catch(() => null);
-  if (!target) return { ok: false, summary: `I couldn't find “${destination}” on the map, sir.` };
+  if (!target)
+    return { ok: false, summary: `“${destination}” konumunu haritada bulamadım efendim.` };
   const url =
     `https://router.project-osrm.org/route/v1/driving/` +
     `${loc.lon},${loc.lat};${target.lon},${target.lat}?overview=false`;
@@ -494,22 +501,22 @@ export async function getDirections(destination: string, ctx: HttpToolCtx): Prom
   try {
     data = await getJson<OsrmResp>(url, { timeoutMs: 10000 });
   } catch {
-    return { ok: false, summary: offlineOr("I couldn't reach the routing service just now, sir.") };
+    return { ok: false, summary: offlineOr("Şu an rota hizmetine erişemedim efendim.") };
   }
   const route = data.routes?.[0];
   if (!route || typeof route.distance !== "number" || typeof route.duration !== "number") {
-    return { ok: false, summary: `I couldn't find a driving route to “${destination}”, sir.` };
+    return { ok: false, summary: `“${destination}” için bir sürüş rotası bulamadım efendim.` };
   }
   const km = route.distance / 1000;
   const mins = route.duration / 60;
   const dur =
     mins >= 60
-      ? `${Math.floor(mins / 60)} h ${Math.round(mins % 60)} min`
-      : `${Math.round(mins)} min`;
+      ? `${Math.floor(mins / 60)} sa ${Math.round(mins % 60)} dk`
+      : `${Math.round(mins)} dk`;
   const short = target.name.split(",")[0];
   return {
     ok: true,
-    summary: `${short} is about ${km.toFixed(1)} km away — roughly a ${dur} drive, sir.`,
+    summary: `${short} yaklaşık ${km.toFixed(1)} km uzaklıkta — arabayla aşağı yukarı ${dur} sürer efendim.`,
   };
 }
 
@@ -517,10 +524,10 @@ export async function getDirections(destination: string, ctx: HttpToolCtx): Prom
 
 export async function makeQrCode(text: string): Promise<ToolResult> {
   const t = (text ?? "").trim();
-  if (!t) return { ok: false, summary: "What should I put in the QR code, sir?" };
+  if (!t) return { ok: false, summary: "QR koduna ne yazayım efendim?" };
   // A QR image URL the HUD can render as <img>; no fetch (so no CORS concern).
   const imageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(t)}`;
-  return { ok: true, summary: `Here's a QR code for ${t}.`, data: { imageUrl, text: t } };
+  return { ok: true, summary: `${t} için QR kodu hazır.`, data: { imageUrl, text: t } };
 }
 
 // ─────────────────────────────── Image generation ───────────────────────────────
@@ -592,28 +599,28 @@ function apiErrorMessage(body: string): string {
 export function imageGenFailure(status: number, body: string): string {
   if (/limit:\s*0\b/i.test(body)) {
     return (
-      "Image generation isn't included in your Gemini key's free tier, sir — Google " +
-      "allocates it zero requests, so this isn't a quota that frees up later. Enable " +
-      "billing on the key at aistudio.google.com/apikey and I'll draw it for you."
+      "Görsel oluşturma, Gemini anahtarınızın ücretsiz katmanına dahil değil efendim — Google " +
+      "bu katmana sıfır istek ayırıyor, yani bu sonradan açılacak bir kota değil. " +
+      "aistudio.google.com/apikey adresinden anahtar için faturalandırmayı etkinleştirin, görseli sizin için çizeyim."
     );
   }
   if (status === 429) {
-    return "Google is rate-limiting image generation on your key just now, sir — give it a few minutes.";
+    return "Google şu an anahtarınızda görsel oluşturmaya kullanım sınırı uyguluyor efendim — birkaç dakika bekleyin.";
   }
   const detail = apiErrorMessage(body);
-  if (detail) return `I couldn't generate that image, sir — ${detail}`;
-  return `I couldn't generate that image, sir.${status ? ` (HTTP ${status})` : ""}`;
+  if (detail) return `Bu görseli oluşturamadım efendim — ${detail}`;
+  return `Bu görseli oluşturamadım efendim.${status ? ` (HTTP ${status})` : ""}`;
 }
 
 export async function generateImage(prompt: string, ctx: HttpToolCtx): Promise<ToolResult> {
   const p = (prompt ?? "").trim();
-  if (!p) return { ok: false, summary: "Tell me what image to create, sir." };
+  if (!p) return { ok: false, summary: "Nasıl bir görsel oluşturayım, söyleyin efendim." };
   const key = ctx.config.keys.gemini?.[0];
   if (!key) {
     return {
       ok: false,
       summary:
-        "Image generation needs a Gemini key, sir — add one in Settings and I'll draw it for you.",
+        "Görsel oluşturmak için bir Gemini anahtarı gerekiyor efendim — Ayarlar’dan bir tane ekleyin, sizin için çizeyim.",
       error: "no_credentials",
     };
   }
@@ -643,7 +650,7 @@ export async function generateImage(prompt: string, ctx: HttpToolCtx): Promise<T
       // Transport, not the model — the next id would fail identically.
       return {
         ok: false,
-        summary: offlineOr(`I couldn't generate that image, sir. (${String(err)})`),
+        summary: offlineOr(`Bu görseli oluşturamadım efendim. (${String(err)})`),
       };
     }
     if (!res.ok) {
@@ -664,7 +671,7 @@ export async function generateImage(prompt: string, ctx: HttpToolCtx): Promise<T
       return {
         ok: false,
         summary:
-          "That image didn't come back — the prompt was most likely blocked by content filters. Try rephrasing it.",
+          "Görsel gelmedi — istem büyük olasılıkla içerik filtrelerine takıldı. Farklı bir şekilde ifade etmeyi deneyin.",
         error: "no_image",
       };
     }
@@ -674,7 +681,7 @@ export async function generateImage(prompt: string, ctx: HttpToolCtx): Promise<T
       .trim();
     return {
       ok: true,
-      summary: caption || `Here's the image for: ${p}`,
+      summary: caption || `İşte görseliniz: ${p}`,
       data: { imageUrl, prompt: p },
     };
   }

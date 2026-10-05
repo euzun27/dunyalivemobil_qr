@@ -59,7 +59,7 @@ export default function Sheet({
           )}
           <div className="sp-hdr-actions">
             {actions}
-            <button type="button" className="sp-close" onClick={onClose} aria-label="Close">
+            <button type="button" className="sp-close" onClick={onClose} aria-label="Kapat">
               <Icon name="close" size={18} />
             </button>
           </div>
@@ -131,7 +131,7 @@ export function Group({ title, children }) {
 }
 
 /** The long "why" behind a setting, folded away until asked for. */
-export function More({ children, label = "How this works" }) {
+export function More({ children, label = "Nasıl çalışır" }) {
   return (
     <details className="sp-more">
       <summary>{label}</summary>

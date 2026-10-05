@@ -46,7 +46,7 @@ export const DEFAULT_DIRECTION = {
   accent: "#00e5ff",
   accent2: "#6fe9ff",
   rgb: [0, 229, 255],
-  tagline: "Symmetric · classic Stark",
+  tagline: "Simetrik · klasik görünüm",
   spokes: false,
   sysVariant: "radial",
 };

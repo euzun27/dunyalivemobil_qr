@@ -153,7 +153,7 @@ export const simplePcStore = {
       setState("connecting");
       const host = await findReachableHost(hosts, config.port, config.secure);
       if (!host) {
-        lastError = `PC'ye ulasilamadi (${hosts.join(", ")})`;
+        lastError = `Bilgisayara ulaşılamadı (${hosts.join(", ")})`;
         setState("offline");
         return false;
       }

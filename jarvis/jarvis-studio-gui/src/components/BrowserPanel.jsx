@@ -246,7 +246,7 @@ export default function BrowserPanel() {
       <div className="bp-page">
         <div className="bp-page-label">Current mission</div>
         <div className="bp-goal">
-          {task?.goal || browserState.title || "Ready when you are, sir."}
+          {task?.goal || browserState.title || "Hazır olduğunuzda başlarım efendim."}
         </div>
         {(browserState.url || browserState.title) && (
           <div className="bp-url" title={browserState.url}>

@@ -22,10 +22,10 @@ export default function BootOverlay({ connected }) {
 
   const msg =
     secs < 12
-      ? "Starting up, sir…"
+      ? "Başlatılıyor, efendim…"
       : secs < 40
-        ? "Setting things up — the first launch downloads a few components."
-        : "Still starting. If this doesn't clear, the backend may have failed to start.";
+        ? "Hazırlık yapılıyor — ilk açılışta birkaç bileşen indirilir."
+        : "Hâlâ başlatılıyor. Bu ekran kapanmazsa arka uç başlatılamamış olabilir.";
 
   return (
     <div className="setup-overlay">
@@ -33,7 +33,7 @@ export default function BootOverlay({ connected }) {
         <div className="setup-ring" aria-hidden="true">
           <span className="setup-ring-core" />
         </div>
-        <div className="setup-kicker">BOOTING</div>
+        <div className="setup-kicker">BAŞLATILIYOR</div>
         <div className="setup-title">DUNYATEK</div>
         <div className="setup-sub">{msg}</div>
         <div className="setup-bar">
@@ -41,8 +41,8 @@ export default function BootOverlay({ connected }) {
         </div>
         {secs >= 40 && (
           <div className="setup-foot">
-            Diagnostics: open <code>backend.log</code> in the DUNYATEK install folder (
-            <code>resources\jarvis-backend</code>).
+            Tanılama: DUNYATEK kurulum klasöründeki (<code>resources\jarvis-backend</code>){" "}
+            <code>backend.log</code> dosyasını açın.
           </div>
         )}
       </div>
