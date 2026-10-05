@@ -29,7 +29,13 @@ import { MicRecorder, transcribe } from "../brain/platform/stt";
 import { syncWakeWord } from "../brain/platform/wakeword";
 import { syncStopOverlay } from "../brain/platform/stopOverlay";
 import { subscribeTelemetry } from "../brain/platform/deviceTelemetry";
-import { resolveAmbientLocation, netInfoFrom, fetchPanelWeather } from "../brain/platform/ambient";
+import {
+  resolveAmbientLocation,
+  netInfoFrom,
+  fetchPanelWeather,
+  setAmbientGps,
+  onAmbientGps,
+} from "../brain/platform/ambient";
 import { discoverModels } from "../brain/providers/models";
 import { isDead as isModelDead, refreshCatalog } from "../brain/providers/catalog";
 import { listPlaybooks, removePlaybook } from "../brain/memory/proceduralLearning";
@@ -354,7 +360,7 @@ export function useBrain() {
         setSecretsReady(true);
         if (failures.length) {
           pushWarning(
-            `Secure credential storage needs attention for: ${failures
+            `Güvenli kimlik bilgisi deposu şu öğeler için ilginizi gerektiriyor: ${failures
               .map(({ name }) => name)
               .join(", ")}.`,
           );
@@ -363,7 +369,7 @@ export function useBrain() {
       .catch(() => {
         if (cancelled) return;
         setSecretsReady(true);
-        pushWarning("Android secure credential storage is unavailable.");
+        pushWarning("Android güvenli kimlik bilgisi deposu kullanılamıyor.");
       });
     return () => {
       cancelled = true;
@@ -476,7 +482,7 @@ export function useBrain() {
                   ok: true,
                   taskId: resolvedTaskId,
                   state: "failed",
-                  result: result?.summary || "The native task journal rejected this task.",
+                  result: result?.summary || "Yerel görev günlüğü bu görevi reddetti.",
                 }),
               );
             }
@@ -720,7 +726,7 @@ export function useBrain() {
                 payload.description ||
                 payload.consequence ||
                 payload.reason ||
-                "perform a consequential action",
+                "önemli bir işlem gerçekleştirmek",
             });
           } else if (kind === "approval.resolved") {
             setPermissionRequest(null);
@@ -730,7 +736,9 @@ export function useBrain() {
               id: payload.prompt_id || payload.id || payload.request_id || ev.taskId,
               taskId: ev.taskId,
               question:
-                payload.question || payload.reason || "Aura needs more information to continue.",
+                payload.question ||
+                payload.reason ||
+                "DUNYATEK’in devam edebilmesi için daha fazla bilgiye ihtiyacı var.",
             });
           } else if (kind === "clarification.resolved") {
             setClarifyRequest(null);
@@ -756,7 +764,7 @@ export function useBrain() {
               data.description ||
               data.consequence ||
               data.reason ||
-              "perform a consequential action",
+              "önemli bir işlem gerçekleştirmek",
           });
         } else if (e === "approval.resolved") {
           setPermissionRequest(null);
@@ -766,7 +774,10 @@ export function useBrain() {
             ...data,
             id: data.prompt_id || data.id || data.request_id || ev.taskId,
             taskId: ev.taskId,
-            question: data.question || data.reason || "Aura needs more information to continue.",
+            question:
+              data.question ||
+              data.reason ||
+              "DUNYATEK’in devam edebilmesi için daha fazla bilgiye ihtiyacı var.",
           });
         } else if (e === "clarification.resolved") {
           setClarifyRequest(null);
@@ -856,7 +867,7 @@ export function useBrain() {
     try {
       await authenticate(reason, {
         allowDeviceCredential: true, // fall back to the phone's PIN/pattern
-        title: "Verify it's you",
+        title: "Kimliğinizi doğrulayın",
         confirmationRequired: false,
       });
       return true; // resolved = authenticated
@@ -870,9 +881,15 @@ export function useBrain() {
   // sidestepped by either path.
   const runPcTask = useCallback(
     async (goal, kind = "browser") => {
-      if (!pcRef.current) return { ok: false, summary: "No PC is paired yet, sir." };
-      if (!(await requireBiometric("Confirm it's you to run a task on your PC"))) {
-        return { ok: false, summary: "I need your fingerprint to run that on your PC, sir." };
+      if (!pcRef.current)
+        return { ok: false, summary: "Henüz eşleşmiş bir bilgisayar yok efendim." };
+      if (
+        !(await requireBiometric("Bilgisayarınızda görev çalıştırmak için kimliğinizi doğrulayın"))
+      ) {
+        return {
+          ok: false,
+          summary: "Bunu bilgisayarınızda çalıştırmak için parmak izinize ihtiyacım var efendim.",
+        };
       }
       return pcRef.current.runTask(goal, kind);
     },
@@ -895,7 +912,7 @@ export function useBrain() {
   // Start the live screen: a fresh RemoteScreen whose signalling rides pcRef's socket.
   const startScreen = useCallback(async () => {
     if (!pcRef.current?.isOnline) {
-      pushWarning("Pair and connect to your PC first, sir.");
+      pushWarning("Lütfen önce bilgisayarınızı eşleştirip bağlanın efendim.");
       return;
     }
     try {
@@ -936,7 +953,7 @@ export function useBrain() {
     try {
       await screen.start();
     } catch (err) {
-      pushWarning("Couldn't start the screen: " + (err?.message || err));
+      pushWarning("Ekran başlatılamadı: " + (err?.message || err));
       setScreenState("failed");
     }
   }, [iceServers, pushWarning, clearControlLease]);
@@ -961,11 +978,13 @@ export function useBrain() {
     async (minutes) => {
       const screen = remoteScreenRef.current;
       if (!screen?.sessionId) {
-        pushWarning("Start viewing your PC's screen before arming control, sir.");
+        pushWarning(
+          "Kontrolü etkinleştirmeden önce bilgisayarınızın ekranını görüntülemeye başlayın efendim.",
+        );
         return;
       }
-      if (!(await requireBiometric("Confirm it's you to control your PC"))) {
-        pushWarning("I need your fingerprint to control your PC, sir.");
+      if (!(await requireBiometric("Bilgisayarınızı kontrol etmek için kimliğinizi doğrulayın"))) {
+        pushWarning("Bilgisayarınızı kontrol etmek için parmak izinize ihtiyacım var efendim.");
         return;
       }
       clearControlLease();
@@ -1006,8 +1025,8 @@ export function useBrain() {
     ]).then(([cancelled, disarmed]) => {
       pushWarning(
         cancelled || disarmed
-          ? "Hard stop sent to your PC, sir — halting any running task and disarming control."
-          : "I couldn't reach your PC to stop it, sir — the link looks down. Check it's on and paired.",
+          ? "Bilgisayarınıza kesin durdurma komutu gönderildi efendim — çalışan görevler durduruluyor ve kontrol kapatılıyor."
+          : "Durdurmak için bilgisayarınıza ulaşamadım efendim — bağlantı kopmuş görünüyor. Bilgisayarın açık ve eşleşmiş olduğunu kontrol edin.",
       );
     });
   }, [pushWarning, clearControlLease, nextControlLeaseEnvelope]);
@@ -1042,7 +1061,10 @@ export function useBrain() {
           reason: "user_cancelled",
         });
       if (sent) setAgentTasks((prev) => markTaskStopping(prev, task.id));
-      else pushWarning("That PC task is still reconnecting; STOP could not reach the host yet.");
+      else
+        pushWarning(
+          "Bu bilgisayar görevi hâlâ yeniden bağlanıyor; DURDUR komutu henüz bilgisayara ulaşamadı.",
+        );
       const lease = nextControlLeaseEnvelope();
       pcRef.current?.signal("stop_control", lease || {});
       clearControlLease();
@@ -1081,7 +1103,7 @@ export function useBrain() {
     clearControlLease();
     if (active.length || cancelledPc || releasedPc) {
       pushWarning(
-        "Global STOP requested: native phone leases invalidated and the PC control lease released.",
+        "Genel DURDUR istendi: telefondaki kontrol yetkileri geçersiz kılındı ve bilgisayar kontrol yetkisi bırakıldı.",
       );
     }
   }, [journaledPhone, pushWarning, requestPhoneStop, clearControlLease, nextControlLeaseEnvelope]);
@@ -1255,9 +1277,11 @@ export function useBrain() {
           const res = await runPcTask(t, "auto");
           spoken =
             (res?.summary || "").trim() ||
-            (res?.ok ? "Done on your PC, sir." : "I couldn't finish that on your PC, sir.");
+            (res?.ok
+              ? "Bilgisayarınızda tamamlandı efendim."
+              : "Bunu bilgisayarınızda tamamlayamadım efendim.");
         } catch (err) {
-          spoken = `That PC task failed: ${err?.message || err}`;
+          spoken = `Bilgisayar görevi başarısız oldu: ${err?.message || err}`;
         }
         setMessages((prev) => [
           ...prev,
@@ -1287,7 +1311,7 @@ export function useBrain() {
           { role: "jarvis", text: reply, actions: drainCards(), finalized: true, id: replyId },
         ]);
       } catch (err) {
-        spoken = `Sorry — I hit an error: ${err?.message || err}`;
+        spoken = `Üzgünüm, bir hatayla karşılaştım: ${err?.message || err}`;
         setMessages((prev) => [
           ...prev,
           { role: "jarvis", text: spoken, actions: drainCards(), finalized: true, id: replyId },
@@ -1333,7 +1357,7 @@ export function useBrain() {
         .filter(([, wireName]) => typeof cfg[wireName] === "string")
         .map(([name, wireName]) => [name, cfg[wireName].trim()]);
       if (requestedSecrets.length && inTauri() && !secretsReady) {
-        pushWarning("Please wait for Android secure credential storage to finish loading.");
+        pushWarning("Lütfen Android güvenli kimlik bilgisi deposunun yüklenmesini bekleyin.");
         return false;
       }
 
@@ -1385,7 +1409,9 @@ export function useBrain() {
         quota.clear();
       }
       if (failedSecrets.length) {
-        pushWarning(`Could not update secure credentials for: ${failedSecrets.join(", ")}.`);
+        pushWarning(
+          `Şu öğeler için güvenli kimlik bilgileri güncellenemedi: ${failedSecrets.join(", ")}.`,
+        );
       }
       return failedSecrets.length === 0;
     },
@@ -1539,7 +1565,7 @@ export function useBrain() {
         promptPermission: userInteractedRef.current && !taskCenterActive,
         onNeedsPermission: () =>
           pushWarning(
-            "Opening a system setting so JARVIS can show a STOP button over other apps — turn on “Draw over other apps”, then it'll appear whenever JARVIS is speaking or busy.",
+            "DUNYATEK'in diğer uygulamaların üzerinde DURDUR düğmesi gösterebilmesi için bir sistem ayarı açılıyor — “Diğer uygulamaların üzerinde göster” iznini açın; DUNYATEK konuşurken ya da çalışırken düğme görünür.",
           ),
       },
     );
@@ -1550,7 +1576,7 @@ export function useBrain() {
     if (busyRef.current || listeningRef.current) return;
     if (!stored.groqKey && !stored.vertexSaJson) {
       pushWarning(
-        "Voice input needs either a Vertex AI Service Account or Groq API key. Add one in Settings.",
+        "Sesli giriş için bir Vertex AI hizmet hesabı veya Groq API anahtarı gerekir. Ayarlar’dan birini ekleyin.",
       );
       return;
     }
@@ -1568,7 +1594,7 @@ export function useBrain() {
         void finishListenRef.current?.();
       }, MAX_LISTEN_MS);
     } catch (e) {
-      pushWarning("Couldn't access the microphone: " + (e?.message || e));
+      pushWarning("Mikrofona erişilemedi: " + (e?.message || e));
       listeningRef.current = false;
       setStatus("idle");
     }
@@ -1604,7 +1630,7 @@ export function useBrain() {
         setStatus("idle");
       }
     } catch (e) {
-      pushWarning("Transcription failed: " + (e?.message || e));
+      pushWarning("Konuşma metne dönüştürülemedi: " + (e?.message || e));
       setStatus("idle");
     }
   }, [stored.groqKey, stored.vertexSaJson, sendMessage, pushWarning]);
@@ -1698,8 +1724,8 @@ export function useBrain() {
               setWakeTriggered((n) => n + 1);
               void sendMessage(text);
             },
-            onError: (msg) => pushWarning(`Wake word: ${msg}`),
-            onFatal: (msg) => pushWarning(`“Hey Jarvis” stopped: ${msg}`),
+            onError: (msg) => pushWarning(`Uyandırma sözü: ${msg}`),
+            onFatal: (msg) => pushWarning(`“Hey Jarvis” dinleme durdu: ${msg}`),
           }
         : null;
     syncWakeWord(wanted);
@@ -1749,9 +1775,11 @@ export function useBrain() {
     };
     void tick();
     const iv = setInterval(tick, 15 * 60 * 1000); // refresh quarter-hourly
+    const offGps = onAmbientGps(() => void tick()); // first GPS fix / moved: refresh now
     return () => {
       cancelled = true;
       clearInterval(iv);
+      offGps();
     };
   }, []);
 
@@ -1812,17 +1840,17 @@ export function useBrain() {
   // layered self-test (raw network → each AI key) and reports exactly what's reachable,
   // so a silent failure becomes a clear, actionable message.
   const repairSetup = useCallback(async () => {
-    pushWarning("Running a connection self-test…");
+    pushWarning("Bağlantı testi çalıştırılıyor…");
     const lines = [];
     // 1. Keyless network reachability — proves the device can hit the internet at all
     //    (and that the HTTP transport works), independent of any API key.
     try {
       const loc = await resolveAmbientLocation();
       lines.push(
-        loc ? `✓ Network OK${loc.place ? ` (${loc.place})` : ""}` : "⚠ Network: no response",
+        loc ? `✓ Ağ bağlantısı tamam${loc.place ? ` (${loc.place})` : ""}` : "⚠ Ağ: yanıt yok",
       );
     } catch {
-      lines.push("⚠ Network unreachable");
+      lines.push("⚠ Ağa ulaşılamıyor");
     }
     // 2. AI keys — discovery doubles as a key-validity + reachability check.
     if (stored.geminiKey || stored.groqKey || stored.vertexSaJson) {
@@ -1835,21 +1863,24 @@ export function useBrain() {
         const prov = groups.filter((g) => g.kind !== "auto" && g.kind !== "image");
         if (prov.length) {
           setAvailableModels(groups);
-          prov.forEach((g) => lines.push(`✓ ${g.label}: ${g.opts.length} models`));
+          prov.forEach((g) => lines.push(`✓ ${g.label}: ${g.opts.length} model`));
         } else {
-          lines.push("⚠ AI key set but no models returned — check the key is valid.");
+          lines.push(
+            "⚠ Yapay zekâ anahtarı girilmiş ancak hiç model dönmedi — anahtarın geçerli olduğunu kontrol edin.",
+          );
         }
       } catch (e) {
-        lines.push("⚠ AI service unreachable: " + (e?.message || e));
+        lines.push("⚠ Yapay zekâ hizmetine ulaşılamıyor: " + (e?.message || e));
       }
     } else {
-      lines.push("⚠ No API key yet — add one in Settings → API Keys.");
+      lines.push("⚠ Henüz API anahtarı yok — Ayarlar → API anahtarları bölümünden ekleyin.");
     }
     pushWarning(lines.join("   ·   "));
   }, [stored.geminiKey, stored.groqKey, stored.vertexSaJson, pushWarning]);
 
   const sendLocation = useCallback((lat, lon) => {
     locationRef.current.setDeviceCoords(lat, lon);
+    setAmbientGps(lat, lon); // HUD weather follows the phone's GPS, not the ISP's city
   }, []);
 
   const sendManualLocation = useCallback(
@@ -1861,7 +1892,7 @@ export function useBrain() {
           return next;
         });
         locationRef.current.clearPinned();
-        pushWarning("Location pin cleared — I'll auto-detect again.");
+        pushWarning("Sabitlenen konum temizlendi — konumunuz yeniden otomatik algılanacak.");
         return;
       }
       const place = (loc?.place ?? loc?.label ?? "").trim();
@@ -1872,7 +1903,7 @@ export function useBrain() {
           return next;
         });
         locationRef.current.clearPinned();
-        pushWarning("Location pin cleared — I'll auto-detect again.");
+        pushWarning("Sabitlenen konum temizlendi — konumunuz yeniden otomatik algılanacak.");
         return;
       }
       setStored((prev) => {
@@ -1881,7 +1912,7 @@ export function useBrain() {
         return next;
       });
       locationRef.current.setPinned(place);
-      pushWarning(`Pinned your location to ${place}.`);
+      pushWarning(`Konumunuz ${place} olarak sabitlendi.`);
     },
     [pushWarning],
   );
@@ -1952,8 +1983,8 @@ export function useBrain() {
     async (id, approved) => {
       const pc = pcRef.current;
       if (!pc) return false;
-      if (approved && !(await requireBiometric("Approve this exact consequential PC action"))) {
-        pushWarning("Approval was not sent because biometric verification failed.");
+      if (approved && !(await requireBiometric("Bu önemli bilgisayar işlemini onaylayın"))) {
+        pushWarning("Biyometrik doğrulama başarısız olduğu için onay gönderilmedi.");
         return false;
       }
       const accepted = pc.respondPermission(id, approved);
@@ -1961,7 +1992,7 @@ export function useBrain() {
       else {
         // The exact challenge is gone (expired or superseded) — leaving the dialog
         // up with silently-dead buttons is how approvals get "lost". Say so.
-        pushWarning("That approval window had already closed, sir — please submit the task again.");
+        pushWarning("Bu onayın süresi zaten dolmuştu efendim — lütfen görevi yeniden gönderin.");
         setPermissionRequest(null);
       }
       return accepted;
@@ -2075,7 +2106,7 @@ export function useBrain() {
     setMute,
     runAction,
     setBrowserOpen: () => {},
-    sendUpload: () => pushWarning("File upload isn't available on the phone yet."),
+    sendUpload: () => pushWarning("Dosya yükleme telefonda henüz kullanılamıyor."),
     sendScreen,
     setAlwaysOnMode,
     setConversationModeOn,

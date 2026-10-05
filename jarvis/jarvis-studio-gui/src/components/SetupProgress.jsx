@@ -48,16 +48,16 @@ export default function SetupProgress({ progress, onRepair }) {
 
   return (
     <div className="setup-overlay">
-      <div className="setup-card" role="status" aria-label="First-run setup">
+      <div className="setup-card" role="status" aria-label="İlk kurulum">
         <div className="setup-ring" aria-hidden="true">
           <span className="setup-ring-core" />
         </div>
-        <div className="setup-kicker">{anyError ? "SETUP — ACTION NEEDED" : "FIRST-RUN SETUP"}</div>
-        <div className="setup-title">Initialising J.A.R.V.I.S</div>
+        <div className="setup-kicker">{anyError ? "KURULUM — İŞLEM GEREKLİ" : "İLK KURULUM"}</div>
+        <div className="setup-title">DUNYATEK başlatılıyor</div>
         <div className="setup-sub">
           {anyError
-            ? "A component couldn't be set up, sir. The rest are ready — retry the missing one below."
-            : "Preparing a few one-time components, sir. This happens only once."}
+            ? "Bir bileşen kurulamadı efendim. Diğerleri hazır — eksik olanı aşağıdan yeniden deneyin."
+            : "Birkaç tek seferlik bileşen hazırlanıyor. Bu işlem yalnızca bir kez yapılır."}
         </div>
 
         <ul className="setup-list">
@@ -77,12 +77,12 @@ export default function SetupProgress({ progress, onRepair }) {
                 <span className="setup-row-label">{it.label || k}</span>
                 <span className="setup-row-status">
                   {it.status === "downloading"
-                    ? "downloading…"
+                    ? "indiriliyor…"
                     : it.status === "done"
-                      ? "ready"
+                      ? "hazır"
                       : it.status === "error"
-                        ? "failed"
-                        : "queued"}
+                        ? "başarısız"
+                        : "sırada"}
                 </span>
               </li>
             );
@@ -101,14 +101,14 @@ export default function SetupProgress({ progress, onRepair }) {
         <div className="setup-foot">
           {progress.complete
             ? anyError
-              ? `${failed.length} component${failed.length === 1 ? "" : "s"} need setup`
-              : "All set, sir."
-            : `${done} of ${total} ready`}
+              ? `${failed.length} bileşenin kurulması gerekiyor`
+              : "Her şey hazır efendim."
+            : `${total} bileşenden ${done} tanesi hazır`}
         </div>
 
         {showRetry && (
           <button className="setup-retry" onClick={handleRetry} disabled={retried}>
-            {retried ? "Retrying…" : "Retry setup"}
+            {retried ? "Yeniden deneniyor…" : "Kurulumu yeniden dene"}
           </button>
         )}
       </div>

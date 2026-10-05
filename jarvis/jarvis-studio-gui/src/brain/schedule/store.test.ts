@@ -47,7 +47,7 @@ describe("runSchedule", () => {
   it("reports an empty day as nothing scheduled", () => {
     const r = runSchedule({ do: "get", day: "wednesday" });
     expect(r.ok).toBe(true);
-    expect(r.summary).toMatch(/nothing/i);
+    expect(r.summary).toMatch(/hiçbir şey yok/i);
   });
 
   it("adds an item and then finds it via get", () => {
@@ -55,7 +55,7 @@ describe("runSchedule", () => {
     const add = runSchedule({ do: "add", day, task: "team standup", time: "09:00" });
     expect(add.ok).toBe(true);
     const get = runSchedule({ do: "get", day });
-    expect(get.summary).toMatch(/1 item/i);
+    expect(get.summary).toMatch(/1 kayıt/i);
   });
 
   // The reported bug: "JARVIS said it added it, but the agenda is empty."
@@ -70,7 +70,7 @@ describe("runSchedule", () => {
     expect(add.ok).toBe(true);
     expect(getTodaySchedule().map((i) => i.task)).toContain(task);
     // and it must not report a nameless day back to the user
-    expect(add.summary).not.toMatch(/your {2,}schedule|to your schedule\.$/);
+    expect(add.summary).not.toMatch(/ {2,}günü|\) günü|^'[^']*' günü/);
   });
 
   it("resolves a blank day to a real moment so the calendar mirror still fires", () => {
@@ -104,7 +104,7 @@ describe("runSchedule", () => {
     const remove = runSchedule({ do: "remove", day: "sunday", match: "gym" });
     expect(remove.ok).toBe(true);
     const get = runSchedule({ do: "get", day: "sunday" });
-    expect(get.summary).toMatch(/nothing/i);
+    expect(get.summary).toMatch(/hiçbir şey yok/i);
   });
 
   it("clears a whole day's schedule", () => {
@@ -113,13 +113,13 @@ describe("runSchedule", () => {
     const cleared = runSchedule({ do: "clear", day: "monday" });
     expect(cleared.ok).toBe(true);
     const get = runSchedule({ do: "get", day: "monday" });
-    expect(get.summary).toMatch(/nothing/i);
+    expect(get.summary).toMatch(/hiçbir şey yok/i);
   });
 
   it("reports an unknown action honestly instead of pretending success", () => {
     const r = runSchedule({ do: "teleport", day: "monday" });
     expect(r.ok).toBe(false);
-    expect(r.summary).toMatch(/unknown/i);
+    expect(r.summary).toMatch(/bilinmeyen/i);
   });
 });
 
@@ -180,7 +180,7 @@ describe("agenda entries do not recur weekly", () => {
       expect(runSchedule({ do: "get", day: "monday" }).summary).toContain("1");
 
       vi.setSystemTime(new Date("2026-03-09T09:00:00")); // the NEXT Monday
-      expect(runSchedule({ do: "get", day: "monday" }).summary).toContain("Nothing");
+      expect(runSchedule({ do: "get", day: "monday" }).summary).toContain("hiçbir şey");
       expect(getTodaySchedule().some((i) => i.task === "stale")).toBe(false);
       runSchedule({ do: "clear", day: "monday" });
     } finally {

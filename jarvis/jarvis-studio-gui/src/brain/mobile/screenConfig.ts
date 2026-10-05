@@ -10,6 +10,8 @@ export interface ScreenConfig {
   density?: string;
   panels?: Record<string, boolean>;
   order?: { left?: string[]; right?: string[] };
+  /** HUD merkezi: amblem, insan yuzu (masaustuyle ayni) ya da parcacik yuzu. Telefonda varsayilan yuz. */
+  core?: "emblem" | "face" | "particle" | "video";
 }
 
 const KEY = "jarvis.android.screen.v1";
@@ -81,7 +83,7 @@ export function applyScreenAction(
     const cfg = loadScreenConfig();
     return {
       ok: true,
-      summary: cfg ? "Here's your current home-screen layout." : "Using the default layout.",
+      summary: cfg ? "Mevcut ana ekran düzeniniz bu." : "Varsayılan düzen kullanılıyor.",
       config: cfg ?? undefined,
     };
   }
@@ -92,7 +94,7 @@ export function applyScreenAction(
     } catch {
       /* storage unavailable — nothing persisted to clear */
     }
-    return { ok: true, summary: "Put your home screen back to the default layout." };
+    return { ok: true, summary: "Ana ekranınızı varsayılan düzene döndürdüm." };
   }
 
   const patch: ScreenConfig = {};
@@ -105,7 +107,11 @@ export function applyScreenAction(
     const on = a === "show_all";
     patch.panels = Object.fromEntries(names.map((p) => [p, on]));
     const config = patchScreenConfig(patch);
-    return { ok: true, summary: on ? "Showed every panel." : "Hid every panel.", config };
+    return {
+      ok: true,
+      summary: on ? "Tüm paneller gösteriliyor." : "Tüm paneller gizlendi.",
+      config,
+    };
   }
   if (a === "toggle" && panel) {
     const now = loadScreenConfig()?.panels?.[panel] !== false;
@@ -128,8 +134,8 @@ export function applyScreenAction(
     order[direction as "left" | "right"] = toRail;
     patch.order = order;
   } else {
-    return { ok: false, summary: "I didn't understand that screen customisation." };
+    return { ok: false, summary: "Bu ekran özelleştirmesini anlayamadım." };
   }
   const config = patchScreenConfig(patch);
-  return { ok: true, summary: "Updated your home screen.", config };
+  return { ok: true, summary: "Ana ekranınızı güncelledim.", config };
 }

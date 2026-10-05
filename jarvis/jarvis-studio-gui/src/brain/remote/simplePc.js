@@ -86,19 +86,22 @@ export class SimplePC {
       this.token = data.token;
       this.loginInfo = data;
     } catch (err) {
-      this.lastError = err?.name === "AbortError" ? "zaman asimi" : String(err?.message || err);
+      this.lastError = err?.name === "AbortError" ? "zaman aşımı" : String(err?.message || err);
       this.onStateChange("offline");
       return false;
     }
 
     return new Promise((resolve) => {
       try {
-        const ws = new WebSocket(`${this.wsBase}/ws?token=${encodeURIComponent(this.token)}`);
+        // client=phone: PC bu soketi "telefon" olarak tanir, SMS isteklerini buraya yollar.
+        const ws = new WebSocket(
+          `${this.wsBase}/ws?token=${encodeURIComponent(this.token)}&client=phone`,
+        );
         this.ws = ws;
         // Soket 10 sn icinde acilmazsa vazgec (yoksa yeniden deneme hic baslamaz).
         const openTimer = setTimeout(() => {
           if (ws.readyState !== WebSocket.OPEN) {
-            this.lastError = "soket zaman asimi";
+            this.lastError = "soket zaman aşımı";
             try {
               ws.close();
             } catch {
@@ -116,6 +119,10 @@ export class SimplePC {
         ws.onmessage = (ev) => {
           try {
             const data = JSON.parse(ev.data);
+            if (data?.type === "send_sms") {
+              void this._sendSms(ws, data);
+              return;
+            }
             this.onMessage(data);
           } catch {
             // JSON degilse yoksay
@@ -126,7 +133,7 @@ export class SimplePC {
         };
         ws.onerror = () => {
           clearTimeout(openTimer);
-          this.lastError = "soket hatasi";
+          this.lastError = "soket hatası";
           this.onStateChange("offline");
           resolve(false);
         };
@@ -138,9 +145,47 @@ export class SimplePC {
     });
   }
 
+  /**
+   * PC'den gelen SMS istegi: kullanici PC'de taslagi dinleyip "evet" dedikten sonra gelir.
+   * SMS telefonun kendi hattindan (operator uzerinden) gider; sonuc PC'ye geri bildirilir.
+   */
+  async _sendSms(ws, req) {
+    let res;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      res = await invoke("plugin:phone|send_sms", {
+        to: String(req.to || ""),
+        text: String(req.text || ""),
+      });
+    } catch (e) {
+      res = { ok: false, summary: `Telefon SMS gönderemedi: ${e?.message || e}` };
+    }
+    try {
+      ws.send(
+        JSON.stringify({
+          type: "sms_result",
+          id: req.id,
+          ok: !!res?.ok,
+          // composer: Mesajlar ekrani acildi, kullanici "Gonder"e dokunacak (henuz gitmedi)
+          composer: !!res?.composer,
+          summary: res?.summary || "",
+        }),
+      );
+    } catch {
+      /* soket kapandiysa PC zaman asimi ile "gitmemis olabilir" der */
+    }
+  }
+
   sendCommand(text) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return false;
     this.ws.send(JSON.stringify({ type: "command", text }));
+    return true;
+  }
+
+  /** DUNYATEK: PC'nin istegine cevap (or. camera_result). */
+  sendJson(obj) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return false;
+    this.ws.send(JSON.stringify(obj));
     return true;
   }
 
@@ -194,6 +239,17 @@ export class SimplePC {
       playCtx = null;
     }
     let playAt = 0;
+    // Ses seviyesi olcerleri: ekrandaki DUNYATEK yuzu bunlarla konusur / dinler.
+    let outMeter = null;
+    try {
+      if (playCtx) {
+        outMeter = playCtx.createAnalyser();
+        outMeter.fftSize = 512;
+        outMeter.connect(playCtx.destination);
+      }
+    } catch {
+      outMeter = null;
+    }
     ws.onmessage = (ev) => {
       if (!playCtx || !(ev.data instanceof ArrayBuffer) || ev.data.byteLength < 2) return;
       if (playCtx.state === "suspended") playCtx.resume().catch(() => {});
@@ -203,7 +259,7 @@ export class SimplePC {
       for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 32768;
       const node = playCtx.createBufferSource();
       node.buffer = abuf;
-      node.connect(playCtx.destination);
+      node.connect(outMeter || playCtx.destination);
       const now = playCtx.currentTime;
       // Geride kaldiysak kisa bir tampon birakip bastan baslat.
       if (playAt < now) playAt = now + 0.05;
@@ -211,7 +267,24 @@ export class SimplePC {
       playAt += abuf.duration;
     };
 
-    const voice = { ws, ctx, stream, node: null, playCtx, lastSent: Date.now() };
+    let micMeter;
+    try {
+      micMeter = ctx.createAnalyser();
+      micMeter.fftSize = 512;
+      ctx.createMediaStreamSource(stream).connect(micMeter);
+    } catch {
+      micMeter = null;
+    }
+    const voice = {
+      ws,
+      ctx,
+      stream,
+      node: null,
+      playCtx,
+      micMeter,
+      outMeter,
+      lastSent: Date.now(),
+    };
     this._voice = voice;
 
     return new Promise((resolve) => {
@@ -275,6 +348,13 @@ export class SimplePC {
     });
   }
 
+  /** Anlik ses seviyeleri 0..1: mic = kullanici konusuyor, out = DUNYATEK konusuyor. */
+  levels() {
+    const v = this._voice;
+    if (!v) return { mic: 0, out: 0 };
+    return { mic: rms(v.micMeter), out: rms(v.outMeter) };
+  }
+
   stopVoice() {
     const v = this._voice;
     if (!v) return;
@@ -313,6 +393,19 @@ export class SimplePC {
     this.ws = null;
     this.token = null;
   }
+}
+
+const _meterBuf = new Float32Array(512);
+function rms(an) {
+  if (!an) return 0;
+  try {
+    an.getFloatTimeDomainData(_meterBuf);
+  } catch {
+    return 0;
+  }
+  let s = 0;
+  for (let i = 0; i < _meterBuf.length; i++) s += _meterBuf[i] * _meterBuf[i];
+  return Math.min(1, Math.sqrt(s / _meterBuf.length) * 5);
 }
 
 /** Float32 ses -> 16 kHz Int16 PCM (basit yeniden ornekleme). */

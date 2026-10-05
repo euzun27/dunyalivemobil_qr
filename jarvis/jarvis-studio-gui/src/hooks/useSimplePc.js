@@ -9,6 +9,7 @@ export function useSimplePc() {
     messages: snap.messages,
     voice: snap.voice,
     lastError: snap.lastError,
+    pcStatus: snap.pcStatus,
     pair: (args) => simplePcStore.pair(args),
     unpair: () => simplePcStore.unpair(),
     reconnect: () => simplePcStore.reconnect(),

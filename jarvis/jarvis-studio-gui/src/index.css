@@ -2740,7 +2740,9 @@ html.app-mobile #root {
      that the buttons stop looking crammed. */
   .hud-fixed-controls {
     gap: 8px;
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    /* DUNYATEK: alt boslukta yanlislikla safe-area-inset-BOTTOM (alttaki gezinme cubugu)
+       vardi; gezinme cubuklu telefonlarda serit iki kat uzayip avatarin tepesini ortuyordu. */
+    padding: 10px 12px;
     border-bottom: 1px solid color-mix(in oklab, var(--ac) 16%, transparent);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
     -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);

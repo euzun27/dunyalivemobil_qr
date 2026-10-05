@@ -41,8 +41,8 @@ function fmtRemaining(secs: unknown, charging: boolean): string {
   if (!Number.isFinite(s) || s <= 0) return "";
   const h = Math.floor(s / 3600);
   const m = Math.round((s % 3600) / 60);
-  const t = h > 0 ? `${h}h ${m}m` : `${m}m`;
-  return charging ? `${t} to full` : `${t} left`;
+  const t = h > 0 ? `${h} sa ${m} dk` : `${m} dk`;
+  return charging ? `dolmasına ${t}` : `${t} kaldı`;
 }
 
 type NativeStats = Partial<Telemetry> & {

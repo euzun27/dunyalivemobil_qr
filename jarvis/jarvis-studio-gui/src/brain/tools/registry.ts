@@ -44,7 +44,7 @@ const int = (description: string) => ({ type: "integer" as const, description })
  * What this install can actually DO — derived from the credentials present, not
  * from whichever tier happens to be generating text.
  *
- * This was keyed on `tier` alone, which was the "JARVIS can't web search" bug.
+ * This was keyed on `tier` alone, which was the "DUNYATEK can't web search" bug.
  * `webSearch()` in tools/http.ts grounds through `config.keys.gemini[0]` and works
  * regardless of which model is answering — but resolveBrainConfig() returns tier
  * "groq" whenever a Groq key exists (including when BOTH keys are set), and
@@ -150,7 +150,7 @@ export function toolPalette(cfg: Cfg, opts: PaletteOpts = {}): ToolDeclaration[]
     ),
     fn(
       "open_saved_file",
-      "Open a file JARVIS saved (recording, screenshot, QR…).",
+      "Open a file DUNYATEK saved (recording, screenshot, QR…).",
       { name: str("Which saved file.") },
       ["name"],
     ),
@@ -319,10 +319,10 @@ export function toolPalette(cfg: Cfg, opts: PaletteOpts = {}): ToolDeclaration[]
     ),
     fn(
       "control_interface",
-      "Operate JARVIS's OWN app screen — open/close its panels and toggle its " +
-        "controls. Use THIS (not phone_task) for anything inside the JARVIS app.",
+      "Operate DUNYATEK's OWN app screen — open/close its panels and toggle its " +
+        "controls. Use THIS (not phone_task) for anything inside the DUNYATEK app.",
       {
-        action: str("What to do in the JARVIS interface.", [
+        action: str("What to do in the DUNYATEK interface.", [
           "open_chat",
           "close_chat",
           "open_settings",
@@ -362,7 +362,7 @@ export function toolPalette(cfg: Cfg, opts: PaletteOpts = {}): ToolDeclaration[]
           description:
             "true when the user wants to END UP in that app — media playing, a chat or " +
             "page left open to look at. Omit or false when they want something found, " +
-            "checked or done and reported back: JARVIS then returns to the front and " +
+            "checked or done and reported back: DUNYATEK then returns to the front and " +
             "tells them the result.",
         },
       },
@@ -370,7 +370,7 @@ export function toolPalette(cfg: Cfg, opts: PaletteOpts = {}): ToolDeclaration[]
     ),
     fn(
       "enable_phone_control",
-      "Open Android's Accessibility settings so the user can switch JARVIS on for " +
+      "Open Android's Accessibility settings so the user can switch DUNYATEK on for " +
         "on-phone app control. Use when phone control is off or the user asks to enable it.",
     ),
 
@@ -382,7 +382,7 @@ export function toolPalette(cfg: Cfg, opts: PaletteOpts = {}): ToolDeclaration[]
           fn(
             "pc_task",
             "Run a WHOLE task on the user's paired Windows PC (desktop apps or the " +
-              "web) via the remote JARVIS. Use for anything that belongs on the " +
+              "web) via the remote DUNYATEK. Use for anything that belongs on the " +
               "computer rather than the phone. Give the complete task.",
             {
               goal: str("The whole task to run on the PC."),

@@ -106,6 +106,12 @@ internal class OpenAppArgs {
 }
 
 @InvokeArg
+internal class SendSmsArgs {
+    var to: String = ""
+    var text: String = ""
+}
+
+@InvokeArg
 internal class OpenUrlArgs {
     var url: String = ""
 }
@@ -415,9 +421,9 @@ class PhonePlugin(private val activity: Activity) : Plugin(activity) {
             val nm = activity.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel = NotificationChannel(
                 REMINDER_CHANNEL_ID,
-                "JARVIS Reminders",
+                "DUNYATEK Hatırlatıcıları",
                 NotificationManager.IMPORTANCE_HIGH,
-            ).apply { description = "Reminders and timers you asked JARVIS to set." }
+            ).apply { description = "DUNYATEK’e kurdurduğunuz hatırlatıcı ve zamanlayıcılar." }
             nm.createNotificationChannel(channel)
         }
     }
@@ -1580,6 +1586,100 @@ class PhonePlugin(private val activity: Activity) : Plugin(activity) {
         }
         val ok = launchApp(activity, args.name)
         invoke.resolve(result(ok, if (ok) "Opened ${args.name}." else "Couldn't find an app called ${args.name}."))
+    }
+
+    /**
+     * DUNYATEK: SMS from the phone's own SIM, asked for by the paired PC after the user
+     * confirmed the draft by voice ("Göndereyim mi?" -> "evet"). Empty `to` only asks
+     * for the SEND_SMS permission (done once when the PC connects, so the dialog never
+     * races a real send). Resolves only after Android reports the send result.
+     */
+    @Command
+    fun sendSms(invoke: Invoke) {
+        val args = invoke.parseArgs(SendSmsArgs::class.java)
+        val to = args.to.filter { it.isDigit() || it == '+' }
+        val text = args.text
+        // SEND_SMS is NOT declared in the manifest: Google Play Protect hard-blocks
+        // sideloaded apps that ask for it. Without it, the user's Messages app opens
+        // with recipient + text filled in and the user taps Send. The direct
+        // SmsManager path below only runs if the permission is ever granted.
+        val granted = ContextCompat.checkSelfPermission(activity, android.Manifest.permission.SEND_SMS) ==
+            PackageManager.PERMISSION_GRANTED
+        if (to.isEmpty()) {
+            invoke.resolve(result(true, if (granted) "SMS izni var." else "SMS, Mesajlar uygulamasıyla gönderilir."))
+            return
+        }
+        if (to.length < 7 || text.isBlank()) {
+            invoke.resolve(result(false, "Numara ya da mesaj metni eksik."))
+            return
+        }
+        if (!granted) {
+            try {
+                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:" + Uri.encode(to))).apply {
+                    putExtra("sms_body", text)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                activity.startActivity(intent)
+                invoke.resolve(
+                    JSObject().apply {
+                        put("ok", true)
+                        put("composer", true)
+                        put("summary", "Telefonda Mesajlar ekranı alıcı ve metin hazır olarak açıldı. " +
+                            "SMS, kullanıcı telefonda 'Gönder'e dokununca gidecek; henüz GÖNDERİLMEDİ.")
+                    },
+                )
+            } catch (e: Exception) {
+                invoke.resolve(result(false, "Telefonda Mesajlar uygulaması açılamadı."))
+            }
+            return
+        }
+        try {
+            val sms = if (Build.VERSION.SDK_INT >= 31) {
+                activity.getSystemService(android.telephony.SmsManager::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                android.telephony.SmsManager.getDefault()
+            }
+            val action = "com.jarvis.phone.SMS_SENT." + System.nanoTime()
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            var done = false
+            lateinit var receiver: android.content.BroadcastReceiver
+            fun finish(ok: Boolean, summary: String) {
+                if (done) return
+                done = true
+                try { activity.unregisterReceiver(receiver) } catch (_: Exception) {}
+                invoke.resolve(result(ok, summary))
+            }
+            receiver = object : android.content.BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    when (resultCode) {
+                        Activity.RESULT_OK -> finish(true, "SMS gönderildi.")
+                        android.telephony.SmsManager.RESULT_ERROR_NO_SERVICE ->
+                            finish(false, "Telefonda şebeke yok, SMS gönderilemedi.")
+                        android.telephony.SmsManager.RESULT_ERROR_RADIO_OFF ->
+                            finish(false, "Telefon uçak modunda ya da hat kapalı, SMS gönderilemedi.")
+                        else -> finish(false, "Operatör SMS'i kabul etmedi (kod $resultCode).")
+                    }
+                }
+            }
+            ContextCompat.registerReceiver(activity, receiver, IntentFilter(action), ContextCompat.RECEIVER_NOT_EXPORTED)
+            val sent = android.app.PendingIntent.getBroadcast(
+                activity, 0, Intent(action).setPackage(activity.packageName),
+                android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_ONE_SHOT,
+            )
+            val parts = sms.divideMessage(text)
+            // Only the last part reports back: that is when the whole SMS has left.
+            val intents = ArrayList<android.app.PendingIntent?>(parts.map { null })
+            intents[intents.size - 1] = sent
+            sms.sendMultipartTextMessage(to, null, parts, intents, null)
+            handler.postDelayed({
+                finish(false, "Telefon 30 saniyede gönderim onayı alamadı; SMS gitmemiş olabilir.")
+            }, 30_000)
+        } catch (e: SecurityException) {
+            invoke.resolve(result(false, "Telefonda SMS izni yok."))
+        } catch (e: Exception) {
+            invoke.resolve(result(false, "SMS gönderilemedi: ${e.message ?: e.javaClass.simpleName}"))
+        }
     }
 
     @Command

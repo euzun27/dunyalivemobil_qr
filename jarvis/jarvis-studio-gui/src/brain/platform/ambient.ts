@@ -12,7 +12,7 @@
 
 import { getJson } from "../tools/httpClient";
 import { ipGeoLookup } from "../tools/location";
-import { wmo } from "../wmoCodes";
+import { wmo, wmoTr } from "../wmoCodes";
 
 export interface NetInfo {
   publicIp: string;
@@ -36,10 +36,68 @@ export interface PanelWeather {
   hours: Array<{ t: string; i: string; c: number | null }>;
 }
 
-/** Coarse location + public IP from IP geolocation. Tries two providers (via
- * tools/location.ts's shared lookup) so one being rate-limited doesn't blank the panels. */
+// DUNYATEK: the phone's own GPS fix (pushed by App's geolocation watcher). IP
+// geolocation puts the phone in the ISP's city (e.g. Kahramanmaraş instead of
+// Gaziantep), so weather follows the GPS whenever it is available.
+let gps: { lat: number; lon: number } | null = null;
+let gpsPlace: { lat: number; lon: number; name: string } | null = null;
+const gpsListeners = new Set<() => void>();
+
+function kmBetween(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const dLat = (a.lat - b.lat) * 111;
+  const dLon = (a.lon - b.lon) * 111 * Math.cos((a.lat * Math.PI) / 180);
+  return Math.hypot(dLat, dLon);
+}
+
+/** New GPS fix from the device. Listeners (the weather refresher) fire only when the
+ * phone actually moved (>2 km) or on the first fix. */
+export function setAmbientGps(lat: number, lon: number): void {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+  const first = !gps;
+  const moved = gps ? kmBetween(gps, { lat, lon }) > 2 : true;
+  gps = { lat, lon };
+  if (first || moved) gpsListeners.forEach((fn) => fn());
+}
+
+export function onAmbientGps(fn: () => void): () => void {
+  gpsListeners.add(fn);
+  return () => gpsListeners.delete(fn);
+}
+
+/** Turkish place name for the GPS fix (OpenStreetMap reverse geocoding, cached). */
+async function gpsPlaceName(lat: number, lon: number): Promise<string> {
+  if (gpsPlace && kmBetween(gpsPlace, { lat, lon }) < 2) return gpsPlace.name;
+  try {
+    const url =
+      "https://nominatim.openstreetmap.org/reverse?" +
+      new URLSearchParams({
+        lat: String(lat),
+        lon: String(lon),
+        format: "jsonv2",
+        zoom: "10",
+        "accept-language": "tr",
+      }).toString();
+    const r = await getJson<{ address?: Record<string, string> }>(url, { timeoutMs: 8000 });
+    const a = r.address ?? {};
+    const town = a.town || a.city_district || a.district || a.county || a.suburb || "";
+    const city = a.province || a.city || a.state || "";
+    const name = [town, city].filter((x, i, arr) => x && arr.indexOf(x) === i).join(", ");
+    gpsPlace = { lat, lon, name };
+    return name;
+  } catch {
+    return "";
+  }
+}
+
+/** Location + public IP. Coordinates come from the phone's GPS when known, otherwise
+ * from IP geolocation (two providers via tools/location.ts, so one being rate-limited
+ * doesn't blank the panels). */
 export async function resolveAmbientLocation(): Promise<AmbientLocation | null> {
   const r = await ipGeoLookup();
+  if (gps) {
+    const place = (await gpsPlaceName(gps.lat, gps.lon)) || r?.place || "";
+    return { lat: gps.lat, lon: gps.lon, place, publicIp: r?.ip || "" };
+  }
   return r ? { lat: r.lat, lon: r.lon, place: r.place, publicIp: r.ip } : null;
 }
 
@@ -73,7 +131,7 @@ export async function fetchPanelWeather(loc: AmbientLocation): Promise<PanelWeat
       hourly: "temperature_2m,weather_code",
       forecast_days: "2",
       timezone: "auto",
-      wind_speed_unit: "mph",
+      wind_speed_unit: "kmh",
     }).toString();
 
   let d: OpenMeteo;
@@ -83,7 +141,7 @@ export async function fetchPanelWeather(loc: AmbientLocation): Promise<PanelWeat
     return null;
   }
   const cur = d.current ?? {};
-  const [cond] = wmo(cur.weather_code);
+  const [cond] = wmoTr(cur.weather_code);
 
   // Next 6 hours starting at the current hour.
   const hours: PanelWeather["hours"] = [];
@@ -104,7 +162,7 @@ export async function fetchPanelWeather(loc: AmbientLocation): Promise<PanelWeat
     condition: cond,
     location: loc.place || "—",
     humidity: typeof cur.relative_humidity_2m === "number" ? cur.relative_humidity_2m : null,
-    wind: typeof cur.wind_speed_10m === "number" ? `${Math.round(cur.wind_speed_10m)} mph` : "—",
+    wind: typeof cur.wind_speed_10m === "number" ? `${Math.round(cur.wind_speed_10m)} km/sa` : "—",
     aqi: null,
     hours,
   };

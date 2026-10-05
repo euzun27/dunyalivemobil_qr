@@ -13,31 +13,41 @@ import { useAndroidBack } from "../hooks/useAndroidBack";
 // can actually serve (Vertex curated / Gemini-key / Groq / local Ollama). Kept
 // deliberately tiny; the live discovered list supersedes it.
 const FALLBACK_GROUPS = [
-  { label: "Auto", opts: [{ value: "auto", label: "Auto — pick the best model per request" }] },
+  {
+    label: "Otomatik",
+    opts: [{ value: "auto", label: "Otomatik — her istek için en iyi modeli seç" }],
+  },
 ];
 
 const MOBILE_FALLBACK_GROUPS = [
-  { label: "Auto", opts: [{ value: "auto", label: "Auto — pick the best free-tier model" }] },
+  {
+    label: "Otomatik",
+    opts: [{ value: "auto", label: "Otomatik — en iyi ücretsiz katman modelini seç" }],
+  },
 ];
 
 const TTS_OPTS = [
-  { value: "piper", label: "Piper — offline neural voice, free", short: "Piper" },
-  { value: "elevenlabs", label: "ElevenLabs — premium cloud, needs a key", short: "ElevenLabs" },
-  { value: "chirp", label: "Google Chirp 3 HD — on your GCP credits", short: "Chirp 3 HD" },
-  { value: "edge-tts", label: "Edge TTS — online", short: "Edge TTS" },
-  { value: "pyttsx3", label: "pyttsx3 — offline, robotic", short: "pyttsx3" },
-  { value: "off", label: "Off", short: "Off" },
+  { value: "piper", label: "Piper — çevrimdışı nöral ses, ücretsiz", short: "Piper" },
+  {
+    value: "elevenlabs",
+    label: "ElevenLabs — premium bulut, anahtar gerekir",
+    short: "ElevenLabs",
+  },
+  { value: "chirp", label: "Google Chirp 3 HD — GCP kredilerinizle", short: "Chirp 3 HD" },
+  { value: "edge-tts", label: "Edge TTS — çevrimiçi", short: "Edge TTS" },
+  { value: "pyttsx3", label: "pyttsx3 — çevrimdışı, robotik", short: "pyttsx3" },
+  { value: "off", label: "Kapalı", short: "Kapalı" },
 ];
 
 const PROVIDER_NAME = {
-  auto: "Auto",
+  auto: "Otomatik",
   vertex: "Vertex AI",
   gemini: "Gemini",
   groq: "Groq",
   openrouter: "OpenRouter",
   nvidia: "NVIDIA NIM",
   mistral: "Mistral",
-  offline: "Offline",
+  offline: "Çevrimdışı",
 };
 
 const isGemini = (m) => /^(gemini|gemma)/i.test(m || "");
@@ -58,9 +68,9 @@ function RemoveKey({ name, configured, onSave }) {
         onSave({ [name]: "" }); // an empty value deletes the stored secret
       }}
       onBlur={() => setArmed(false)}
-      title="Delete this saved key"
+      title="Kayıtlı bu anahtarı sil"
     >
-      {armed ? "Confirm remove" : "Remove"}
+      {armed ? "Kaldırmayı onayla" : "Kaldır"}
     </button>
   );
 }
@@ -84,7 +94,7 @@ function KeyField({
       <div className="sp-key-hd">
         <span className="sp-label">{label}</span>
         <span className={`sp-lamp ${configured ? "sp-lamp--on" : ""}`}>
-          {status || (configured ? "Connected" : "Not set")}
+          {status || (configured ? "Bağlı" : "Ayarlanmadı")}
         </span>
         {removeName && <RemoveKey name={removeName} configured={configured} onSave={onSave} />}
       </div>
@@ -95,7 +105,9 @@ function KeyField({
         rows={multiline ? 2 : undefined}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={configured ? "Saved. Paste a new key to replace it" : placeholder}
+        placeholder={
+          configured ? "Kaydedildi. Değiştirmek için yeni bir anahtar yapıştırın" : placeholder
+        }
         autoComplete="off"
         spellCheck={false}
       />
@@ -126,24 +138,24 @@ function QuotaPanel() {
   const remaining = Object.entries(snap.remaining ?? {});
 
   const label = (s) => {
-    if (s < 60) return `${s}s`;
-    if (s < 3600) return `${Math.round(s / 60)} min`;
-    if (s < 86400) return `${Math.round(s / 3600)}h`;
-    return "tomorrow";
+    if (s < 60) return `${s} sn`;
+    if (s < 3600) return `${Math.round(s / 60)} dk`;
+    if (s < 86400) return `${Math.round(s / 3600)} sa`;
+    return "yarın";
   };
 
   return (
-    <Group title="Rate limits">
+    <Group title="Kullanım sınırları">
       <div className="sp-field">
         {benched.length === 0 ? (
           <div className="sp-status">
-            <span className="sp-lamp sp-lamp--on">All routes available</span>
+            <span className="sp-lamp sp-lamp--on">Tüm yönlendirmeler kullanılabilir</span>
           </div>
         ) : (
           <>
             <div className="sp-status">
               <span className="sp-lamp sp-lamp--warn">
-                {benched.length} resting after a rate limit
+                {benched.length} yönlendirme kullanım sınırı nedeniyle dinleniyor
               </span>
               <button
                 type="button"
@@ -153,14 +165,14 @@ function QuotaPanel() {
                   setSnap(quota.snapshot());
                 }}
               >
-                Clear all
+                Tümünü temizle
               </button>
             </div>
             <div className="sp-table">
               {benched.map((b) => (
                 <div className="quota-row" key={`${b.route}`}>
                   <span className="quota-route">{b.route.split("\u001f").join(" / ")}</span>
-                  <span className="quota-eta">back in {label(b.secondsLeft)}</span>
+                  <span className="quota-eta">{label(b.secondsLeft)} sonra dönecek</span>
                 </div>
               ))}
             </div>
@@ -168,13 +180,14 @@ function QuotaPanel() {
         )}
         {remaining.length > 0 && (
           <div className="sp-desc">
-            Reported remaining:{" "}
+            Bildirilen kalan:{" "}
             {remaining.map(([k, v]) => `${k.split("\u001f").pop()} ${v}`).join(", ")}
           </div>
         )}
         <More>
-          A route is one model on one key. After a rate limit JARVIS rests that route and uses the
-          next one instead of failing. Clearing only helps if you&apos;ve fixed the cause.
+          Bir yönlendirme, tek bir anahtar üzerindeki tek bir modeldir. Kullanım sınırına takılınca
+          DUNYATEK o yönlendirmeyi dinlendirir ve hata vermek yerine sıradakini kullanır. Temizlemek
+          yalnızca sorunun nedenini giderdiyseniz işe yarar.
         </More>
       </div>
     </Group>
@@ -187,23 +200,23 @@ function QuotaPanel() {
  * each request goes to the weakest model that is still good enough, falling through
  * to the next on failure. Re-ranked on its own whenever a key is added or removed.
  */
-const TIER_LABEL = { fast: "Fast", mid: "Everyday", flagship: "Flagship" };
-const SOURCE_LABEL = { benchmark: "Benchmark", llm: "Estimated", guess: "Unscored" };
+const TIER_LABEL = { fast: "Hızlı", mid: "Günlük", flagship: "Üst düzey" };
+const SOURCE_LABEL = { benchmark: "Kıyaslama", llm: "Tahmini", guess: "Puansız" };
 
 function RoutingSection({ routing, onRerank }) {
   const r = routing || {};
   const models = r.models || [];
   const c = r.counts || {};
   return (
-    <Group title="Model ranking">
+    <Group title="Model sıralaması">
       <div className="sp-field">
         <div className="sp-status">
           <span className={`sp-lamp ${models.length ? "sp-lamp--on" : ""}`}>
             {r.in_progress
-              ? "Ranking…"
+              ? "Sıralanıyor…"
               : models.length
-                ? `${models.length} models ranked`
-                : "Not ranked yet"}
+                ? `${models.length} model sıralandı`
+                : "Henüz sıralanmadı"}
           </span>
           {onRerank && (
             <button
@@ -211,9 +224,9 @@ function RoutingSection({ routing, onRerank }) {
               className="sp-btn sp-btn--quiet"
               disabled={!!r.in_progress}
               onClick={onRerank}
-              title="Re-read every provider's models and look up the ones without benchmark data again"
+              title="Tüm sağlayıcıların modellerini yeniden okuyun ve kıyaslama verisi olmayanları yeniden araştırın"
             >
-              {r.in_progress ? "Ranking…" : "Re-rank"}
+              {r.in_progress ? "Sıralanıyor…" : "Yeniden sırala"}
             </button>
           )}
         </div>
@@ -221,16 +234,16 @@ function RoutingSection({ routing, onRerank }) {
             replaces the computed summary instead of repeating it. */}
         {models.length === 0 && !r.in_progress ? (
           <div className="sp-desc">
-            JARVIS ranks your models once it can see them. Until then it uses its built-in Gemini
-            and Groq tiers.
+            DUNYATEK modellerinizi görebildiği anda sıralar. O zamana kadar yerleşik Gemini ve Groq
+            katmanlarını kullanır.
           </div>
         ) : (
           !r.in_progress && (
             <div className="sp-desc">
               {r.last_result ||
-                `${c.benchmark || 0} of ${models.length} scored from benchmarks` +
-                  (c.llm ? `, ${c.llm} estimated` : "") +
-                  (c.guess ? `, ${c.guess} not scored yet` : "") +
+                `${models.length} modelden ${c.benchmark || 0} tanesi kıyaslamalarla puanlandı` +
+                  (c.llm ? `, ${c.llm} tanesi tahmin edildi` : "") +
+                  (c.guess ? `, ${c.guess} tanesi henüz puanlanmadı` : "") +
                   "."}
             </div>
           )
@@ -247,9 +260,9 @@ function RoutingSection({ routing, onRerank }) {
               </span>
               <span className="route-score">{m.score}</span>
               <span className={`route-note route-src--${m.source}`}>
-                {m.provider}, {(SOURCE_LABEL[m.source] || m.source).toLowerCase()}
+                {m.provider}, {(SOURCE_LABEL[m.source] || m.source).toLocaleLowerCase("tr")}
                 {m.basis ? ` (${m.basis})` : ""}
-                {!m.tools ? ". Chat only, no tool calling" : ""}
+                {!m.tools ? ". Yalnızca sohbet, araç çağırma yok" : ""}
               </span>
             </div>
           ))}
@@ -257,16 +270,15 @@ function RoutingSection({ routing, onRerank }) {
       )}
       <div className="sp-field">
         <More>
-          Each request gets the weakest tier that can handle it: quick chat goes to Fast, everyday
-          commands to Everyday, hard reasoning to Flagship. If that model fails or hits a rate
-          limit, the next one in line takes over, then stronger tiers, then weaker. The ranking
-          refreshes on its own when you add or remove a key.
+          Her istek, onu karşılayabilecek en zayıf katmana gider: kısa sohbet Hızlı katmana, günlük
+          komutlar Günlük katmana, zor akıl yürütme Üst düzey katmana. O model hata verirse ya da
+          kullanım sınırına takılırsa sıradaki devralır; önce daha güçlü, sonra daha zayıf katmanlar
+          denenir. Bir anahtar eklediğinizde ya da kaldırdığınızda sıralama kendiliğinden yenilenir.
           <br />
           <br />
-          Scores come from the Artificial Analysis Intelligence Index ({r.catalog ||
-            "benchmark"}{" "}
-          snapshot). Models it doesn&apos;t cover are estimated by {r.estimated_by || "an LLM"} with
-          Google Search when you press Re-rank.
+          Puanlar Artificial Analysis Intelligence Index’ten gelir ({r.catalog || "kıyaslama"} anlık
+          görüntüsü). Kapsamadığı modeller, Yeniden sırala’ya bastığınızda{" "}
+          {r.estimated_by || "bir dil modeli"} tarafından Google Arama ile tahmin edilir.
         </More>
       </div>
     </Group>
@@ -439,47 +451,49 @@ export default function Settings({
 
   const desktopModelsPage = (
     <>
-      <Group title="Provider">
+      <Group title="Sağlayıcı">
         <Field>
           <select
             className="sp-input"
             value={providerMode}
             onChange={(e) => setProviderMode(e.target.value)}
-            aria-label="AI provider"
+            aria-label="Yapay zekâ sağlayıcısı"
           >
-            <option value="vertex">Vertex AI — Gemini on your Google Cloud credits</option>
-            <option value="gemini">Gemini API key — with Groq as fallback</option>
-            <option value="offline">Offline — a local Ollama model, no cloud</option>
+            <option value="vertex">Vertex AI — Google Cloud kredilerinizle Gemini</option>
+            <option value="gemini">Gemini API anahtarı — yedek olarak Groq</option>
+            <option value="offline">Çevrimdışı — yerel bir Ollama modeli, bulut yok</option>
           </select>
           {providerMode === "vertex" &&
             (sysInfo.has_vertex_sa ? (
               <div className="sp-desc">
-                Billed to your Google Cloud project through your gcloud login. Login detected.
+                gcloud oturumunuz üzerinden Google Cloud projenize faturalandırılır. Oturum
+                algılandı.
               </div>
             ) : (
               <Warn>
-                No gcloud login found. Run <code>gcloud auth application-default login</code>.
+                gcloud oturumu bulunamadı. <code>gcloud auth application-default login</code>{" "}
+                komutunu çalıştırın.
               </Warn>
             ))}
           {providerMode === "gemini" &&
             (sysInfo.has_gemini_key ? (
-              <div className="sp-desc">Gemini runs on your API key. Vertex stays off.</div>
+              <div className="sp-desc">Gemini, API anahtarınızla çalışır. Vertex kapalı kalır.</div>
             ) : (
-              <Warn>Add a Gemini key in API keys.</Warn>
+              <Warn>API anahtarları bölümüne bir Gemini anahtarı ekleyin.</Warn>
             ))}
         </Field>
         {providerMode === "offline" && (
           <>
             <Field
-              label="Local model"
-              hint="Slower and less capable than the cloud tiers. Commands still work."
+              label="Yerel model"
+              hint="Bulut katmanlarından daha yavaş ve daha az yeteneklidir. Komutlar yine çalışır."
             >
               <select
                 className="sp-input"
                 value={offlineModel}
                 onChange={(e) => setOfflineModel(e.target.value)}
               >
-                <option value="">Auto — first installed model</option>
+                <option value="">Otomatik — ilk yüklü model</option>
                 {localOpts.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -488,12 +502,12 @@ export default function Settings({
               </select>
               {localOpts.length === 0 && (
                 <Warn>
-                  No local models at {ollamaUrl}. Install Ollama, then pull one, e.g.{" "}
-                  <code>ollama pull llama3.1</code>.
+                  {ollamaUrl} adresinde yerel model yok. Ollama’yı kurun, ardından bir model
+                  indirin, örneğin <code>ollama pull llama3.1</code>.
                 </Warn>
               )}
             </Field>
-            <Field label="Ollama address">
+            <Field label="Ollama adresi">
               <input
                 type="text"
                 className="sp-input sp-mono"
@@ -506,7 +520,7 @@ export default function Settings({
         )}
       </Group>
 
-      <Group title="Chat model">
+      <Group title="Sohbet modeli">
         <Field>
           <select
             className="sp-input"
@@ -514,7 +528,7 @@ export default function Settings({
             onChange={(e) => {
               if (e.target.value !== "__custom") setModel(e.target.value);
             }}
-            aria-label="Chat model"
+            aria-label="Sohbet modeli"
           >
             {modelGroups.map((g) => (
               <optgroup key={g.label} label={g.label}>
@@ -525,55 +539,56 @@ export default function Settings({
                 ))}
               </optgroup>
             ))}
-            {!allValues.includes(model) && <option value="__custom">Custom: {model}</option>}
+            {!allValues.includes(model) && <option value="__custom">Özel: {model}</option>}
           </select>
           {geminiSelected && sysInfo.has_vertex_sa && (
-            <div className="sp-desc">Served through Vertex AI on your Google Cloud credits.</div>
+            <div className="sp-desc">Google Cloud kredilerinizle Vertex AI üzerinden sunulur.</div>
           )}
           {geminiSelected && !sysInfo.has_vertex_sa && !sysInfo.has_gemini_key && (
             <Warn>
-              This is a Gemini model. Add a Gemini key in API keys, or sign in to Vertex with
-              gcloud.
+              Bu bir Gemini modeli. API anahtarları bölümüne bir Gemini anahtarı ekleyin ya da
+              gcloud ile Vertex’te oturum açın.
             </Warn>
           )}
           {imageModelSelected && (
             <Warn>
-              Image models only make images, so saving keeps Auto for chat. Ask JARVIS for an image
-              and it uses this model on its own.
+              Görsel modelleri yalnızca görsel üretir; bu yüzden kaydettiğinizde sohbet için
+              Otomatik kalır. DUNYATEK’ten bir görsel istediğinizde bu modeli kendiliğinden
+              kullanır.
             </Warn>
           )}
           {nativeAudio && (
             <div className="sp-desc">
-              Native-audio models talk through Google&apos;s Live API: full-duplex voice with
-              barge-in, no Whisper or TTS. Typed messages use a Gemini text model. Needs Vertex or a
-              Gemini key.
+              Yerel ses modelleri Google’ın Live API’si üzerinden konuşur: araya girilebilen çift
+              yönlü ses; Whisper ya da TTS gerekmez. Yazılı mesajlar bir Gemini metin modeli
+              kullanır. Vertex ya da bir Gemini anahtarı gerekir.
             </div>
           )}
           <details className="sp-more" open={!allValues.includes(model)}>
-            <summary>Use a model ID</summary>
+            <summary>Model kimliği kullan</summary>
             <input
               type="text"
               className="sp-input sp-mono"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder="exact model id"
+              placeholder="tam model kimliği"
               spellCheck={false}
             />
           </details>
           <More>
-            In Auto, each request goes to the weakest ranked model that can handle it, across every
-            provider you have a key for. The order is under Routing. Image requests skip chat and go
-            straight to an image-only Gemini model.
+            Otomatik modda her istek, anahtarınız olan tüm sağlayıcılar arasında onu
+            karşılayabilecek en zayıf sıralı modele gider. Sıralama Yönlendirme bölümündedir. Görsel
+            istekleri sohbeti atlayıp doğrudan yalnızca görsel üreten bir Gemini modeline gider.
           </More>
         </Field>
         <Toggle
-          label="Fall back when a model is unavailable"
+          label="Model kullanılamadığında yedeğe geç"
           checked={autoSwitch}
           onChange={setAutoSwitch}
           hint={
             autoSwitch
-              ? "If your model is rate-limited or down, the next one in the routing order answers, and the reply says so."
-              : "Only this model is used. Several keys for it still rotate. When it runs out, the turn fails and says so."
+              ? "Modeliniz kullanım sınırına takılır ya da çalışmazsa yönlendirme sırasındaki bir sonraki model yanıt verir ve yanıtta bu belirtilir."
+              : "Yalnızca bu model kullanılır. Birden fazla anahtarı varsa yine sırayla kullanılır. Sınır dolduğunda istek başarısız olur ve bu belirtilir."
           }
         />
       </Group>
@@ -606,55 +621,55 @@ export default function Settings({
   const fallbackHint =
     model !== "auto"
       ? autoSwitch
-        ? `If ${model} is rate-limited or down, another ${providerName} model answers first, then other providers. The reply says so.`
-        : `Only ${model} is used. Several keys for it still rotate. When it runs out, the turn fails and says so.`
+        ? `${model} kullanım sınırına takılır ya da çalışmazsa önce başka bir ${providerName} modeli, sonra diğer sağlayıcılar yanıt verir. Yanıtta bu belirtilir.`
+        : `Yalnızca ${model} kullanılır. Birden fazla anahtarı varsa yine sırayla kullanılır. Sınır dolduğunda istek başarısız olur ve bu belirtilir.`
       : autoSwitch
-        ? `If every ${providerName} model is rate-limited or down, another provider answers, and the reply says so.`
-        : `Only ${providerName} models are used. When they're all out, the turn fails and says so.`;
+        ? `Tüm ${providerName} modelleri kullanım sınırına takılır ya da çalışmazsa başka bir sağlayıcı yanıt verir ve yanıtta bu belirtilir.`
+        : `Yalnızca ${providerName} modelleri kullanılır. Hepsinin sınırı dolduğunda istek başarısız olur ve bu belirtilir.`;
 
   const mobileModelsPage = (
     <>
-      <Group title="Provider">
+      <Group title="Sağlayıcı">
         <Field
           hint={
             providerMode === "auto"
-              ? "Each request goes to the best model across all your keys."
-              : `Chat and phone tasks use ${providerName}. Voice input isn't affected.`
+              ? "Her istek, tüm anahtarlarınız arasındaki en iyi modele gider."
+              : `Sohbet ve telefon görevleri ${providerName} kullanır. Sesli giriş bundan etkilenmez.`
           }
         >
           <select
             className="sp-input"
             value={providerMode}
             onChange={(e) => pickProvider(e.target.value)}
-            aria-label="AI provider"
+            aria-label="Yapay zekâ sağlayıcısı"
           >
-            <option value="auto">Auto</option>
+            <option value="auto">Otomatik</option>
             {keyedProviders.map((p) => (
               <option key={p} value={p}>
                 {PROVIDER_NAME[p]}
               </option>
             ))}
             {providerMode !== "auto" && !keyedProviders.includes(providerMode) && (
-              <option value={providerMode}>{providerName} (no key)</option>
+              <option value={providerMode}>{providerName} (anahtar yok)</option>
             )}
           </select>
           {["openrouter", "nvidia", "mistral"].includes(providerMode) && (
             <Warn>
-              {providerName}&apos;s free models run on shared capacity and are often busy, so
-              replies can be slow or fail.
+              {providerName} ücretsiz modelleri ortak kapasitede çalışır ve sık sık yoğun olur; bu
+              yüzden yanıtlar yavaş gelebilir ya da başarısız olabilir.
             </Warn>
           )}
         </Field>
       </Group>
 
-      <Group title="Chat model">
+      <Group title="Sohbet modeli">
         <Field
           hint={
             model !== "auto"
-              ? `Every request goes to ${model} on ${providerName}.`
+              ? `Her istek ${providerName} üzerindeki ${model} modeline gider.`
               : providerMode === "auto"
-                ? "JARVIS picks the model for each request: a quick one for small talk, a stronger one for real work."
-                : `JARVIS picks the best ${providerName} model for each request.`
+                ? "DUNYATEK her istek için modeli kendisi seçer: sohbet için hızlı bir model, gerçek işler için daha güçlü bir model."
+                : `DUNYATEK her istek için en uygun ${providerName} modelini seçer.`
           }
         >
           <select
@@ -668,10 +683,10 @@ export default function Settings({
               setProviderMode(p);
               setModel(rest.join("::"));
             }}
-            aria-label="Chat model"
+            aria-label="Sohbet modeli"
           >
             <option value="auto">
-              {providerMode === "auto" ? "Auto" : `Auto — best ${providerName} model`}
+              {providerMode === "auto" ? "Otomatik" : `Otomatik — en iyi ${providerName} modeli`}
             </option>
             {reachable.map((g) => (
               <optgroup key={g.provider} label={PROVIDER_NAME[g.provider]}>
@@ -683,19 +698,24 @@ export default function Settings({
               </optgroup>
             ))}
             {!modelListed && model !== "auto" && (
-              <option value="__custom">{model} (not reachable)</option>
+              <option value="__custom">{model} (erişilemiyor)</option>
             )}
           </select>
           {reachable.length === 0 && (
-            <div className="sp-desc">Models appear here once your keys&apos; model lists load.</div>
+            <div className="sp-desc">
+              Anahtarlarınızın model listeleri yüklendiğinde modeller burada görünür.
+            </div>
           )}
           {!modelListed && model !== "auto" && (
-            <Warn>None of your keys list {model} any more. Pick another model or Auto.</Warn>
+            <Warn>
+              Anahtarlarınızın hiçbiri artık {model} modelini listelemiyor. Başka bir model ya da
+              Otomatik’i seçin.
+            </Warn>
           )}
         </Field>
         {!(providerMode === "auto" && model === "auto") && (
           <Toggle
-            label="Fall back when unavailable"
+            label="Kullanılamadığında yedeğe geç"
             checked={autoSwitch}
             onChange={setAutoSwitch}
             hint={fallbackHint}
@@ -703,9 +723,9 @@ export default function Settings({
         )}
         <div className="sp-field">
           <More>
-            Auto sends each request to the weakest ranked model that can handle it; the order is
-            under Routing. If that model is rate-limited, the next one takes over. Image requests
-            skip chat and go straight to an image-only Gemini model.
+            Otomatik mod her isteği, onu karşılayabilecek en zayıf sıralı modele gönderir; sıralama
+            Yönlendirme bölümündedir. O model kullanım sınırına takılırsa sıradaki devralır. Görsel
+            istekleri sohbeti atlayıp doğrudan yalnızca görsel üreten bir Gemini modeline gider.
           </More>
         </div>
       </Group>
@@ -722,30 +742,30 @@ export default function Settings({
   );
 
   const multiKeyHint =
-    "Free-tier limits count per key. Paste several, one per line, and JARVIS rotates through them.";
+    "Ücretsiz kullanım sınırları anahtar başınadır. Her satıra bir tane olacak şekilde birkaç anahtar yapıştırın; DUNYATEK sırayla kullanır.";
   const keysPage = (
     <>
       <p className="sp-lede">
         {IS_MOBILE
-          ? "Keys stay on this device. A saved key is never shown again; paste a new one to replace it."
-          : "Keys are stored in app data, outside the project folder. A saved key is never shown again."}
+          ? "Anahtarlar bu cihazda kalır. Kaydedilen bir anahtar bir daha gösterilmez; değiştirmek için yenisini yapıştırın."
+          : "Anahtarlar proje klasörünün dışında, uygulama verilerinde saklanır. Kaydedilen bir anahtar bir daha gösterilmez."}
       </p>
       {IS_MOBILE && providerMode === "vertex" ? (
         <Group title="Vertex AI">
           <KeyField
-            label="Service account JSON"
+            label="Hizmet hesabı JSON’u"
             configured={sysInfo.has_vertex_sa}
-            status={sysInfo.vertex_project ? `Project ${sysInfo.vertex_project}` : undefined}
-            note="Runs Gemini chat on your Google Cloud credits."
+            status={sysInfo.vertex_project ? `Proje ${sysInfo.vertex_project}` : undefined}
+            note="Gemini sohbetini Google Cloud kredilerinizle çalıştırır."
             value={vertexSaJson}
             onChange={setVertexSaJson}
-            placeholder="Paste the whole JSON file"
+            placeholder="JSON dosyasının tamamını yapıştırın"
             multiline
           />
           <KeyField
             label="Groq"
             configured={sysInfo.has_groq_key}
-            note="Optional. Uses Whisper for “Hey Jarvis” and voice input instead of Chirp. Chat stays on Vertex."
+            note="İsteğe bağlı. “Hey Jarvis” ve sesli giriş için Chirp yerine Whisper kullanır. Sohbet Vertex’te kalır."
             value={groqKey}
             onChange={setGroqKey}
             placeholder="gsk_…"
@@ -754,14 +774,14 @@ export default function Settings({
           />
         </Group>
       ) : (
-        <Group title="Chat and voice">
+        <Group title="Sohbet ve ses">
           <KeyField
             label="Groq"
             configured={sysInfo.has_groq_key}
-            note="Voice input and chat."
+            note="Sesli giriş ve sohbet."
             value={groqKey}
             onChange={setGroqKey}
-            placeholder="gsk_…  one per line"
+            placeholder="gsk_…  her satıra bir tane"
             multiline
             removeName="groq_api_key"
             onSave={onSave}
@@ -771,7 +791,9 @@ export default function Settings({
             configured={sysInfo.has_gemini_key}
             value={geminiKey}
             onChange={setGeminiKey}
-            placeholder={IS_MOBILE ? "AIza… or AQ.…  one per line" : "AIza…  one per line"}
+            placeholder={
+              IS_MOBILE ? "AIza… veya AQ.…  her satıra bir tane" : "AIza…  her satıra bir tane"
+            }
             multiline
             removeName="gemini_api_key"
             onSave={onSave}
@@ -782,11 +804,11 @@ export default function Settings({
         </Group>
       )}
       {IS_MOBILE && (
-        <Group title="Extra free providers">
+        <Group title="Ek ücretsiz sağlayıcılar">
           {[
             ["OpenRouter", "openrouter", openrouterKey, setOpenrouterKey, "sk-or-…"],
             ["NVIDIA NIM", "nvidia", nvidiaKey, setNvidiaKey, "nvapi-…"],
-            ["Mistral", "mistral", mistralKey, setMistralKey, "Mistral API key"],
+            ["Mistral", "mistral", mistralKey, setMistralKey, "Mistral API anahtarı"],
           ].map(([label, id, value, set, hint]) => (
             <KeyField
               key={id}
@@ -801,37 +823,38 @@ export default function Settings({
           ))}
           <div className="sp-field">
             <div className="sp-desc">
-              More free quota. Their free models are found and ranked alongside Gemini and Groq.
+              Daha fazla ücretsiz kota. Ücretsiz modelleri bulunur ve Gemini ile Groq’un yanında
+              sıralanır.
             </div>
             <Warn>
-              Whatever a fallback answers includes what&apos;s on screen during a phone task.
-              Mistral&apos;s free tier trains on the data it&apos;s sent.
+              Bir telefon görevi sırasında yedek sağlayıcının yanıtladığı isteklere ekrandakiler de
+              dahildir. Mistral’ın ücretsiz katmanı kendisine gönderilen verilerle model eğitir.
             </Warn>
           </div>
         </Group>
       )}
       {!IS_MOBILE && (
-        <Group title="Voice and places">
+        <Group title="Ses ve yerler">
           <KeyField
             label="ElevenLabs"
             configured={sysInfo.has_elevenlabs_key}
-            note="Premium text-to-speech."
+            note="Premium metin okuma."
             value={elevenKey}
             onChange={setElevenKey}
-            placeholder="ElevenLabs API key"
+            placeholder="ElevenLabs API anahtarı"
           />
           <KeyField
             label="Google Maps"
             configured={sysInfo.has_google_maps_key || sysInfo.places_source === "google"}
             status={
               !sysInfo.has_google_maps_key && sysInfo.places_source === "google"
-                ? "Via Vertex"
+                ? "Vertex üzerinden"
                 : undefined
             }
             note={
               sysInfo.places_source === "google"
-                ? "Accurate nearby places and distances. Active."
-                : "Accurate nearby places and distances, instead of OpenStreetMap. On Vertex, enabling “Places API (New)” in your project is enough."
+                ? "Yakındaki yerler ve mesafeler doğru gösterilir. Etkin."
+                : "OpenStreetMap yerine yakındaki yerleri ve mesafeleri doğru gösterir. Vertex kullanıyorsanız projenizde “Places API (New)”u etkinleştirmeniz yeterlidir."
             }
             value={mapsKey}
             onChange={setMapsKey}
@@ -847,21 +870,21 @@ export default function Settings({
       {IS_MOBILE ? (
         <>
           <Toggle
-            label="“Hey Jarvis” wake word"
+            label="“Hey Jarvis” uyandırma sözü"
             checked={wakeWordOn}
             onChange={setWakeWordOn}
-            hint="Listens on the phone itself. Nothing is sent until it hears the wake word."
+            hint="Dinleme telefonun kendisinde yapılır. Uyandırma sözü duyulana kadar hiçbir şey gönderilmez."
           />
           <div className="sp-field">
             <More>
-              Needs microphone permission. Speech-to-text uses Cloud Speech-to-Text on Vertex, or
-              Groq Whisper on Groq and Gemini. Replies are spoken by the phone&apos;s built-in
-              text-to-speech.
+              Mikrofon izni gerekir. Konuşmayı yazıya çevirmek için Vertex’te Cloud Speech-to-Text,
+              Groq ve Gemini’de Groq Whisper kullanılır. Yanıtlar telefonun yerleşik metin okuma
+              özelliğiyle seslendirilir.
             </More>
           </div>
         </>
       ) : (
-        <Field label="Voice">
+        <Field label="Ses">
           <select className="sp-input" value={tts} onChange={(e) => setTts(e.target.value)}>
             {TTS_OPTS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -871,21 +894,21 @@ export default function Settings({
           </select>
           {tts === "piper" && (
             <div className="sp-desc">
-              Private and unlimited. The 60 MB voice downloads the first time JARVIS speaks.
+              Gizli ve sınırsız. 60 MB’lık ses, DUNYATEK ilk kez konuştuğunda indirilir.
             </div>
           )}
           {tts === "elevenlabs" &&
             (sysInfo.has_elevenlabs_key ? (
               <div className="sp-desc">
-                The most natural voice, but the free tier is about 10k characters a month.
+                En doğal ses, ancak ücretsiz katman ayda yaklaşık 10 bin karakterle sınırlıdır.
               </div>
             ) : (
-              <Warn>ElevenLabs needs a key. Add it in API keys.</Warn>
+              <Warn>ElevenLabs bir anahtar gerektirir. API anahtarları bölümüne ekleyin.</Warn>
             ))}
         </Field>
       )}
       <div className="sp-field sp-row">
-        <span className="sp-label">Wake phrase</span>
+        <span className="sp-label">Uyandırma sözü</span>
         <span className="sp-value sp-mono">{sysInfo.wakeWord || "hey_jarvis"}</span>
       </div>
     </Group>
@@ -893,13 +916,13 @@ export default function Settings({
 
   const automationPage = (
     <>
-      <Group title="Autopilot">
+      <Group title="Otopilot">
         <Field
           label="Model"
           hint={
             sysInfo.autopilot_model_active
-              ? `Drives multi-step browser and desktop tasks. Now using ${sysInfo.autopilot_model_active}.`
-              : "Drives multi-step browser and desktop tasks. Leave blank for auto."
+              ? `Çok adımlı tarayıcı ve masaüstü görevlerini yürütür. Şu an ${sysInfo.autopilot_model_active} kullanılıyor.`
+              : "Çok adımlı tarayıcı ve masaüstü görevlerini yürütür. Otomatik için boş bırakın."
           }
         >
           <input
@@ -907,50 +930,50 @@ export default function Settings({
             className="sp-input sp-mono"
             value={autopilotModel}
             onChange={(e) => setAutopilotModel(e.target.value)}
-            placeholder="auto, a model id, or ollama:llama3.1"
+            placeholder="auto, bir model kimliği ya da ollama:llama3.1"
             spellCheck={false}
           />
         </Field>
         <Field
-          label="Step reasoning"
-          hint="Dynamic thinks harder on tricky steps. Off is quickest but picks worse moves on hard pages."
+          label="Adım akıl yürütmesi"
+          hint="Dinamik, zorlu adımlarda daha çok düşünür. Kapalı en hızlısıdır ama zor sayfalarda daha kötü hamleler seçer."
         >
           <select
             className="sp-input"
             value={autopilotThinking}
             onChange={(e) => setAutopilotThinking(e.target.value)}
           >
-            <option value="dynamic">Dynamic (recommended)</option>
-            <option value="off">Off</option>
+            <option value="dynamic">Dinamik (önerilen)</option>
+            <option value="off">Kapalı</option>
           </select>
         </Field>
         <Toggle
-          label="Look at screenshots when stuck"
+          label="Takıldığında ekran görüntülerine bak"
           checked={autopilotVision}
           onChange={setAutopilotVision}
         />
       </Group>
-      <Group title="Alerts">
+      <Group title="Uyarılar">
         <Toggle
-          label="Speak up about system load"
+          label="Sistem yükü hakkında sesli uyar"
           checked={sysAlerts}
           onChange={setSysAlerts}
-          hint="High CPU, full memory or a low battery. Agenda reminders and timers aren't affected."
+          hint="Yüksek işlemci kullanımı, dolu bellek ya da düşük pil. Gündem hatırlatıcıları ve zamanlayıcılar etkilenmez."
         />
       </Group>
-      <Group title="Status pill">
+      <Group title="Durum rozeti">
         <Toggle
-          label="Show over other apps"
+          label="Diğer uygulamaların üzerinde göster"
           checked={ovlEnabled}
           onChange={setOvlEnabled}
-          hint="A small pill above the taskbar shows whether JARVIS is listening or working, with a stop button."
+          hint="Ekranın üstündeki küçük bir rozet, DUNYATEK'in dinlediğini ya da çalıştığını gösterir; durdurma düğmesi de vardır."
         />
         {ovlEnabled && (
-          <Field label="Hide it in these apps">
+          <Field label="Bu uygulamalarda gizle">
             <div className="dirlist">
               {ovlApps.length === 0 && (
-                <StateMessage variant="empty" icon="info" title="Shown in every app">
-                  Add an app&apos;s process name, like chrome or code.
+                <StateMessage variant="empty" icon="info" title="Tüm uygulamalarda gösteriliyor">
+                  chrome ya da code gibi bir uygulamanın işlem adını ekleyin.
                 </StateMessage>
               )}
               {ovlApps.map((a) => (
@@ -960,7 +983,7 @@ export default function Settings({
                   </span>
                   <button
                     className="dirlist-rm"
-                    aria-label={`Show in ${a} again`}
+                    aria-label={`${a} içinde yeniden göster`}
                     onClick={() => removeApp(a)}
                   >
                     <Icon name="close" size={14} />
@@ -978,7 +1001,7 @@ export default function Settings({
                 onKeyDown={(e) => e.key === "Enter" && addApp()}
               />
               <button type="button" className="sp-btn" onClick={addApp}>
-                Hide
+                Gizle
               </button>
             </div>
           </Field>
@@ -990,17 +1013,17 @@ export default function Settings({
   const locationPage = (
     <Group>
       <div className="sp-field sp-row">
-        <span className="sp-label">Current</span>
+        <span className="sp-label">Geçerli</span>
         <span className="sp-value">
-          {pinnedLoc?.label ? pinnedLoc.label.split(",")[0] : "Automatic"}
+          {pinnedLoc?.label ? pinnedLoc.label.split(",")[0] : "Otomatik"}
         </span>
       </div>
       <Field
-        label={pinnedLoc?.label ? "Pin somewhere else" : "Pin a place"}
+        label={pinnedLoc?.label ? "Başka bir yer sabitle" : "Bir yer sabitle"}
         hint={
           IS_MOBILE
-            ? "Uses GPS when allowed, otherwise your IP. Pin your area if weather or distances are off."
-            : "Uses browser GPS or your IP. A pin overrides it everywhere. You can also say “set my location to…”."
+            ? "İzin verildiğinde GPS’i, aksi halde IP adresinizi kullanır. Hava durumu ya da mesafeler yanlışsa bölgenizi sabitleyin."
+            : "Tarayıcı GPS’ini ya da IP adresinizi kullanır. Sabitlenen yer her yerde bunun yerine geçer. “Konumumu … olarak ayarla” da diyebilirsiniz."
         }
       >
         <div className="sp-inline">
@@ -1008,7 +1031,7 @@ export default function Settings({
             type="text"
             className="sp-input"
             value={locInput}
-            placeholder="Powai, Mumbai"
+            placeholder="Kadıköy, İstanbul"
             onChange={(e) => setLocInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && pinLocation()}
           />
@@ -1018,7 +1041,7 @@ export default function Settings({
             onClick={pinLocation}
             disabled={!locInput.trim()}
           >
-            Pin
+            Sabitle
           </button>
         </div>
         {pinnedLoc?.label && (
@@ -1027,7 +1050,7 @@ export default function Settings({
             className="sp-link"
             onClick={() => onSetLocation && onSetLocation({ clear: true })}
           >
-            Go back to automatic
+            Otomatiğe geri dön
           </button>
         )}
       </Field>
@@ -1037,7 +1060,7 @@ export default function Settings({
   const calendarPage = (
     <Group>
       <Toggle
-        label="Add agenda items to my phone's calendar"
+        label="Gündem öğelerini telefonumun takvimine ekle"
         checked={calendarSync}
         onChange={(on) => {
           setCalendarSync(on);
@@ -1046,12 +1069,12 @@ export default function Settings({
           // dialog would lose that race.
           if (on) void requestCalendarPermission();
         }}
-        hint="Items show up in Google Calendar and on your other devices. Turn off to keep the agenda inside JARVIS."
+        hint="Kayıtlar Google Takvim'de ve diğer cihazlarınızda görünür. Ajandayı yalnızca DUNYATEK içinde tutmak için kapatın."
       />
       <div className="sp-field">
-        <More label="If you decline calendar permission">
-          JARVIS opens the calendar&apos;s own new-event screen instead, so you can still add the
-          item yourself.
+        <More label="Takvim iznini reddederseniz">
+          DUNYATEK bunun yerine takvimin kendi yeni etkinlik ekranını açar; böylece öğeyi yine de
+          kendiniz ekleyebilirsiniz.
         </More>
       </div>
     </Group>
@@ -1060,35 +1083,35 @@ export default function Settings({
   const filesPage = IS_MOBILE ? (
     <Group>
       <div className="sp-field sp-row">
-        <span className="sp-label">Folder</span>
-        <span className="sp-value sp-mono">{grantedFolder ? grantedFolder.name : "None"}</span>
+        <span className="sp-label">Klasör</span>
+        <span className="sp-value sp-mono">{grantedFolder ? grantedFolder.name : "Yok"}</span>
       </div>
-      <Field hint="JARVIS can list this folder and read the text files in it. It can never write, move or delete anything.">
+      <Field hint="DUNYATEK bu klasörü listeleyip içindeki metin dosyalarını okuyabilir. Hiçbir şeyi yazamaz, taşıyamaz ya da silemez.">
         <button type="button" className="sp-btn" onClick={chooseFolder}>
-          {grantedFolder ? "Change folder" : "Choose folder"}
+          {grantedFolder ? "Klasörü değiştir" : "Klasör seç"}
         </button>
       </Field>
     </Group>
   ) : (
     <>
-      <Group title="Where JARVIS saves things">
-        <Field hint="Images, recordings and documents go into subfolders here.">
+      <Group title="DUNYATEK'in kayıt yeri">
+        <Field hint="Görseller, kayıtlar ve belgeler buradaki alt klasörlere kaydedilir.">
           <input
             type="text"
             className="sp-input sp-mono"
             value={storageDir}
             onChange={(e) => setStorageDir(e.target.value)}
-            placeholder="C:\Users\you\Jarvis"
+            placeholder="C:\Users\kullanici\DUNYATEK"
             spellCheck={false}
           />
         </Field>
       </Group>
-      <Group title="Folders JARVIS can read">
-        <Field hint="It can list these and read files inside, asking you each time. It can never run, write, move or delete anything.">
+      <Group title="DUNYATEK'in okuyabileceği klasörler">
+        <Field hint="Bu klasörleri listeleyebilir ve içindeki dosyaları her seferinde size sorarak okuyabilir. Hiçbir şeyi çalıştıramaz, yazamaz, taşıyamaz ya da silemez.">
           <div className="dirlist">
             {dirs.length === 0 && (
-              <StateMessage variant="empty" icon="folder" title="No folders yet">
-                Add one to let JARVIS read files from it.
+              <StateMessage variant="empty" icon="folder" title="Henüz klasör yok">
+                DUNYATEK’in dosyalarını okuyabilmesi için bir klasör ekleyin.
               </StateMessage>
             )}
             {dirs.map((d) => (
@@ -1098,7 +1121,7 @@ export default function Settings({
                 </span>
                 <button
                   className="dirlist-rm"
-                  aria-label={`Remove ${d}`}
+                  aria-label={`${d} klasörünü kaldır`}
                   onClick={() => removeDir(d)}
                 >
                   <Icon name="close" size={14} />
@@ -1111,13 +1134,13 @@ export default function Settings({
               type="text"
               className="sp-input sp-mono"
               value={newDir}
-              placeholder="C:\Users\you\Documents"
+              placeholder="C:\Users\kullanici\Documents"
               onChange={(e) => setNewDir(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addDir()}
               spellCheck={false}
             />
             <button type="button" className="sp-btn" onClick={addDir}>
-              Add
+              Ekle
             </button>
           </div>
         </Field>
@@ -1127,9 +1150,9 @@ export default function Settings({
 
   const diagnosticsPage = (
     <>
-      <Group title="Now">
+      <Group title="Şu an">
         <div className="sp-field sp-row">
-          <span className="sp-label">Provider</span>
+          <span className="sp-label">Sağlayıcı</span>
           <span className="sp-value">
             {PROVIDER_NAME[sysInfo.provider_mode || sysInfo.provider] ||
               sysInfo.provider_mode ||
@@ -1138,17 +1161,17 @@ export default function Settings({
         </div>
         {sysInfo.ram != null && (
           <div className="sp-field sp-row">
-            <span className="sp-label">Memory available</span>
+            <span className="sp-label">Kullanılabilir bellek</span>
             <span className="sp-value sp-mono">{sysInfo.ram} GB</span>
           </div>
         )}
       </Group>
-      <Group title={IS_MOBILE ? "Connection" : "Components"}>
+      <Group title={IS_MOBILE ? "Bağlantı" : "Bileşenler"}>
         <Field
           hint={
             IS_MOBILE
-              ? "Checks the network and whether your keys can reach Groq and Gemini."
-              : "Re-downloads the browser engine, speech model or voice if a feature says it needs setup. Progress shows on the main screen."
+              ? "Ağı ve anahtarlarınızın Groq ile Gemini’ye erişip erişemediğini denetler."
+              : "Bir özellik kurulum gerektiğini söylerse tarayıcı motorunu, konuşma modelini ya da sesi yeniden indirir. İlerleme ana ekranda gösterilir."
           }
         >
           <button
@@ -1160,7 +1183,7 @@ export default function Settings({
             }}
             disabled={!onRepairSetup}
           >
-            {IS_MOBILE ? "Run connection test" : "Repair components"}
+            {IS_MOBILE ? "Bağlantı testini çalıştır" : "Bileşenleri onar"}
           </button>
         </Field>
       </Group>
@@ -1182,7 +1205,7 @@ export default function Settings({
     [
       {
         id: "models",
-        title: "Models",
+        title: "Modeller",
         icon: "sparkle",
         value: model !== "auto" ? model : PROVIDER_NAME[providerMode] || providerMode,
         tone: "on",
@@ -1190,21 +1213,21 @@ export default function Settings({
       },
       {
         id: "routing",
-        title: "Routing",
+        title: "Yönlendirme",
         icon: "route",
         value: restingCount
-          ? `${restingCount} resting`
+          ? `${restingCount} dinleniyor`
           : rankedCount
-            ? `${rankedCount} ranked`
-            : "Not ranked",
+            ? `${rankedCount} sıralı`
+            : "Sıralanmadı",
         tone: restingCount ? "warn" : rankedCount ? "on" : "off",
         body: routingPage,
       },
       {
         id: "keys",
-        title: "API keys",
+        title: "API anahtarları",
         icon: "key",
-        value: keyCount ? `${keyCount} connected` : "None",
+        value: keyCount ? `${keyCount} bağlı` : "Yok",
         tone: keyCount ? "on" : "warn",
         body: keysPage,
       },
@@ -1212,47 +1235,45 @@ export default function Settings({
     [
       {
         id: "voice",
-        title: "Voice",
+        title: "Ses",
         icon: "mic",
         value: IS_MOBILE
           ? wakeWordOn
-            ? "Wake word on"
-            : "Wake word off"
+            ? "Uyandırma sözü açık"
+            : "Uyandırma sözü kapalı"
           : TTS_OPTS.find((o) => o.value === tts)?.short || tts,
         tone: (IS_MOBILE ? wakeWordOn : tts !== "off") ? "on" : "off",
         body: voicePage,
       },
       !IS_MOBILE && {
         id: "automation",
-        title: "Automation",
+        title: "Otomasyon",
         icon: "robot",
-        value: autopilotModel.trim() || "Auto",
+        value: autopilotModel.trim() || "Otomatik",
         tone: "on",
         body: automationPage,
       },
       {
         id: "location",
-        title: "Location",
+        title: "Konum",
         icon: "pin",
-        value: pinnedLoc?.label ? pinnedLoc.label.split(",")[0] : "Automatic",
+        value: pinnedLoc?.label ? pinnedLoc.label.split(",")[0] : "Otomatik",
         tone: "on",
         body: locationPage,
       },
       {
         id: "calendar",
-        title: "Calendar",
+        title: "Takvim",
         icon: "calendar",
-        value: calendarSync ? "Syncing" : "In app only",
+        value: calendarSync ? "Eşitleniyor" : "Yalnızca uygulamada",
         tone: calendarSync ? "on" : "off",
         body: calendarPage,
       },
       {
         id: "files",
-        title: "Files",
+        title: "Dosyalar",
         icon: "folder",
-        value: IS_MOBILE
-          ? grantedFolder?.name || "No folder"
-          : `${dirs.length} folder${dirs.length === 1 ? "" : "s"}`,
+        value: IS_MOBILE ? grantedFolder?.name || "Klasör yok" : `${dirs.length} klasör`,
         tone: (IS_MOBILE ? grantedFolder : dirs.length) ? "on" : "off",
         body: filesPage,
       },
@@ -1260,7 +1281,7 @@ export default function Settings({
     [
       {
         id: "diagnostics",
-        title: "Diagnostics",
+        title: "Tanılama",
         icon: "activity",
         value: "",
         tone: null,
@@ -1278,19 +1299,19 @@ export default function Settings({
         className={`sp ${wide ? "sp--wide" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label="Settings"
+        aria-label="Ayarlar"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="sp-hdr">
           {drilled ? (
             <button type="button" className="sp-back" onClick={() => setPage(null)}>
               <Icon name="chevronLeft" size={18} />
-              <span>Settings</span>
+              <span>Ayarlar</span>
             </button>
           ) : (
-            <h2 className="sp-title">Settings</h2>
+            <h2 className="sp-title">Ayarlar</h2>
           )}
-          <button type="button" className="sp-close" onClick={onClose} aria-label="Close settings">
+          <button type="button" className="sp-close" onClick={onClose} aria-label="Ayarları kapat">
             <Icon name="close" size={18} />
           </button>
         </header>
@@ -1298,7 +1319,7 @@ export default function Settings({
         {/* On the phone each page starts at the top, not at the index's scroll. */}
         <div className="sp-body" key={wide ? "wide" : page || "index"}>
           {(wide || !current) && (
-            <nav className="sp-nav" aria-label="Settings sections">
+            <nav className="sp-nav" aria-label="Ayar bölümleri">
               {sections.map((group) => (
                 <div className="sp-nav-group" key={group[0].id}>
                   {group.map((p) => (
@@ -1333,14 +1354,14 @@ export default function Settings({
 
         <footer className="sp-foot">
           <span className="sp-foot-note" aria-live="polite">
-            {dirty ? "Unsaved changes" : ""}
+            {dirty ? "Kaydedilmemiş değişiklikler" : ""}
           </span>
           <button
             type="button"
             className={`sp-btn ${dirty ? "sp-btn--primary" : ""}`}
             onClick={handleSave}
           >
-            Save changes
+            Değişiklikleri kaydet
           </button>
         </footer>
       </div>

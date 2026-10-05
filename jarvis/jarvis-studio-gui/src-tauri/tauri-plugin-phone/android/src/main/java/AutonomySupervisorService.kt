@@ -199,8 +199,8 @@ class AutonomySupervisorService : Service() {
     private fun refreshForeground() {
         val count = activeTasks.size()
         if (count == 0) return
-        val text = if (count == 1) "1 task running safely in the background"
-        else "$count tasks running safely in the background"
+        val text = if (count == 1) "Arka planda 1 görev güvenle çalışıyor"
+        else "Arka planda $count görev güvenle çalışıyor"
         startForeground(NOTIFICATION_ID, notification(text))
     }
 
@@ -248,14 +248,14 @@ class AutonomySupervisorService : Service() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_pause)
-            .setContentTitle("JARVIS is controlling this phone")
+            .setContentTitle("DUNYATEK bu telefonu kullanıyor")
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setContentIntent(contentIntent)
-            .addAction(android.R.drawable.ic_media_pause, "PAUSE", pauseIntent)
-            .addAction(android.R.drawable.ic_delete, "STOP", stopIntent)
+            .addAction(android.R.drawable.ic_media_pause, "DURAKLAT", pauseIntent)
+            .addAction(android.R.drawable.ic_delete, "DURDUR", stopIntent)
             .build()
     }
 
@@ -265,9 +265,9 @@ class AutonomySupervisorService : Service() {
             manager.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    "JARVIS autonomous tasks",
+                    "DUNYATEK otomatik görevleri",
                     NotificationManager.IMPORTANCE_LOW,
-                ).apply { description = "Progress with persistent Pause and Stop controls." },
+                ).apply { description = "Görev ilerlemesi; Duraklat ve Durdur düğmeleriyle." },
             )
         }
     }

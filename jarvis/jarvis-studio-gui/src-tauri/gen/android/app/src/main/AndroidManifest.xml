@@ -20,6 +20,12 @@
          which requires this SYSTEM_ALERT_WINDOW ("draw over other apps") grant. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- DUNYATEK: phone GPS for the weather panel (asked by the WebView's geolocation
+         prompt in RustWebChromeClient); IP location puts the phone in the ISP's city. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
     <!-- AndroidTV support -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
 

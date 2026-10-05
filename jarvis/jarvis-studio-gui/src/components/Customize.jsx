@@ -4,6 +4,7 @@
 // edit the same live state. Mirrors the named themes in actions/__init__.py.
 
 import ModalPanel from "./ModalPanel";
+import { IS_MOBILE } from "../hooks/useAssistant";
 
 const THEMES = {
   cyan: ["#00e5ff", "#6fe9ff", [0, 229, 255]],
@@ -19,13 +20,34 @@ const THEMES = {
   white: ["#e8f4ff", "#ffffff", [232, 244, 255]],
 };
 
+const THEME_LABELS = {
+  cyan: "Camgöbeği",
+  blue: "Mavi",
+  amber: "Kehribar",
+  gold: "Altın",
+  red: "Kırmızı",
+  green: "Yeşil",
+  purple: "Mor",
+  magenta: "Macenta",
+  pink: "Pembe",
+  orange: "Turuncu",
+  white: "Beyaz",
+};
+
 const BACKGROUNDS = ["grid", "solid", "aurora", "minimal"];
+const BACKGROUND_LABELS = {
+  grid: "Izgara",
+  solid: "Düz",
+  aurora: "Aurora",
+  minimal: "Sade",
+};
+const DENSITY_LABELS = { normal: "Normal", compact: "Sıkı" };
 const PANEL_LABELS = {
-  system: "System",
-  power: "Power",
-  agenda: "Agenda",
-  weather: "Weather",
-  network: "Network",
+  system: "Sistem",
+  power: "Güç",
+  agenda: "Gündem",
+  weather: "Hava durumu",
+  network: "Ağ",
   terminal: "Terminal",
 };
 
@@ -39,19 +61,41 @@ export default function Customize({ screen, onClose, onPatch }) {
   const accent = (s.accent || "#00e5ff").toLowerCase();
   const background = s.background || "grid";
   const density = s.density || "normal";
+  const core = s.core || (IS_MOBILE ? "video" : "emblem"); // HudApp ile ayni varsayilan
 
   return (
-    <ModalPanel title="Customize Display" onClose={onClose}>
+    <ModalPanel title="Ekranı Özelleştir" onClose={onClose}>
+      {/* DUNYATEK: merkez gorunum - amblem ya da insan yuzu */}
+      <div className="settings-sec">
+        <label>Merkez</label>
+        <div className="cz-row">
+          {[
+            ["emblem", "DUNYATEK amblemi"],
+            ["video", "DUNYATEK avatar\u0131"],
+            ["face", "\u0130nsan y\u00fcz\u00fc"],
+            ["particle", "Par\u00e7ac\u0131k y\u00fcz\u00fc"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              className={`cz-chip ${core === key ? "cz-chip--on" : ""}`}
+              onClick={() => onPatch({ core: key })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Accent colour */}
       <div className="settings-sec">
-        <label>Accent colour</label>
+        <label>Vurgu rengi</label>
         <div className="cz-swatches">
           {Object.entries(THEMES).map(([name, [a, a2, rgb]]) => (
             <button
               key={name}
               className={`cz-swatch ${accent === a.toLowerCase() ? "cz-swatch--on" : ""}`}
               style={{ background: a }}
-              title={name}
+              title={THEME_LABELS[name] || name}
               onClick={() => onPatch({ accent: a, accent2: a2, rgb })}
             />
           ))}
@@ -60,7 +104,7 @@ export default function Customize({ screen, onClose, onPatch }) {
 
       {/* Background */}
       <div className="settings-sec">
-        <label>Background</label>
+        <label>Arka plan</label>
         <div className="cz-row">
           {BACKGROUNDS.map((bg) => (
             <button
@@ -68,7 +112,7 @@ export default function Customize({ screen, onClose, onPatch }) {
               className={`cz-chip ${background === bg ? "cz-chip--on" : ""}`}
               onClick={() => onPatch({ background: bg })}
             >
-              {bg}
+              {BACKGROUND_LABELS[bg] || bg}
             </button>
           ))}
         </div>
@@ -76,7 +120,7 @@ export default function Customize({ screen, onClose, onPatch }) {
 
       {/* Density */}
       <div className="settings-sec">
-        <label>Density</label>
+        <label>Yoğunluk</label>
         <div className="cz-row">
           {["normal", "compact"].map((d) => (
             <button
@@ -84,7 +128,7 @@ export default function Customize({ screen, onClose, onPatch }) {
               className={`cz-chip ${density === d ? "cz-chip--on" : ""}`}
               onClick={() => onPatch({ density: d })}
             >
-              {d}
+              {DENSITY_LABELS[d] || d}
             </button>
           ))}
         </div>
@@ -92,10 +136,10 @@ export default function Customize({ screen, onClose, onPatch }) {
 
       {/* Panels: show/hide + reorder within each rail, move across rails */}
       <div className="settings-sec">
-        <label>Panels & layout</label>
+        <label>Paneller ve yerleşim</label>
         {["left", "right"].map((rail) => (
           <div key={rail} className="cz-rail">
-            <div className="cz-rail-hd">{rail === "left" ? "Left rail" : "Right rail"}</div>
+            <div className="cz-rail-hd">{rail === "left" ? "Sol sütun" : "Sağ sütun"}</div>
             {(order[rail] || []).map((key, i) => {
               const visible = panels[key] !== false;
               const arr = order[rail] || [];
@@ -103,7 +147,7 @@ export default function Customize({ screen, onClose, onPatch }) {
                 <div key={key} className="cz-panel-row">
                   <button
                     className={`cz-eye ${visible ? "cz-eye--on" : ""}`}
-                    title={visible ? "Hide" : "Show"}
+                    title={visible ? "Gizle" : "Göster"}
                     onClick={() => onPatch({ panels: { [key]: !visible } })}
                   >
                     {visible ? "👁" : "🚫"}
@@ -113,17 +157,21 @@ export default function Customize({ screen, onClose, onPatch }) {
                     <button
                       disabled={i === 0}
                       onClick={() => onPatch({ move: { panel: key, direction: "up" } })}
+                      title="Yukarı taşı"
+                      aria-label="Yukarı taşı"
                     >
                       ▲
                     </button>
                     <button
                       disabled={i === arr.length - 1}
                       onClick={() => onPatch({ move: { panel: key, direction: "down" } })}
+                      title="Aşağı taşı"
+                      aria-label="Aşağı taşı"
                     >
                       ▼
                     </button>
                     <button
-                      title="Move to other rail"
+                      title="Diğer sütuna taşı"
                       onClick={() =>
                         onPatch({
                           move: { panel: key, direction: rail === "left" ? "right" : "left" },
@@ -142,10 +190,11 @@ export default function Customize({ screen, onClose, onPatch }) {
 
       <div className="settings-sec cz-actions">
         <button className="cz-reset" onClick={() => onPatch({ reset: true })}>
-          Reset to defaults
+          Varsayılanlara sıfırla
         </button>
         <span className="cz-hint">
-          Tip: you can also just tell JARVIS — “make the screen amber”, “hide the weather panel”.
+          İpucu: DUNYATEK’e doğrudan da söyleyebilirsiniz — “ekranı kehribar rengi yap”, “hava
+          durumu panelini gizle”.
         </span>
       </div>
     </ModalPanel>

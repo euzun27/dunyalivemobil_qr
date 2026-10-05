@@ -151,7 +151,7 @@ export default function BrowserPanel() {
                 ◆
               </span>
             </div>
-            <span className="bp-min-title">JARVIS</span>
+            <span className="bp-min-title">DUNYATEK</span>
           </div>
           <div className="bp-hdr-actions">
             <span className={`bp-pill ${pill.cls}`}>{pill.label}</span>
@@ -199,7 +199,7 @@ export default function BrowserPanel() {
             </span>
           </div>
           <div className="bp-title-block">
-            <span className="bp-title">JARVIS</span>
+            <span className="bp-title">DUNYATEK</span>
             <span className="bp-subtitle">Browser control</span>
           </div>
         </div>
@@ -246,7 +246,7 @@ export default function BrowserPanel() {
       <div className="bp-page">
         <div className="bp-page-label">Current mission</div>
         <div className="bp-goal">
-          {task?.goal || browserState.title || "Ready when you are, sir."}
+          {task?.goal || browserState.title || "Hazır olduğunuzda başlarım efendim."}
         </div>
         {(browserState.url || browserState.title) && (
           <div className="bp-url" title={browserState.url}>

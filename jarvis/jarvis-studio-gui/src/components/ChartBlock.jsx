@@ -44,7 +44,7 @@ export default function ChartBlock({ tagHead, body }) {
   // takes the whole chat bubble down with it.
   if (err || !Array.isArray(data?.labels) || !Array.isArray(data?.values)) {
     return (
-      <StateMessage variant="error">{err ?? "Missing or malformed labels/values"}</StateMessage>
+      <StateMessage variant="error">{err ?? "Etiketler/değerler eksik veya hatalı"}</StateMessage>
     );
   }
   const rows = data.labels.map((name, i) => ({ name, value: data.values[i] }));

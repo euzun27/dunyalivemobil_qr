@@ -7,6 +7,7 @@ import Settings from "./components/Settings";
 import Onboarding from "./components/Onboarding";
 import MobileOnboarding from "./components/MobileOnboarding";
 import MobileRemotePC from "./components/MobileRemotePC";
+import { useSimplePc } from "./hooks/useSimplePc";
 import RemoteDesktop from "./components/RemoteDesktop";
 import SetupProgress from "./components/SetupProgress";
 import BootOverlay from "./components/BootOverlay";
@@ -48,11 +49,11 @@ function ClarifyPrompt({ request, onRespond }) {
   const submit = () => onRespond(request.id, answer.trim(), request.taskId);
   return (
     <div className="perm-overlay">
-      <div className="perm-dialog" role="alertdialog" aria-label="JARVIS needs your input">
+      <div className="perm-dialog" role="alertdialog" aria-label="DUNYATEK sizden bir yanıt bekliyor">
         <div className="perm-icon">
           <Icon name="help" size={26} />
         </div>
-        <div className="perm-kicker">JARVIS NEEDS YOUR INPUT</div>
+        <div className="perm-kicker">DUNYATEK SİZDEN BİR YANIT BEKLİYOR</div>
         <div className="perm-desc">{request.question}</div>
         <input
           className="clarify-input"
@@ -62,14 +63,14 @@ function ClarifyPrompt({ request, onRespond }) {
           onKeyDown={(e) => {
             if (e.key === "Enter" && answer.trim()) submit();
           }}
-          placeholder="Type your answerâ€¦"
+          placeholder="Yanıtınızı yazın…"
         />
         <div className="perm-actions">
           <button className="perm-deny" onClick={() => onRespond(request.id, "", request.taskId)}>
-            SKIP
+            ATLA
           </button>
           <button className="perm-approve" disabled={!answer.trim()} onClick={submit}>
-            SEND
+            GÖNDER
           </button>
         </div>
       </div>
@@ -160,6 +161,17 @@ export default function App() {
     stopTask,
     stopAllTasks,
   } = useAssistant();
+  // DUNYATEK: PC'ye bagliyken HUD cekirdegi PC'deki asistanin durumunu gosterir
+  // (konusuyor / dusunuyor / dinliyor). PC zaten "speaking" ve "log" mesajlari gonderiyor.
+  const pcLink = useSimplePc();
+  const pcOnline = pcLink.state === "online";
+  const hudStatus = pcOnline ? pcLink.pcStatus : status;
+  const togglePcVoice = () => {
+    if (pcLink.voice) pcLink.stopVoice();
+    else void pcLink.startVoice().catch(() => {}); // hata ayrintisi "Uzak PC" ekraninda
+  };
+  const micListening = pcOnline ? pcLink.voice : status === "listening";
+  const micBusy = !pcOnline && (status === "thinking" || status === "speaking");
 
   const unifiedTasks = taskCenterTasks || agentTasks || [];
   const anyTaskActive =
@@ -490,7 +502,8 @@ export default function App() {
         <JarvisHUD
           config={hudConfig}
           screen={screen}
-          status={status}
+          status={hudStatus}
+          muted={pcOnline && !pcLink.voice}
           telemetry={telemetry}
           weather={weather}
           netInfo={netInfo}
@@ -540,7 +553,7 @@ export default function App() {
           {status === "speaking" && (
             <button
               className="hud-fixed-btn hud-fixed-btn--silence"
-              title="Stop speaking now"
+              title="Konuşmayı hemen durdur"
               onClick={stopSpeech}
             >
               <Icon name="stop" />
@@ -549,7 +562,7 @@ export default function App() {
           {/* Persistent mute toggle: keeps speech off (text still shows) until untoggled */}
           <button
             className={`hud-fixed-btn ${muted ? "hud-fixed-btn--muted" : ""}`}
-            title={muted ? "Unmute Jarvis" : "Mute Jarvis (text only)"}
+            title={muted ? "DUNYATEK'in sesini aç" : "DUNYATEK'i sessize al (yalnızca metin)"}
             aria-pressed={muted}
             onClick={() => setMute(!muted)}
           >
@@ -560,8 +573,8 @@ export default function App() {
             className={`hud-fixed-btn ${conversationMode ? "hud-fixed-btn--listening" : ""}`}
             title={
               conversationMode
-                ? "Conversation mode ON"
-                : "Conversation mode (natural, brief replies)"
+                ? "Sohbet modu AÇIK"
+                : "Sohbet modu (doğal, kısa yanıtlar)"
             }
             aria-pressed={conversationMode}
             onClick={() => setConversationModeOn(!conversationMode)}
@@ -571,7 +584,7 @@ export default function App() {
           {/* Conversation log â€” always reachable on mobile (dock is far down the scroll) */}
           <button
             className={`hud-fixed-btn ${chatOpen ? "hud-fixed-btn--armed" : ""}`}
-            title="Open conversation log"
+            title="Sohbet geçmişini aç"
             aria-pressed={chatOpen}
             onClick={() => setChatOpen(true)}
           >
@@ -583,8 +596,8 @@ export default function App() {
               className={`hud-fixed-btn ${browserState.open ? "hud-fixed-btn--armed" : ""}`}
               title={
                 browserState.open
-                  ? "JARVIS's browser is open â€” click to close it"
-                  : "Open JARVIS's web browser"
+                  ? "DUNYATEK'in tarayıcısı açık — kapatmak için dokunun"
+                  : "DUNYATEK'in web tarayıcısını aç"
               }
               aria-pressed={browserState.open}
               onClick={() => setBrowserOpen(!browserState.open)}
@@ -595,7 +608,7 @@ export default function App() {
           {/* Agent Activity â€” JARVIS's autopilot steps + the screenshots it saw */}
           <button
             className={`hud-fixed-btn ${anyTaskActive ? "hud-fixed-btn--armed" : ""}`}
-            title="Task Center â€” durable progress, recovery, proof, and STOP"
+            title="Görev Merkezi — kalıcı ilerleme, kurtarma, kanıt ve DURDUR"
             aria-pressed={activityOpen}
             onClick={() => setActivityOpen(true)}
           >
@@ -607,10 +620,10 @@ export default function App() {
               className={`hud-fixed-btn ${pcState === "online" ? "hud-fixed-btn--armed" : ""}`}
               title={
                 pcState === "online"
-                  ? "Remote PC â€” online (tap to manage)"
+                  ? "Uzak bilgisayar — çevrimiçi (yönetmek için dokunun)"
                   : pcConfig
-                    ? `Remote PC â€” ${pcState}`
-                    : "Pair a Windows PC to control it from here"
+                    ? `Uzak bilgisayar — ${pcState}`
+                    : "Buradan kontrol etmek için bir Windows bilgisayarı eşleştirin"
               }
               aria-pressed={remoteOpen}
               onClick={() => setRemoteOpen(true)}
@@ -620,12 +633,12 @@ export default function App() {
           )}
           <button
             className="hud-fixed-btn"
-            title="Customize the home screen"
+            title="Ana ekranı özelleştir"
             onClick={() => setCustomizeOpen(true)}
           >
             <Icon name="palette" />
           </button>
-          <button className="hud-fixed-btn" title="Settings" onClick={() => setShowSettings(true)}>
+          <button className="hud-fixed-btn" title="Ayarlar" onClick={() => setShowSettings(true)}>
             <Icon name="settings" />
           </button>
         </div>
@@ -635,14 +648,30 @@ export default function App() {
           Mic â†’ Groq Whisper â†’ brain (see useBrain). */}
       {IS_MOBILE && !hudOverlayOpen && (
         <button
-          className={`mobile-mic${status === "listening" ? " mobile-mic--listening" : ""}${
-            status === "thinking" || status === "speaking" ? " mobile-mic--busy" : ""
+          className={`mobile-mic${micListening ? " mobile-mic--listening" : ""}${
+            micBusy ? " mobile-mic--busy" : ""
           }`}
-          onClick={triggerListen}
-          aria-label={status === "listening" ? "Stop and send" : "Tap to talk"}
-          title={status === "listening" ? "Listening â€” tap to send" : "Tap to talk"}
+          onClick={pcOnline ? togglePcVoice : triggerListen}
+          aria-label={
+            pcOnline
+              ? pcLink.voice
+                ? "PC ile sesli görüşmeyi kapat"
+                : "PC ile sesli görüşmeyi aç"
+              : status === "listening"
+                ? "Durdur ve gönder"
+                : "Konuşmak için dokunun"
+          }
+          title={
+            pcOnline
+              ? pcLink.voice
+                ? "DUNYATEK dinliyor — kapatmak için dokunun"
+                : "DUNYATEK ile konuşmak için dokunun"
+              : status === "listening"
+                ? "Dinliyorum — göndermek için dokunun"
+                : "Konuşmak için dokunun"
+          }
         >
-          <Icon name={status === "listening" ? "stop" : "mic"} size={28} strokeWidth={1.8} />
+          <Icon name={micListening ? "stop" : "mic"} size={28} strokeWidth={1.8} />
         </button>
       )}
 
@@ -651,9 +680,9 @@ export default function App() {
           {controlState.armed && (
             <div className="hud-armed-banner hud-armed-banner--control">
               <span className="hud-armed-dot" />
-              <span>âŒ¨ JARVIS IS CONTROLLING YOUR MOUSE &amp; KEYBOARD</span>
+              <span>⌨ DUNYATEK FARE VE KLAVYENİZİ KONTROL EDİYOR</span>
               <button className="hud-armed-disarm hud-armed-disarm--stop" onClick={stopControl}>
-                STOP
+                DURDUR
               </button>
             </div>
           )}
@@ -661,17 +690,17 @@ export default function App() {
             <div className="hud-armed-banner">
               <span className="hud-armed-dot" />
               <span>
-                BROWSER Â· {browserState.title || browserState.url || "ready"} Â· panel on the right
+                TARAYICI · {browserState.title || browserState.url || "hazır"} · panel sağda
               </span>
               <button className="hud-armed-disarm" onClick={() => setBrowserOpen(false)}>
-                CLOSE
+                KAPAT
               </button>
             </div>
           )}
           {!isConnected && (
             <div className="hud-offline">
-              âš  CORE OFFLINE â€” start <code>python main.py</code> in{" "}
-              <code>jarvis-studio-backend/</code>
+              ⚠ ÇEKİRDEK ÇEVRİMDIŞI — <code>jarvis-studio-backend/</code> içinde{" "}
+              <code>python main.py</code> komutunu çalıştırın
             </div>
           )}
         </div>
@@ -693,9 +722,9 @@ export default function App() {
             />
             {anyTaskActive
               ? phoneTaskActive
-                ? "Phone task active"
-                : "PC task active"
-              : "Speaking"}
+                ? "Telefon görevi etkin"
+                : "Bilgisayar görevi etkin"
+              : "Konuşuyor"}
           </span>
           <button
             className="pcb-stop"
@@ -704,9 +733,9 @@ export default function App() {
               else stopPhoneTask();
               stopSpeech();
             }}
-            aria-label="Stop"
+            aria-label="Durdur"
           >
-            STOP
+            DURDUR
           </button>
         </div>
       )}
@@ -719,7 +748,7 @@ export default function App() {
               <span>
                 <Icon name="alert" size={15} /> {w.text}
               </span>
-              <button aria-label="Dismiss" onClick={() => dismissWarning(w.id)}>
+              <button aria-label="Kapat" onClick={() => dismissWarning(w.id)}>
                 <Icon name="close" size={14} />
               </button>
             </div>
@@ -808,13 +837,13 @@ export default function App() {
       {/* â”€â”€ Approve/Deny gate for dangerous actions â”€â”€ */}
       {permissionRequest && (
         <div className="perm-overlay">
-          <div className="perm-dialog" role="alertdialog" aria-label="Permission required">
+          <div className="perm-dialog" role="alertdialog" aria-label="İzin gerekiyor">
             <div className="perm-icon">
               <Icon name="alert" size={26} />
             </div>
-            <div className="perm-kicker">AUTHORISATION REQUIRED</div>
+            <div className="perm-kicker">YETKİ GEREKİYOR</div>
             <div className="perm-desc">
-              JARVIS wants to <strong>{permissionRequest.description}</strong>.
+              DUNYATEK şunu yapmak istiyor: <strong>{permissionRequest.description}</strong>.
             </div>
             {/* The v2 protocol accepts an exact signed approval from the task's
                 own source device (aura main.py handle_task_approval), verified
@@ -825,19 +854,19 @@ export default function App() {
                 shows a prompt for phone-submitted tasks.) */}
             {
               <>
-                <div className="perm-sub">This action needs your explicit approval.</div>
+                <div className="perm-sub">Bu işlem için açık onayınız gerekiyor.</div>
                 <div className="perm-actions">
                   <button
                     className="perm-deny"
                     onClick={() => respondPermission(permissionRequest.id, false)}
                   >
-                    DENY
+                    REDDET
                   </button>
                   <button
                     className="perm-approve"
                     onClick={() => respondPermission(permissionRequest.id, true)}
                   >
-                    APPROVE
+                    ONAYLA
                   </button>
                 </div>
               </>
@@ -852,27 +881,27 @@ export default function App() {
           so every such action was auto-denied and the task stalled. */}
       {phoneApproval && (
         <div className="perm-overlay">
-          <div className="perm-dialog" role="alertdialog" aria-label="Action approval required">
+          <div className="perm-dialog" role="alertdialog" aria-label="İşlem onayı gerekiyor">
             <div className="perm-icon">
               <Icon name={phoneApproval.risk === "R3" ? "shield" : "alert"} size={26} />
             </div>
             <div className="perm-kicker">
-              {phoneApproval.risk === "R3" ? "CRITICAL ACTION" : "CONFIRM ACTION"}
+              {phoneApproval.risk === "R3" ? "KRİTİK İŞLEM" : "İŞLEMİ ONAYLAYIN"}
             </div>
             <div className="perm-desc">
-              JARVIS wants to <strong>{phoneApproval.reason}</strong>.
+              DUNYATEK şunu yapmak istiyor: <strong>{phoneApproval.reason}</strong>.
             </div>
             <div className="perm-sub">
               {phoneApproval.risk === "R3"
-                ? "This can move money, change credentials, or delete things. Approve only if you asked for it."
-                : "This has an effect outside the phone (sending, sharing, posting or calling)."}
+                ? "Bu işlem para aktarabilir, kimlik bilgilerini değiştirebilir veya bir şeyleri silebilir. Yalnızca siz istediyseniz onaylayın."
+                : "Bu işlemin telefonun dışında bir etkisi var (gönderme, paylaşma, yayınlama veya arama)."}
             </div>
             <div className="perm-actions">
               <button className="perm-deny" onClick={() => resolvePhoneApproval("deny")}>
-                DENY
+                REDDET
               </button>
               <button className="perm-approve" onClick={() => resolvePhoneApproval("allow")}>
-                ALLOW ONCE
+                BİR KEZ İZİN VER
               </button>
             </div>
             {/* Never offered for R3 â€” a payment/credential/deletion step re-asks
@@ -880,7 +909,7 @@ export default function App() {
             {phoneApproval.risk === "R2" && (
               <div className="perm-actions">
                 <button className="perm-approve" onClick={() => resolvePhoneApproval("allow_task")}>
-                  ALLOW FOR THIS TASK
+                  BU GÖREV İÇİN İZİN VER
                 </button>
               </div>
             )}

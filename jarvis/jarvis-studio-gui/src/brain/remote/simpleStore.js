@@ -1,4 +1,6 @@
 import { SimplePC, findReachableHost } from "./simplePc";
+import { INITIAL_PC_STATUS, nextPcStatus } from "./pcStatus";
+import { handleCameraRequest } from "./phoneCamera";
 
 /* DUNYATEK - telefon, bilgisayardaki DUNYATEK'in uzaktan kumandasi.
  * Eslesmis bir PC varsa uygulama acilir acilmaz ona baglanir, baglanti koparsa
@@ -22,13 +24,27 @@ let client = null;
 // Kullanici "Konusmayi bitir" dediyse, bir sonraki baglantiya kadar sesi kendimiz acmayiz.
 let voiceStoppedByUser = false;
 let lastError = "";
+// PC'deki asistanin durumu (HUD cekirdegi): idle | listening | thinking | speaking
+let pc = INITIAL_PC_STATUS;
 const listeners = new Set();
 
 // Cached snapshot object - only replaced when data actually changes, so
 // useSyncExternalStore does not loop forever re-rendering.
-let snapshot = { config, state, messages, voice, lastError };
+let snapshot = { config, state, messages, voice, lastError, pcStatus: pc.status };
 function refreshSnapshot() {
-  snapshot = { config, state, messages, voice, lastError };
+  snapshot = { config, state, messages, voice, lastError, pcStatus: pc.status };
+}
+
+/** PC durumunu ilerletir; degistiyse true (cagiran emit eder). */
+function pcEvent(ev) {
+  const next = nextPcStatus(
+    pc,
+    { ...ev, now: Date.now() },
+    { online: state === "online", voice },
+  );
+  if (next === pc) return false;
+  pc = next;
+  return true;
 }
 
 function emit() {
@@ -39,6 +55,7 @@ function emit() {
 function setState(s) {
   const was = state;
   state = s;
+  pcEvent({ kind: "conn" });
   emit();
   if (s === "online" && was !== "online") {
     voiceStoppedByUser = false;
@@ -78,7 +95,13 @@ function makeClient(host, port, secure) {
     secure,
     onStateChange: setState,
     onMessage: (msg) => {
+      if (msg?.type === "camera_capture") {
+        // PC'deki asistan telefon kamerasindan tek kare istiyor (sohbet mesaji degil).
+        void handleCameraRequest(msg, (r) => client?.sendJson(r));
+        return;
+      }
       messages = [...messages.slice(-49), msg];
+      pcEvent({ kind: "msg", msg });
       emit();
     },
   });
@@ -130,7 +153,7 @@ export const simplePcStore = {
       setState("connecting");
       const host = await findReachableHost(hosts, config.port, config.secure);
       if (!host) {
-        lastError = `PC'ye ulasilamadi (${hosts.join(", ")})`;
+        lastError = `Bilgisayara ulaşılamadı (${hosts.join(", ")})`;
         setState("offline");
         return false;
       }
@@ -168,13 +191,19 @@ export const simplePcStore = {
   sendCommand(text) {
     return client?.sendCommand(text) || false;
   },
+  /** Canli gorusmenin anlik ses seviyeleri (ekrandaki yuz icin), yoksa 0. */
+  levels() {
+    return client ? client.levels() : { mic: 0, out: 0 };
+  },
   async startVoice() {
     if (!client || voice || state !== "online") return voice;
     const ok = await client.startVoice(() => {
       voice = false;
+      pcEvent({ kind: "voice" });
       emit();
     });
     voice = ok;
+    pcEvent({ kind: "voice" });
     emit();
     return ok;
   },
@@ -182,6 +211,7 @@ export const simplePcStore = {
     voiceStoppedByUser = true;
     client?.stopVoice();
     voice = false;
+    pcEvent({ kind: "voice" });
     emit();
   },
   async toggleVoice() {
@@ -224,6 +254,7 @@ async function syncWakeLock() {
 async function restartVoice() {
   client?.stopVoice();
   voice = false;
+  pcEvent({ kind: "voice" });
   emit();
   voiceRestarts += 1;
   if (voiceRestarts > 2) {
@@ -239,6 +270,7 @@ async function restartVoice() {
 }
 
 function keepAlive() {
+  if (pcEvent({ kind: "tick" })) emit(); // "dusunuyor" zaman asimi
   void syncWakeLock();
   if (!visible()) return; // arka planda Android zaten her seyi duraklatir
   if (config?.deviceToken && !reconnecting && (state === "idle" || state === "offline")) {

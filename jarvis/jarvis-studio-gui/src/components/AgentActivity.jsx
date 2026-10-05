@@ -4,23 +4,23 @@ import ModalPanel from "./ModalPanel";
 import { stepIcon } from "../hooks/agentActivity";
 
 const STATUS = {
-  accepted: { label: "accepted", cls: "activity-pill--run" },
-  queued: { label: "queued", cls: "activity-pill--run" },
-  recovering: { label: "recovering…", cls: "activity-pill--run" },
-  planning: { label: "planning…", cls: "activity-pill--run" },
-  policy_check: { label: "policy check…", cls: "activity-pill--run" },
-  executing: { label: "executing…", cls: "activity-pill--run" },
-  verifying: { label: "verifying…", cls: "activity-pill--run" },
-  waiting_for_unlock: { label: "waiting for unlock", cls: "activity-pill--wait" },
-  waiting_for_approval: { label: "approval needed", cls: "activity-pill--wait" },
-  suspended: { label: "suspended safely", cls: "activity-pill--wait" },
-  cancelling: { label: "stopping…", cls: "activity-pill--fail" },
-  cancelled: { label: "cancelled", cls: "activity-pill--fail" },
-  succeeded: { label: "verified ✓", cls: "activity-pill--ok" },
-  running: { label: "running…", cls: "activity-pill--run" },
-  done: { label: "done ✓", cls: "activity-pill--ok" },
-  failed: { label: "failed ✕", cls: "activity-pill--fail" },
-  stopped: { label: "stopped", cls: "activity-pill--fail" },
+  accepted: { label: "kabul edildi", cls: "activity-pill--run" },
+  queued: { label: "sırada", cls: "activity-pill--run" },
+  recovering: { label: "kurtarılıyor…", cls: "activity-pill--run" },
+  planning: { label: "planlanıyor…", cls: "activity-pill--run" },
+  policy_check: { label: "politika denetimi…", cls: "activity-pill--run" },
+  executing: { label: "yürütülüyor…", cls: "activity-pill--run" },
+  verifying: { label: "doğrulanıyor…", cls: "activity-pill--run" },
+  waiting_for_unlock: { label: "kilit açılması bekleniyor", cls: "activity-pill--wait" },
+  waiting_for_approval: { label: "onay gerekiyor", cls: "activity-pill--wait" },
+  suspended: { label: "güvenle askıya alındı", cls: "activity-pill--wait" },
+  cancelling: { label: "durduruluyor…", cls: "activity-pill--fail" },
+  cancelled: { label: "iptal edildi", cls: "activity-pill--fail" },
+  succeeded: { label: "doğrulandı ✓", cls: "activity-pill--ok" },
+  running: { label: "çalışıyor…", cls: "activity-pill--run" },
+  done: { label: "tamamlandı ✓", cls: "activity-pill--ok" },
+  failed: { label: "başarısız ✕", cls: "activity-pill--fail" },
+  stopped: { label: "durduruldu", cls: "activity-pill--fail" },
 };
 
 const TERMINAL = new Set(["succeeded", "failed", "cancelled", "done", "stopped"]);
@@ -37,7 +37,7 @@ const ACTUATING = new Set([
 ]);
 
 function taskIcon(task) {
-  if (task.kind === "phone" || task.source === "phone") return "PH";
+  if (task.kind === "phone" || task.source === "phone") return "TEL";
   if (task.kind === "browser") return "WEB";
   return "PC";
 }
@@ -56,8 +56,8 @@ function planLines(plan) {
   if (!Array.isArray(plan)) return [];
   return plan.map((step, index) => {
     if (typeof step === "string") return step;
-    if (!step || typeof step !== "object") return `Step ${index + 1}`;
-    return step.description || step.action || step.type || step.step_id || `Step ${index + 1}`;
+    if (!step || typeof step !== "object") return `Adım ${index + 1}`;
+    return step.description || step.action || step.type || step.step_id || `Adım ${index + 1}`;
   });
 }
 
@@ -76,19 +76,19 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
 
   return (
     <ModalPanel
-      title="Task Center"
+      title="Görev Merkezi"
       onClose={onClose}
       className="activity-panel"
       actions={
         <div className="activity-hdr-actions">
           {hasActive && onStopAll && (
             <button className="activity-stop-all" onClick={onStopAll}>
-              STOP ALL
+              TÜMÜNÜ DURDUR
             </button>
           )}
           {ordered.length > 0 && (
             <button className="activity-clear" onClick={onClear}>
-              Clear finished
+              Bitenleri temizle
             </button>
           )}
         </div>
@@ -96,9 +96,9 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
     >
       <>
         {ordered.length === 0 ? (
-          <StateMessage variant="empty" icon="inbox" title="No tasks yet">
-            PC and phone work you hand to JARVIS appears here with live progress, recovery
-            details and the evidence it verified against.
+          <StateMessage variant="empty" icon="inbox" title="Henüz görev yok">
+            DUNYATEK’e verdiğiniz bilgisayar ve telefon işleri; canlı ilerleme, kurtarma ayrıntıları
+            ve doğrulamada kullanılan kanıtlarla birlikte burada görünür.
           </StateMessage>
         ) : (
           <div className="activity-list">
@@ -110,15 +110,15 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
                 <article key={task.id} className="activity-task">
                   <div className="activity-task-hd">
                     <span className="activity-task-ico">{taskIcon(task)}</span>
-                    <span className="activity-task-goal">{task.goal || "Aura task"}</span>
+                    <span className="activity-task-goal">{task.goal || "DUNYATEK görevi"}</span>
                     <span className={`activity-pill ${status.cls}`}>{status.label}</span>
                     {canStop && onStopTask && (
                       <button
                         className="activity-task-stop"
                         onClick={() => onStopTask(task.id)}
-                        aria-label={`Stop ${task.goal || "task"}`}
+                        aria-label={`Durdur: ${task.goal || "görev"}`}
                       >
-                        Stop
+                        Durdur
                       </button>
                     )}
                   </div>
@@ -126,13 +126,13 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
                   <div className="activity-meta">
                     <span>
                       {task.source === "phone" || task.kind === "phone"
-                        ? "On this phone"
-                        : "Windows host"}
+                        ? "Bu telefonda"
+                        : "Windows bilgisayar"}
                     </span>
                     {Number.isFinite(Number(task.currentStep)) && Number(task.currentStep) > 0 && (
                       <span>
-                        Step {task.currentStep}
-                        {plan.length ? ` of ${plan.length}` : ""}
+                        Adım {task.currentStep}
+                        {plan.length ? ` / ${plan.length}` : ""}
                       </span>
                     )}
                     {task.risk && <span>{task.risk}</span>}
@@ -140,37 +140,37 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
 
                   {task.recoveryInfo && (
                     <div className="activity-notice activity-notice--recovery">
-                      Recovery: {task.recoveryInfo}
+                      Kurtarma: {task.recoveryInfo}
                     </div>
                   )}
-                  {task.retryInfo && <div className="activity-notice">Retry: {task.retryInfo}</div>}
+                  {task.retryInfo && (
+                    <div className="activity-notice">Yeniden deneme: {task.retryInfo}</div>
+                  )}
                   {task.waitingReason && (
                     <div className="activity-notice activity-notice--waiting">
-                      Waiting: {task.waitingReason}
+                      Bekleniyor: {task.waitingReason}
                     </div>
                   )}
 
                   {task.approval && (
                     <div className="activity-approval" role="status">
                       <div className="activity-approval-title">
-                        {task.approval.risk || "R2"} approval required
+                        {task.approval.risk || "R2"} onayı gerekiyor
                       </div>
-                      {task.approval.action && <div>Action: {task.approval.action}</div>}
-                      {task.approval.target && <div>Target: {task.approval.target}</div>}
-                      {task.approval.consequence && (
-                        <div>Consequence: {task.approval.consequence}</div>
-                      )}
+                      {task.approval.action && <div>İşlem: {task.approval.action}</div>}
+                      {task.approval.target && <div>Hedef: {task.approval.target}</div>}
+                      {task.approval.consequence && <div>Sonuç: {task.approval.consequence}</div>}
                       {task.approval.expiresAt && (
-                        <div>Expires: {approvalExpiry(task.approval.expiresAt)}</div>
+                        <div>Geçerlilik sonu: {approvalExpiry(task.approval.expiresAt)}</div>
                       )}
                       <div className="activity-approval-note">
-                        Display only — approve this exact action on the trusted host.
+                        Yalnızca bilgi amaçlıdır — bu işlemi güvenilir bilgisayarda onaylayın.
                       </div>
                     </div>
                   )}
 
                   {plan.length > 0 && (
-                    <ol className="activity-plan" aria-label="Current plan">
+                    <ol className="activity-plan" aria-label="Mevcut plan">
                       {plan.map((line, index) => (
                         <li
                           key={`${index}:${line}`}
@@ -189,7 +189,7 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
                   )}
                   {task.proof && (
                     <div className="activity-proof">
-                      <span>Verification evidence</span>
+                      <span>Doğrulama kanıtı</span>
                       {printable(task.proof)}
                     </div>
                   )}
@@ -201,7 +201,7 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
                           key={item.receiptKey || index}
                           className="activity-shot"
                           src={item.image}
-                          alt="Task evidence screenshot"
+                          alt="Görev kanıtı ekran görüntüsü"
                           loading="lazy"
                           onClick={() => setZoom(item.image)}
                         />
@@ -220,10 +220,10 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
                         <span className="activity-step-ico">⏳</span>
                         <span className="activity-step-txt">
                           {task.status === "verifying"
-                            ? "checking postconditions and collecting proof…"
+                            ? "son koşullar denetleniyor ve kanıt toplanıyor…"
                             : task.status === "cancelling"
-                              ? "invalidating actuator lease…"
-                              : "working from the last verified checkpoint…"}
+                              ? "kontrol yetkisi geri alınıyor…"
+                              : "son doğrulanan kontrol noktasından devam ediliyor…"}
                         </span>
                       </div>
                     )}
@@ -235,8 +235,9 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
         )}
 
         <div className="activity-foot">
-          Tasks survive interface recreation and reconnects. Aura reports success only after
-          verification. Approval cards are read-only until signed device approvals are available.
+          Görevler arayüz yenilense ve bağlantı kopsa da korunur. DUNYATEK başarıyı yalnızca
+          doğrulamadan sonra bildirir. İmzalı cihaz onayları kullanılabilir olana kadar onay
+          kartları salt okunurdur.
         </div>
 
         {zoom && (
@@ -247,14 +248,14 @@ export default function AgentActivity({ tasks, onClose, onClear, onStopTask, onS
               setZoom(null);
             }}
           >
-            <img src={zoom} alt="Task evidence" onClick={(event) => event.stopPropagation()} />
+            <img src={zoom} alt="Görev kanıtı" onClick={(event) => event.stopPropagation()} />
             <button
               className="activity-lightbox-x"
               onClick={(event) => {
                 event.stopPropagation();
                 setZoom(null);
               }}
-              aria-label="Close evidence preview"
+              aria-label="Kanıt önizlemesini kapat"
             >
               ✕
             </button>

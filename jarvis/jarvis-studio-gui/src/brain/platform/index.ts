@@ -115,7 +115,7 @@ async function phoneInvoke(
   args: Record<string, unknown> = {},
 ): Promise<ToolResult & { eventId?: number }> {
   if (!inTauri()) {
-    return { ok: false, summary: "This only works on the device.", error: "not_on_device" };
+    return { ok: false, summary: "Bu yalnızca cihazda çalışır.", error: "not_on_device" };
   }
   try {
     const call = invoke(`plugin:phone|${cmd}`, args);
@@ -125,7 +125,7 @@ async function phoneInvoke(
           call,
           new Promise((_, reject) =>
             setTimeout(
-              () => reject(new Error(`native '${cmd}' did not respond`)),
+              () => reject(new Error(`yerel '${cmd}' komutu yanıt vermedi`)),
               PHONE_INVOKE_TIMEOUT_MS,
             ),
           ),
@@ -149,7 +149,7 @@ async function phoneInvoke(
       ...(typeof res?.eventId === "number" ? { eventId: res.eventId } : {}),
     };
   } catch (err) {
-    return { ok: false, summary: `Failed: ${String(err)}`, error: "plugin_error" };
+    return { ok: false, summary: `Başarısız oldu: ${String(err)}`, error: "plugin_error" };
   }
 }
 
@@ -161,7 +161,7 @@ async function phoneJson<T>(cmd: string, args: Record<string, unknown>): Promise
     return (await Promise.race([
       invoke<T>(`plugin:phone|${cmd}`, args),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`native '${cmd}' did not respond`)), PHONE_INVOKE_TIMEOUT_MS),
+        setTimeout(() => reject(new Error(`yerel '${cmd}' komutu yanıt vermedi`)), PHONE_INVOKE_TIMEOUT_MS),
       ),
     ])) as T;
   } catch {
@@ -205,7 +205,7 @@ function setGrantedFolder(folder: GrantedFolder): void {
 /** Open Android's folder picker and persist the granted tree for later reads. */
 export async function pickGrantedFolder(): Promise<ToolResult & { folder?: GrantedFolder }> {
   if (!inTauri()) {
-    return { ok: false, summary: "This only works on the device.", error: "not_on_device" };
+    return { ok: false, summary: "Bu yalnızca cihazda çalışır.", error: "not_on_device" };
   }
   try {
     const res = await invoke<{ ok: boolean; summary: string; uri?: string; name?: string }>(
@@ -216,7 +216,7 @@ export async function pickGrantedFolder(): Promise<ToolResult & { folder?: Grant
     setGrantedFolder(folder);
     return { ok: true, summary: res.summary, folder };
   } catch (err) {
-    return { ok: false, summary: `Failed: ${String(err)}`, error: "plugin_error" };
+    return { ok: false, summary: `Başarısız oldu: ${String(err)}`, error: "plugin_error" };
   }
 }
 
@@ -233,15 +233,15 @@ const tauriPhone: PhoneController = {
   // The operator loop runs natively; see operator/controller.ts for why.
   async operatorStart(spec) {
     const res = await phoneJson<OperatorStartResult>("operator_start", { ...spec });
-    return res ?? { ok: false, summary: "The phone plugin did not respond.", error: "plugin_error" };
+    return res ?? { ok: false, summary: "Telefon eklentisi yanıt vermedi.", error: "plugin_error" };
   },
   async operatorStatus(taskId, since) {
     const res = await phoneJson<OperatorStatus>("operator_status", { taskId, since });
-    return res ?? { ok: false, summary: "The phone plugin did not respond." };
+    return res ?? { ok: false, summary: "Telefon eklentisi yanıt vermedi." };
   },
   async beginTask(spec) {
     if (!inTauri()) {
-      return { ok: false, summary: "This only works on the device.", error: "not_on_device" };
+      return { ok: false, summary: "Bu yalnızca cihazda çalışır.", error: "not_on_device" };
     }
     try {
       const res = await invoke<{
@@ -278,7 +278,7 @@ const tauriPhone: PhoneController = {
         },
       };
     } catch (err) {
-      return { ok: false, summary: `Failed: ${String(err)}`, error: "plugin_error" };
+      return { ok: false, summary: `Başarısız oldu: ${String(err)}`, error: "plugin_error" };
     }
   },
   checkpointTask: (checkpoint) => phoneInvoke("task_checkpoint", { ...checkpoint }),
@@ -337,7 +337,7 @@ export const androidPlatform: Platform = {
         c.includes("quieter")
       ) {
         return phoneInvoke("open_system_settings", { target: "sound" }).then((r) =>
-          r.ok ? { ok: true, summary: "Opened sound settings — use the volume keys." } : r,
+          r.ok ? { ok: true, summary: "Ses ayarlarını açtım — ses düğmelerini kullanın." } : r,
         );
       }
       // play_pause / next / previous have NO implementation anywhere (no Kotlin
@@ -349,7 +349,7 @@ export const androidPlatform: Platform = {
       if (c.includes("play") || c.includes("pause") || c === "next" || c === "previous") {
         return Promise.resolve({
           ok: false,
-          summary: "I can't control media playback on Android yet, sir.",
+          summary: "Android’de medya oynatmayı henüz kontrol edemiyorum efendim.",
           error: "not_implemented",
         });
       }
@@ -371,7 +371,7 @@ export const androidPlatform: Platform = {
       // nothing to stop because there is nothing to start; both directions fail.
       return Promise.resolve({
         ok: false,
-        summary: "Screen/audio recording isn't available on the phone yet.",
+        summary: "Ekran/ses kaydı telefonda henüz kullanılamıyor.",
         error: "not_implemented",
       });
     },
@@ -382,11 +382,11 @@ export const androidPlatform: Platform = {
       if (!folder) {
         return {
           ok: false,
-          summary: "No folder has been granted yet — choose one in Settings ▸ Storage & Privacy.",
+          summary: "Henüz erişim izni verilmiş bir klasör yok — Ayarlar ▸ Dosyalar bölümünden bir klasör seçin.",
           error: "not_implemented",
         };
       }
-      if (!inTauri()) return { ok: false, summary: "This only works on the device." };
+      if (!inTauri()) return { ok: false, summary: "Bu yalnızca cihazda çalışır." };
       try {
         const res = await invoke<{ ok: boolean; summary: string; content?: string }>(
           "plugin:phone|read_file",
@@ -396,7 +396,7 @@ export const androidPlatform: Platform = {
           ? { ok: true, summary: res.content ?? res.summary }
           : { ok: false, summary: res.summary };
       } catch (err) {
-        return { ok: false, summary: `Failed: ${String(err)}`, error: "plugin_error" };
+        return { ok: false, summary: `Başarısız oldu: ${String(err)}`, error: "plugin_error" };
       }
     },
     list: async (path) => {
@@ -404,11 +404,11 @@ export const androidPlatform: Platform = {
       if (!folder) {
         return {
           ok: false,
-          summary: "No folder has been granted yet — choose one in Settings ▸ Storage & Privacy.",
+          summary: "Henüz erişim izni verilmiş bir klasör yok — Ayarlar ▸ Dosyalar bölümünden bir klasör seçin.",
           error: "not_implemented",
         };
       }
-      if (!inTauri()) return { ok: false, summary: "This only works on the device." };
+      if (!inTauri()) return { ok: false, summary: "Bu yalnızca cihazda çalışır." };
       try {
         const res = await invoke<{
           ok: boolean;
@@ -421,7 +421,7 @@ export const androidPlatform: Platform = {
           .join("\n");
         return { ok: true, summary: listing || res.summary };
       } catch (err) {
-        return { ok: false, summary: `Failed: ${String(err)}`, error: "plugin_error" };
+        return { ok: false, summary: `Başarısız oldu: ${String(err)}`, error: "plugin_error" };
       }
     },
   },
@@ -429,8 +429,8 @@ export const androidPlatform: Platform = {
     screenshot: async () => {
       const base64 = await captureScreenshotBase64();
       return base64
-        ? { ok: true, summary: "Captured screenshot.", images: [base64] }
-        : { ok: false, summary: "Screenshot failed (null)." };
+        ? { ok: true, summary: "Ekran görüntüsü alındı.", images: [base64] }
+        : { ok: false, summary: "Ekran görüntüsü alınamadı (null)." };
     },
   },
   phone: tauriPhone,

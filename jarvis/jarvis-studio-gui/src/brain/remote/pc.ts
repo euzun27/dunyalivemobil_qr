@@ -554,7 +554,7 @@ export class RemotePC {
       }
       if (unauthorized) {
         this.setState("unauthorized");
-        this.failPending("Your PC rejected this phone's identity or pairing pins.");
+        this.failPending("Bilgisayarınız bu telefonun kimliğini veya eşleştirme sabitlemelerini reddetti.");
         this.resolveWaiters(false);
         return;
       }
@@ -627,7 +627,7 @@ export class RemotePC {
     }
     this.setState("unauthorized");
     this.resolveWaiters(false);
-    this.failPending("Your PC identity or phone pairing could not be verified.");
+    this.failPending("Bilgisayarınızın kimliği veya telefon eşleştirmesi doğrulanamadı.");
     try {
       ws.close(1008, "identity verification failed");
     } catch {
@@ -720,7 +720,7 @@ export class RemotePC {
       hostId: this.hostId,
       challengeId,
       connectionNonce: this.connectionNonce,
-      deviceName: this.cfg.deviceName || "Aura phone",
+      deviceName: this.cfg.deviceName || "DUNYATEK telefonu",
     }));
     if (!claim.ok || !claim.deviceId || !claim.publicKey || !claim.signature) {
       throw new Error("phone pairing signature failed");
@@ -736,7 +736,7 @@ export class RemotePC {
         device_id: claim.deviceId,
         public_key: claim.publicKey,
         fingerprint: claim.fingerprint || "",
-        device_name: claim.deviceName || this.cfg.deviceName || "Aura phone",
+        device_name: claim.deviceName || this.cfg.deviceName || "DUNYATEK telefonu",
         pin,
         signature: claim.signature,
       },
@@ -808,7 +808,7 @@ export class RemotePC {
       clearTimeout(this.authTimer);
       this.authTimer = null;
     }
-    this.failPending("I let go of the PC link, sir.");
+    this.failPending("Bilgisayar bağlantısını bıraktım efendim.");
     this.resolveWaiters(false);
     const ws = this.ws;
     this.ws = null;
@@ -962,19 +962,19 @@ export class RemotePC {
    */
   async runTask(goal: string, kind: "browser" | "computer" | "auto" = "browser"): Promise<ToolResult> {
     const g = (goal || "").trim();
-    if (!g) return { ok: false, summary: "What should I do on the PC, sir?" };
+    if (!g) return { ok: false, summary: "Bilgisayarda ne yapayım efendim?" };
     if (this.pending) {
-      return { ok: false, summary: "I'm still finishing the last PC task, sir — one moment." };
+      return { ok: false, summary: "Son bilgisayar görevini hâlâ bitiriyorum efendim — bir dakika." };
     }
     const online = await this.ensureOnline();
     if (!online) {
       const why =
         this._state === "unauthorized"
-          ? "the phone identity or host pins were rejected — scan a fresh pairing QR."
-          : "make sure it's on, on the same network, and the JARVIS desktop app is running.";
+          ? "telefon kimliği veya bilgisayar sabitlemeleri reddedildi — yeni bir eşleştirme QR kodu tarayın."
+          : "bilgisayarın açık, aynı ağda ve DUNYATEK masaüstü programının çalışıyor olduğundan emin olun.";
       return {
         ok: false,
-        summary: `I can't reach your PC, sir — ${why}`,
+        summary: `Bilgisayarınıza ulaşamıyorum efendim — ${why}`,
         error: "unreachable",
       };
     }
@@ -1003,7 +1003,7 @@ export class RemotePC {
           this.cancelPending("deadline_exceeded");
           this.settle({
             ok: false,
-            summary: "That PC task exceeded its deadline, sir — I asked the PC to cancel it.",
+            summary: "Bilgisayar görevi süre sınırını aştı efendim — bilgisayardan iptal etmesini istedim.",
             error: "deadline_exceeded",
           });
         },
@@ -1014,7 +1014,7 @@ export class RemotePC {
       if (!sent) {
         this.settle({
           ok: false,
-          summary: "I couldn't send that to your PC, sir — the link dropped.",
+          summary: "Bunu bilgisayarınıza gönderemedim efendim — bağlantı koptu.",
         });
       }
     });
@@ -1064,7 +1064,7 @@ export class RemotePC {
     const p = this.pending;
     if (!p || p.done) return false;
     const sent = this.cancelPending(reason);
-    this.settle({ ok: false, summary: "Stopped the PC task, sir.", error: reason });
+    this.settle({ ok: false, summary: "Bilgisayar görevini durdurdum efendim.", error: reason });
     return sent;
   }
 
@@ -1174,7 +1174,7 @@ export class RemotePC {
         this.cancelPending("client_stalled");
         this.settle({
           ok: false,
-          summary: "The PC task stopped making verified progress, sir — I asked it to cancel.",
+          summary: "Bilgisayar görevinde doğrulanmış ilerleme durdu efendim — iptal etmesini istedim.",
           error: "client_stalled",
         });
       },
@@ -1195,7 +1195,7 @@ export class RemotePC {
         this.cancelPending("approval_timeout");
         this.settle({
           ok: false,
-          summary: "That PC task needed attention and the approval window expired, sir.",
+          summary: "Bilgisayar görevi ilginizi gerektiriyordu ve onay süresi doldu efendim.",
           error: "approval_timeout",
         });
       },
@@ -1300,7 +1300,7 @@ export class RemotePC {
       type: "task.cancel",
       data: { task_id: p.taskId, reason },
     });
-    this.settle({ ok: false, summary: "Stopped the PC task, sir.", error: reason });
+    this.settle({ ok: false, summary: "Bilgisayar görevini durdurdum efendim.", error: reason });
     return sent;
   }
 
@@ -1600,10 +1600,10 @@ function terminalResult(data: unknown): ToolResult {
   const summary =
     ((ok || state === "failed" || stopped) && claimedSummary) ||
     (stopped
-      ? "Stopped on the PC, sir."
+      ? "Bilgisayarda durduruldu efendim."
       : ok
-        ? "Done on your PC, sir."
-        : "I couldn't verify completion of that PC task, sir.");
+        ? "Bilgisayarınızda tamamlandı efendim."
+        : "Bilgisayar görevinin tamamlandığını doğrulayamadım efendim.");
   return {
     ok,
     summary,
