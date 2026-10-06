@@ -40,7 +40,7 @@ function pcEvent(ev) {
   const next = nextPcStatus(
     pc,
     { ...ev, now: Date.now() },
-    { online: state === "online", voice },
+    { online: state === "online", voice, phoneAudio: voice && client?.playing?.() != null },
   );
   if (next === pc) return false;
   pc = next;
@@ -285,6 +285,11 @@ function keepAlive() {
 if (typeof window !== "undefined") {
   setTimeout(keepAlive, 500);
   setInterval(keepAlive, RETRY_MS);
+  // Canli gorusmede avatarin "konusuyor" durumu telefonda gercekten calan sese baglidir.
+  setInterval(() => {
+    if (!voice || !client) return;
+    if (pcEvent({ kind: "play", playing: client.playing() })) emit();
+  }, 120);
   // Uygulamaya/ekrana geri donulunce beklemeden toparla.
   document.addEventListener("visibilitychange", () => {
     if (visible()) setTimeout(keepAlive, 300);

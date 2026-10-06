@@ -9,6 +9,8 @@
 export const PC_APP_PORT = 8002;
 // PC'nin (Gemini Live) konusma sesi ornekleme hizi.
 const PC_VOICE_RATE = 24000;
+// Cumle aralarindaki kisa bosluklarda avatar konusmayi kesmesin.
+const PLAY_HOLD_S = 0.3;
 
 /**
  * Adreslerin hepsini ayni anda dener, ilk cevap vereni dondurur (yoksa null).
@@ -239,6 +241,7 @@ export class SimplePC {
       playCtx = null;
     }
     let playAt = 0;
+    let gotAudio = false; // bu gorusmede PC'den ses geldi mi
     // Ses seviyesi olcerleri: ekrandaki DUNYATEK yuzu bunlarla konusur / dinler.
     let outMeter = null;
     try {
@@ -253,6 +256,7 @@ export class SimplePC {
     ws.onmessage = (ev) => {
       if (!playCtx || !(ev.data instanceof ArrayBuffer) || ev.data.byteLength < 2) return;
       if (playCtx.state === "suspended") playCtx.resume().catch(() => {});
+      gotAudio = true;
       const pcm = new Int16Array(ev.data, 0, ev.data.byteLength >> 1);
       const abuf = playCtx.createBuffer(1, pcm.length, PC_VOICE_RATE);
       const ch = abuf.getChannelData(0);
@@ -284,6 +288,9 @@ export class SimplePC {
       micMeter,
       outMeter,
       lastSent: Date.now(),
+      // Telefonda DUNYATEK sesi su an caliyor mu (tamponda calinacak ses var mi)?
+      // null: bu gorusmede telefona hic ses gelmedi (PC kendi hoparlorunden konusuyor).
+      playing: () => (playCtx && gotAudio ? playAt + PLAY_HOLD_S > playCtx.currentTime : null),
     };
     this._voice = voice;
 
@@ -346,6 +353,11 @@ export class SimplePC {
         resolve(false);
       };
     });
+  }
+
+  /** Telefonda PC sesi caliyor mu; ses hic gelmediyse ya da gorusme yoksa null. */
+  playing() {
+    return this._voice?.playing ? this._voice.playing() : null;
   }
 
   /** Anlik ses seviyeleri 0..1: mic = kullanici konusuyor, out = DUNYATEK konusuyor. */
