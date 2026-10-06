@@ -24,6 +24,10 @@ describe("yardimcilar", () => {
     expect(hedefKlip("thinking")).toBe("dusunme");
     expect(hedefKlip("listening")).toBe("bekleme");
     expect(hedefKlip("idle")).toBe("bekleme");
+    expect(hedefKlip("thinking", false, true)).toBe("kamera");
+    expect(hedefKlip("listening", false, true)).toBe("kamera");
+    expect(hedefKlip("speaking", false, true)).toBe("konusma"); // konusma onde
+    expect(hedefKlip("speaking", true, true)).toBe("kamera");
   });
 
   it("yumusak", () => {

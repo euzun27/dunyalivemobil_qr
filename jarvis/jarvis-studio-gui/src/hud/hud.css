@@ -2713,3 +2713,32 @@
     transition: none;
   }
 }
+
+/* DUNYATEK: telefon kamerasi katmani (KameraKatmani.jsx) */
+.kamera-katmani {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000; /* kamera uyarisinin (phoneCamera.ts) hemen altinda */
+  background: #000308;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kamera-katmani__goruntu {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.kamera-katmani__avatar {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 56px);
+  right: 12px;
+  border: 1px solid rgba(0, 212, 255, 0.7);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #00060a;
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
+}
+.kamera-katmani__avatar .video-avatar {
+  display: block;
+}

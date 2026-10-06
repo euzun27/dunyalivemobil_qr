@@ -1,5 +1,5 @@
 /* VideoAvatar.jsx - HUD merkezinde gercekci DUNYATEK avatari (masaustuyle ayni klipler).
-   Klipler public/avatar/ altinda; bir kez belge olarak (blob) okunur: telefonun web
+   Klipler public/avatar/ altinda; bir kez belge olarak (blob) okunur (kamera klibi arkadan): telefonun web
    gorunumunde gomulu videolarda ileri-geri sarma boylece sorunsuz calisir.
    Iki <video> slotu: biri gorunurken digeri siradaki klibi hazirlar; gecis 0.4 sn,
    yeni kare eski karenin bas pozuna oturtulur (videoPlayer.ts). Arka planda durur. */
@@ -15,8 +15,10 @@ import {
   kareNo,
   ters,
 } from "./videoPlayer";
+import { bakis } from "./kameraDurumu";
 
 const KLIPLER = ["bekleme", "dusunme", "konusma"];
+const SONRADAN = ["kamera"]; // avatar bunlari beklemeden baslar; gelince eklenir
 const FRAME_MS = 1000 / 30;
 let kaynakSozu = null; // { url: {klip: blobUrl}, poz: {klip: Afin[]} } - uygulama boyunca bir kez
 
@@ -26,10 +28,14 @@ function kaynaklariYukle() {
       const meta = await (await fetch("/avatar/pozlar.json")).json();
       const url = {};
       const poz = {};
-      for (const k of KLIPLER) {
+      const al = async (k) => {
         const b = await (await fetch(`/avatar/${meta.klipler[k].dosya}`)).blob();
-        url[k] = URL.createObjectURL(b);
         poz[k] = meta.klipler[k].poz;
+        url[k] = URL.createObjectURL(b); // url en son: klip ancak pozu hazirsa secilir
+      };
+      await Promise.all(KLIPLER.map(al));
+      for (const k of SONRADAN) {
+        if (meta.klipler[k]) void al(k).catch(() => {}); // yoksa ya da yuklenemezse bekleme oynar
       }
       return { url, poz };
     })().catch((e) => {
@@ -122,7 +128,10 @@ export function VideoAvatar({ status = "idle", muted = false, width = 260, onErr
           if (now - son < FRAME_MS) return;
           son = now;
           const s = live.current;
-          const e = yon.adim(now / 1000, hedefKlip(s.status, s.muted), [durum(0), durum(1)]);
+          const bakiyor = bakis.aktif(Date.now() / 1000, s.status === "speaking");
+          let hedef = hedefKlip(s.status, s.muted, bakiyor);
+          if (!url[hedef]) hedef = hedefKlip(s.status, s.muted);
+          const e = yon.adim(now / 1000, hedef, [durum(0), durum(1)]);
           if (e.baslat) baslat(e.baslat.slot, e.baslat.klip);
           if (e.durdur !== undefined) slotlar[e.durdur].pause();
           const a = yon.aktif;

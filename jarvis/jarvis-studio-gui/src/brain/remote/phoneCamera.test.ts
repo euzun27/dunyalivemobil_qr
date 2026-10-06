@@ -146,6 +146,18 @@ describe("handleCameraRequest", () => {
     ]);
   });
 
+  it("istek gelince avatar kamera bakisina gecer; hata olursa katman kapanir", async () => {
+    const { bakis, anlik, kareAlindi } = await import("../../hud/kameraDurumu");
+    bakis.bitir();
+    await handleCameraRequest({ type: "camera_capture", id: "k1" }, () => {}, ok);
+    expect(bakis.aktif(Date.now() / 1000, false)).toBe(true);
+    kareAlindi("data:image/jpeg;base64,QQ==");
+    const red = () => Promise.reject(Object.assign(new Error("x"), { name: "NotAllowedError" }));
+    await handleCameraRequest({ type: "camera_capture", id: "k2" }, () => {}, red);
+    expect(anlik().foto).toBe(null);
+    bakis.bitir();
+  });
+
   it("gecersiz istekler yok sayilir", async () => {
     const giden: CameraResult[] = [];
     for (const m of [null, {}, { type: "camera_capture" }, { type: "send_sms", id: "x" }]) {

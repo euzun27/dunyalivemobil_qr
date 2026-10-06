@@ -1,7 +1,7 @@
 /**
  * DUNYATEK video avatari (telefon) - saf mantik.
  *
- * Masaustundeki core/video_avatar.py ile ayni davranis: bekleme / dusunme / konusma
+ * Masaustundeki core/video_avatar.py ile ayni davranis: bekleme / dusunme / konusma / kamera
  * klipleri, poz eslestirmeli ~0.4 sn yumusak gecisler. Telefonda klipleri <video>
  * oynatir; bu dosya yalnizca "ne zaman hangi klip, nasil karistir" kararini verir
  * (DOM'suz, test edilebilir).
@@ -10,7 +10,7 @@
  * 360x540 olceginde.
  */
 
-export type Klip = "bekleme" | "dusunme" | "konusma";
+export type Klip = "bekleme" | "dusunme" | "konusma" | "kamera";
 /** 2x3 afin donusum, satirlar: [[a, c, e], [b, d, f]]  (x' = a*x + c*y + e, y' = b*x + d*y + f) */
 export type Afin = [[number, number, number], [number, number, number]];
 
@@ -19,8 +19,10 @@ export const GECIS_SN = 0.4;
 export const POZ_GENISLIK = 360;
 export const POZ_YUKSEKLIK = 540;
 
-export function hedefKlip(status: string, muted = false): Klip {
+/** Konusma her zaman onde; sonra kamera bakisi (telefon kamerasi istendi), sonra dusunme. */
+export function hedefKlip(status: string, muted = false, bakiyor = false): Klip {
   if (status === "speaking" && !muted) return "konusma";
+  if (bakiyor) return "kamera";
   if (status === "thinking") return "dusunme";
   return "bekleme";
 }
