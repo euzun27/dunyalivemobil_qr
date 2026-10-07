@@ -37,6 +37,17 @@ workflows:
           PBX=$(find src-tauri/gen/apple -name project.pbxproj | head -1)
           perl -0pi -e 's/buildSettings = \{/buildSettings = {\n\t\t\t\tCODE_SIGNING_ALLOWED = NO;\n\t\t\t\tCODE_SIGNING_REQUIRED = NO;\n\t\t\t\tCODE_SIGN_IDENTITY = "";/g' "$PBX"
           grep -c "CODE_SIGNING_ALLOWED = NO" "$PBX"
+          # Uygulama simgesi: DUNYATEK logosu (koyu zemin, 1024x1024, saydamlıksız).
+          # Xcode tek boyutlu simgeden diğer boyutları kendisi üretir.
+          ICONSET=$(find src-tauri/gen/apple -type d -name AppIcon.appiconset | head -1)
+          if [ -n "$ICONSET" ]; then
+            rm -f "$ICONSET"/*.png "$ICONSET"/Contents.json
+            cp src-tauri/icon-src/ios-app-icon.png "$ICONSET/AppIcon-1024.png"
+            echo '{"images":[{"filename":"AppIcon-1024.png","idiom":"universal","platform":"ios","size":"1024x1024"}],"info":{"author":"xcode","version":1}}' > "$ICONSET/Contents.json"
+            ls -la "$ICONSET"
+          else
+            echo "UYARI: AppIcon.appiconset bulunamadı, varsayılan simge kalır."
+          fi
       - name: Derle (tauri ios build)
         working_directory: jarvis/jarvis-studio-gui
         script: |
