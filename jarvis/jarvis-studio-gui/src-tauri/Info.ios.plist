@@ -15,10 +15,10 @@
 	<string>DUNYATEK, bilgisayar kontrolünü onaylamak için Face ID kullanır.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<!-- Bilgisayardaki asistan yerel ağda düz HTTP (8002) ile konuşur. -->
+		<!-- Bilgisayardaki asistan düz HTTP (8002) ile konuşur: ev ağı ve Tailscale (100.x).
+		     NSAllowsLocalNetworking EKLENMEMELİ: varken iOS NSAllowsArbitraryLoads'u yok sayar
+		     ve yalnızca yerel ağa izin verir; Tailscale adresi engellenir. -->
 		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 </dict>

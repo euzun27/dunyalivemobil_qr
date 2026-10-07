@@ -137,7 +137,11 @@ export const simplePcStore = {
         hosts: uniq([...candidates, ...(Array.isArray(info.hosts) ? info.hosts : [])]),
         deviceToken: info.device_token || null,
       });
+      lastError = "";
+    } else {
+      lastError = `${reach}: ${client.lastError || state}`;
     }
+    emit();
     return ok;
   },
   /**
