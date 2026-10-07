@@ -12,6 +12,15 @@ const PC_VOICE_RATE = 24000;
 // Cumle aralarindaki kisa bosluklarda avatar konusmayi kesmesin.
 const PLAY_HOLD_S = 0.3;
 
+/** PC'nin ses soketinden gelen metin: {"type":"kes"} = calan sesi hemen sustur. */
+export function sesKesMesaji(metin) {
+  try {
+    return JSON.parse(metin)?.type === "kes";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Adreslerin hepsini ayni anda dener, ilk cevap vereni dondurur (yoksa null).
  * Tailscale tunelinin ilk acilisi 10-15 sn surebildigi icin bekleme uzun tutulur;
@@ -253,7 +262,24 @@ export class SimplePC {
     } catch {
       outMeter = null;
     }
+    // Planlanmis ses parcalari: PC "kes" deyince (kullanici araya girdi) hepsi susturulur.
+    const calanlar = new Set();
+    const sustur = () => {
+      for (const n of calanlar) {
+        try {
+          n.stop();
+        } catch {
+          /* zaten bitmis */
+        }
+      }
+      calanlar.clear();
+      playAt = 0;
+    };
     ws.onmessage = (ev) => {
+      if (typeof ev.data === "string") {
+        if (sesKesMesaji(ev.data)) sustur();
+        return;
+      }
       if (!playCtx || !(ev.data instanceof ArrayBuffer) || ev.data.byteLength < 2) return;
       if (playCtx.state === "suspended") playCtx.resume().catch(() => {});
       gotAudio = true;
@@ -264,6 +290,8 @@ export class SimplePC {
       const node = playCtx.createBufferSource();
       node.buffer = abuf;
       node.connect(outMeter || playCtx.destination);
+      calanlar.add(node);
+      node.onended = () => calanlar.delete(node);
       const now = playCtx.currentTime;
       // Geride kaldiysak kisa bir tampon birakip bastan baslat.
       if (playAt < now) playAt = now + 0.05;

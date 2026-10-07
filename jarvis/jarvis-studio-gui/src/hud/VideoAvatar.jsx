@@ -1,6 +1,8 @@
 /* VideoAvatar.jsx - HUD merkezinde gercekci DUNYATEK avatari (masaustuyle ayni klipler).
-   Klipler public/avatar/ altinda; bir kez belge olarak (blob) okunur (kamera klibi arkadan): telefonun web
+   Klipler public/avatar/ altinda; bir kez belge olarak (blob) okunur: telefonun web
    gorunumunde gomulu videolarda ileri-geri sarma boylece sorunsuz calisir.
+   Hizli acilis: once bekleme klibinin ilk karesi (kucuk JPEG) hemen cizilir, yalnizca
+   bekleme klibi beklenir; diger klipler arkadan gelir, gelene kadar bekleme oynar.
    Iki <video> slotu: biri gorunurken digeri siradaki klibi hazirlar; gecis 0.4 sn,
    yeni kare eski karenin bas pozuna oturtulur (videoPlayer.ts). Arka planda durur. */
 
@@ -17,8 +19,9 @@ import {
 } from "./videoPlayer";
 import { bakis } from "./kameraDurumu";
 
-const KLIPLER = ["bekleme", "dusunme", "konusma"];
-const SONRADAN = ["kamera"]; // avatar bunlari beklemeden baslar; gelince eklenir
+const ILK = "bekleme"; // avatar yalnizca bunu bekler
+const SONRADAN = ["dusunme", "konusma", "kamera"]; // gelince eklenir; o zamana kadar bekleme oynar
+const ILK_KARE = "/avatar/bekleme-ilk.jpg"; // bekleme klibinin 0. karesi (video hazir olana kadar)
 const FRAME_MS = 1000 / 30;
 let kaynakSozu = null; // { url: {klip: blobUrl}, poz: {klip: Afin[]} } - uygulama boyunca bir kez
 
@@ -33,7 +36,7 @@ function kaynaklariYukle() {
         poz[k] = meta.klipler[k].poz;
         url[k] = URL.createObjectURL(b); // url en son: klip ancak pozu hazirsa secilir
       };
-      await Promise.all(KLIPLER.map(al));
+      await al(ILK);
       for (const k of SONRADAN) {
         if (meta.klipler[k]) void al(k).catch(() => {}); // yoksa ya da yuklenemezse bekleme oynar
       }
@@ -90,6 +93,26 @@ export function VideoAvatar({ status = "idle", muted = false, width = 260, onErr
       hazir: slotKlip[i] !== null && slotlar[i].readyState >= 2 && !slotlar[i].seeking,
     });
 
+    // Video cozulene kadar ilk kare: yuz acilir acilmaz gorunur. Bekleme klibi ayni
+    // kareden basladigi icin gecis fark edilmez; video bir kare cizince bu artik onemsiz.
+    let videoCizdi = false;
+    const ilkKare = new Image();
+    ilkKare.onload = () => {
+      if (iptal || videoCizdi || !ctx) return;
+      ctx.setTransform(olcek, 0, 0, olcek, 0, 0);
+      ctx.drawImage(ilkKare, 0, 0, POZ_GENISLIK, POZ_YUKSEKLIK);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    };
+    ilkKare.src = ILK_KARE;
+    // iOS web gorunumu ekranda gorunmeyen videonun oynatilmasini ilk dokunusa kadar
+    // erteleyebilir: ilk dokunusta iki slot da yeniden baslatilir.
+    const dokunus = () => {
+      slotlar.forEach((v) => {
+        if (v.src && v.paused) void v.play().catch(() => {});
+      });
+    };
+    window.addEventListener("pointerdown", dokunus, { once: true, passive: true });
+
     kaynaklariYukle()
       .then(({ url, poz }) => {
         if (iptal || !ctx) return;
@@ -131,6 +154,7 @@ export function VideoAvatar({ status = "idle", muted = false, width = 260, onErr
           const bakiyor = bakis.aktif(Date.now() / 1000, s.status === "speaking");
           let hedef = hedefKlip(s.status, s.muted, bakiyor);
           if (!url[hedef]) hedef = hedefKlip(s.status, s.muted);
+          if (!url[hedef]) hedef = ILK; // klip henuz gelmedi
           const e = yon.adim(now / 1000, hedef, [durum(0), durum(1)]);
           if (e.baslat) baslat(e.baslat.slot, e.baslat.klip);
           if (e.durdur !== undefined) slotlar[e.durdur].pause();
@@ -138,6 +162,7 @@ export function VideoAvatar({ status = "idle", muted = false, width = 260, onErr
           const va = slotlar[a];
           if (slotKlip[a] === null || va.readyState < 2) return;
           if (va.paused) void va.play().catch(() => {});
+          videoCizdi = true;
           ctx.setTransform(1, 0, 0, 1, 0, 0);
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           const ka = slotKlip[a];
@@ -163,6 +188,7 @@ export function VideoAvatar({ status = "idle", muted = false, width = 260, onErr
     return () => {
       iptal = true;
       cancelAnimationFrame(raf);
+      window.removeEventListener("pointerdown", dokunus);
       slotlar.forEach((v) => {
         v.pause();
         v.removeAttribute("src");
