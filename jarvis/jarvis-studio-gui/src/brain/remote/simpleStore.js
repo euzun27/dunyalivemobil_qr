@@ -40,7 +40,7 @@ function pcEvent(ev) {
   const next = nextPcStatus(
     pc,
     { ...ev, now: Date.now() },
-    { online: state === "online", voice },
+    { online: state === "online", voice, phoneAudio: voice && client?.playing?.() != null },
   );
   if (next === pc) return false;
   pc = next;
@@ -137,7 +137,11 @@ export const simplePcStore = {
         hosts: uniq([...candidates, ...(Array.isArray(info.hosts) ? info.hosts : [])]),
         deviceToken: info.device_token || null,
       });
+      lastError = "";
+    } else {
+      lastError = `${reach}: ${client.lastError || state}`;
     }
+    emit();
     return ok;
   },
   /**
@@ -285,6 +289,11 @@ function keepAlive() {
 if (typeof window !== "undefined") {
   setTimeout(keepAlive, 500);
   setInterval(keepAlive, RETRY_MS);
+  // Canli gorusmede avatarin "konusuyor" durumu telefonda gercekten calan sese baglidir.
+  setInterval(() => {
+    if (!voice || !client) return;
+    if (pcEvent({ kind: "play", playing: client.playing() })) emit();
+  }, 120);
   // Uygulamaya/ekrana geri donulunce beklemeden toparla.
   document.addEventListener("visibilitychange", () => {
     if (visible()) setTimeout(keepAlive, 300);

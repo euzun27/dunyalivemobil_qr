@@ -78,4 +78,33 @@ describe("nextPcStatus", () => {
     expect(nextPcStatus(base, { kind: "voice" }, ON)).toBe(base);
     expect(nextPcStatus(base, { kind: "tick", now: 99999 }, ON)).toBe(base);
   });
+
+  it("telefonda ses calarken avatar telefondaki gercek calmayi izler, PC mesajini degil", () => {
+    const TEL: PcStatusContext = { online: true, voice: true, phoneAudio: true };
+    let st = run([{ kind: "conn" }], TEL);
+    const seq: string[] = [];
+    const events: PcStatusEvent[] = [
+      { kind: "msg", msg: { type: "log", speaker: "user", text: "merhaba" }, now: 1000 },
+      { kind: "msg", msg: { type: "speaking", state: true }, now: 1100 }, // PC erken: yok sayilir
+      { kind: "play", playing: false, now: 1200 },
+      { kind: "play", playing: true, now: 1600 }, // ses telefonda basladi
+      { kind: "msg", msg: { type: "speaking", state: false }, now: 2000 }, // PC erken bitti: yok sayilir
+      { kind: "play", playing: true, now: 2500 },
+      { kind: "play", playing: false, now: 3200 }, // telefonda ses bitti
+    ];
+    for (const ev of events) {
+      st = nextPcStatus(st, ev, TEL);
+      seq.push(st.status);
+    }
+    expect(seq).toEqual(["thinking", "thinking", "thinking", "speaking", "speaking", "speaking", "listening"]);
+  });
+
+  it("telefona ses gelmiyorsa eskisi gibi PC mesajlari belirler", () => {
+    let st = run([{ kind: "conn" }]);
+    st = nextPcStatus(st, { kind: "msg", msg: { type: "speaking", state: true } }, ON);
+    st = nextPcStatus(st, { kind: "play", playing: null }, ON);
+    expect(st.status).toBe("speaking");
+    st = nextPcStatus(st, { kind: "play", playing: false }, ON); // phoneAudio yok: dokunma
+    expect(st.status).toBe("speaking");
+  });
 });

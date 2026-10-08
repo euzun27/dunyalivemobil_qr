@@ -1,0 +1,68 @@
+# DUNYATEK telefon uygulaması — Codemagic iOS derlemesi.
+# Apple Developer hesabı olmadan İMZASIZ .ipa üretir. Telefona kurulum: Windows'ta Sideloadly
+# + ücretsiz Apple ID (imza 7 gün geçerli). Ücretli hesaba geçilince imzalı/TestFlight iş akışı eklenir.
+workflows:
+  ios-imzasiz:
+    name: iOS (imzasız IPA)
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    environment:
+      xcode: latest
+      node: 22
+    cache:
+      cache_paths:
+        - $HOME/.cargo/registry
+        - $HOME/.cargo/git
+    scripts:
+      - name: Araçlar (Rust, xcodegen)
+        script: |
+          set -e
+          if ! command -v rustup >/dev/null 2>&1; then
+            curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+          fi
+          source "$HOME/.cargo/env"
+          rustup target add aarch64-apple-ios
+          command -v xcodegen >/dev/null 2>&1 || brew install xcodegen
+          rustc --version; node --version; xcodebuild -version
+      - name: Paketler (npm ci)
+        working_directory: jarvis/jarvis-studio-gui
+        script: npm ci
+      - name: iOS projesini oluştur (tauri ios init)
+        working_directory: jarvis/jarvis-studio-gui
+        script: |
+          set -e
+          source "$HOME/.cargo/env"
+          npx tauri ios init --ci
+          # İmzasız derleme: Xcode projesinde kod imzalamayı kapat.
+          PBX=$(find src-tauri/gen/apple -name project.pbxproj | head -1)
+          perl -0pi -e 's/buildSettings = \{/buildSettings = {\n\t\t\t\tCODE_SIGNING_ALLOWED = NO;\n\t\t\t\tCODE_SIGNING_REQUIRED = NO;\n\t\t\t\tCODE_SIGN_IDENTITY = "";/g' "$PBX"
+          grep -c "CODE_SIGNING_ALLOWED = NO" "$PBX"
+          # Uygulama simgesi: DUNYATEK logosu (koyu zemin, 1024x1024, saydamlıksız).
+          # Xcode tek boyutlu simgeden diğer boyutları kendisi üretir.
+          ICONSET=$(find src-tauri/gen/apple -type d -name AppIcon.appiconset | head -1)
+          if [ -n "$ICONSET" ]; then
+            rm -f "$ICONSET"/*.png "$ICONSET"/Contents.json
+            cp src-tauri/icon-src/ios-app-icon.png "$ICONSET/AppIcon-1024.png"
+            echo '{"images":[{"filename":"AppIcon-1024.png","idiom":"universal","platform":"ios","size":"1024x1024"}],"info":{"author":"xcode","version":1}}' > "$ICONSET/Contents.json"
+            ls -la "$ICONSET"
+          else
+            echo "UYARI: AppIcon.appiconset bulunamadı, varsayılan simge kalır."
+          fi
+      - name: Derle (tauri ios build)
+        working_directory: jarvis/jarvis-studio-gui
+        script: |
+          source "$HOME/.cargo/env"
+          # Arşiv (xcarchive) imzasız oluşur; son "export" adımı imza istediği için hata
+          # vermesi beklenir. .ipa'yı aşağıda arşivden kendimiz paketliyoruz.
+          npx tauri ios build --target aarch64 --ci || echo "tauri ios build export adımında durdu (imzasız derlemede beklenir)"
+          APP=$(find src-tauri/gen/apple -path "*.xcarchive/Products/Applications/*.app" -maxdepth 6 -type d | head -1)
+          if [ -z "$APP" ]; then
+            echo "HATA: derlenmiş .app bulunamadı (yukarıdaki derleme hatasına bakın)."; exit 1
+          fi
+          echo "Uygulama: $APP"
+          rm -rf "$CM_BUILD_DIR/ipa" && mkdir -p "$CM_BUILD_DIR/ipa/Payload"
+          cp -R "$APP" "$CM_BUILD_DIR/ipa/Payload/"
+          (cd "$CM_BUILD_DIR/ipa" && zip -qry DUNYATEK-imzasiz.ipa Payload)
+          ls -la "$CM_BUILD_DIR/ipa"
+    artifacts:
+      - ipa/*.ipa

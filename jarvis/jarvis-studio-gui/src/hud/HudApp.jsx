@@ -14,6 +14,7 @@ import { ReactorCore, BootSequence, Waveform } from "./HudCore";
 import { HoloFace } from "./HoloFace.jsx";
 import ParticleFace from "./ParticleFace.jsx";
 import { VideoAvatar } from "./VideoAvatar.jsx";
+import { KameraKatmani } from "./KameraKatmani.jsx";
 import { useSimplePc } from "../hooks/useSimplePc";
 
 function openWebsite() {
@@ -213,6 +214,8 @@ export function JarvisHUD({
         ) : (
           <ReactorCore status={status} size={IS_MOBILE ? 232 : 482} rgb={c.rgb} />
         )}
+        {/* PC telefon kamerasindan kare isteyince: kamera goruntusu + ustte kucuk avatar */}
+        <KameraKatmani status={status} muted={muted} avatar={centre === "video"} />
         <div className="core-readout">
           <span className="core-name">{c.name}</span>
           {IS_MOBILE && <span className="core-tag">YAPAY ZEKÂ ASİSTANI</span>}

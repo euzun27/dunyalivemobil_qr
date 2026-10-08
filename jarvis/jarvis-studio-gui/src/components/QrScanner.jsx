@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
+import { qrTaramaBoyutu } from "./qrTarama";
 
 /* ANDROID FORK — Camera QR scanner for Remote PC pairing.
  *
@@ -29,25 +30,51 @@ export default function QrScanner({ onResult, onCancel }) {
       streamRef.current = null;
     };
 
-    const scanLoop = () => {
+    // DUNYATEK: hizli okuma. Varsa telefonun yerlesik QR okuyucusu (BarcodeDetector);
+    // yoksa jsQR kucultulmus karede ve yalnizca normal (ters cevrilmemis) desenle calisir.
+    // Tam cozunurlukte her karede iki kez taramak eski telefonlarda saniyeler surebiliyordu.
+    let detector = null;
+    try {
+      if ("BarcodeDetector" in window) detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+    } catch {
+      detector = null;
+    }
+    let mesgul = false;
+    const bulundu = (text) => {
+      doneRef.current = true;
+      stop();
+      onResult(text);
+    };
+
+    const scanLoop = async () => {
       if (cancelled || doneRef.current) return;
       const v = videoRef.current;
       const c = canvasRef.current;
-      if (v && c && v.videoWidth) {
-        c.width = v.videoWidth;
-        c.height = v.videoHeight;
-        const ctx = c.getContext("2d");
-        ctx.drawImage(v, 0, 0, c.width, c.height);
-        const frame = ctx.getImageData(0, 0, c.width, c.height);
-        const code = jsQR(frame.data, c.width, c.height);
-        if (code?.data) {
-          doneRef.current = true;
-          stop();
-          onResult(code.data);
-          return;
+      if (v && c && v.videoWidth && !mesgul) {
+        mesgul = true;
+        try {
+          if (detector) {
+            const kodlar = await detector.detect(v).catch(() => {
+              detector = null; // desteklenmiyor: jsQR'a gec
+              return [];
+            });
+            const text = kodlar.find((k) => k.rawValue)?.rawValue;
+            if (text && !cancelled && !doneRef.current) return bulundu(text);
+          } else {
+            const { w, h } = qrTaramaBoyutu(v.videoWidth, v.videoHeight);
+            c.width = w;
+            c.height = h;
+            const ctx = c.getContext("2d", { willReadFrequently: true });
+            ctx.drawImage(v, 0, 0, w, h);
+            const frame = ctx.getImageData(0, 0, w, h);
+            const code = jsQR(frame.data, w, h, { inversionAttempts: "dontInvert" });
+            if (code?.data) return bulundu(code.data);
+          }
+        } finally {
+          mesgul = false;
         }
       }
-      rafRef.current = requestAnimationFrame(scanLoop);
+      if (!cancelled && !doneRef.current) rafRef.current = requestAnimationFrame(scanLoop);
     };
 
     (async () => {
@@ -62,7 +89,13 @@ export default function QrScanner({ onResult, onCancel }) {
         // onPermissionRequest, and Tauri's generated RustWebChromeClient already
         // requests the OS-level CAMERA grant from there.
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          // 1280x720 yeter; surekli odak varsa yakin QR hemen netlesir.
+          video: {
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            advanced: [{ focusMode: "continuous" }],
+          },
           audio: false,
         });
         if (cancelled) {

@@ -9,6 +9,8 @@
  * PC tarafi: dunya_live core/telefon_kamera.py (ayni mesaj sozlesmesi).
  */
 
+import { akisAcildi, bakisBasla, kameraKapandi, kareAlindi } from "../../hud/kameraDurumu";
+
 export const MAX_SIDE = 1280;
 export const JPEG_QUALITY = 0.82;
 export const WARMUP_MS = 700; // pozlama/odak otursun
@@ -90,6 +92,7 @@ export async function captureFrame(
     video.muted = true;
     video.playsInline = true;
     video.srcObject = stream;
+    akisAcildi(stream); // HUD: canli goruntu + ustte avatar
     await video.play();
     await wait(WARMUP_MS);
     const { w, h } = fitSize(video.videoWidth, video.videoHeight);
@@ -101,8 +104,10 @@ export async function captureFrame(
     if (!ctx) throw new Error("no 2d context");
     ctx.drawImage(video, 0, 0, w, h);
     video.srcObject = null;
-    const frame = splitDataUrl(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+    const url = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    const frame = splitDataUrl(url);
     if (!frame) throw new Error("encode failed");
+    kareAlindi(url); // cevap bitene kadar HUD'da bu kare durur
     return frame;
   } finally {
     stream?.getTracks().forEach((t) => t.stop());
@@ -146,10 +151,12 @@ export async function handleCameraRequest(
     return;
   }
   busy = true;
+  bakisBasla(); // avatar kamera klibine gecer
   try {
     const f = await withTimeout(capture(), timeoutMs);
     send({ type: "camera_result", id, ok: true, mime: f.mime, data: f.data });
   } catch (e) {
+    kameraKapandi();
     send({ type: "camera_result", id, ok: false, summary: errorMessage(e) });
   } finally {
     busy = false;

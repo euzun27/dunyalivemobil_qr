@@ -205,7 +205,14 @@ export default function MobileRemotePC({ onClose }) {
           Bağlan
         </button>
 
-        {scanError && <div className="settings-warn">{scanError}</div>}
+        {scanError && (
+          <div className="settings-warn">
+            {scanError}
+            {!paired && lastError && (
+              <div style={{ opacity: 0.8, fontSize: 11, marginTop: 6 }}>Ayrıntı: {lastError}</div>
+            )}
+          </div>
+        )}
         {pairing && <div className="settings-hint">Bağlanılıyor...</div>}
       </div>
 

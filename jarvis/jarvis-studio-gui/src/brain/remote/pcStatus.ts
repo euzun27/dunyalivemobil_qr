@@ -20,12 +20,18 @@ export type PcStatusEvent =
   | { kind: "msg"; msg: unknown; now?: number }
   | { kind: "voice"; now?: number }
   | { kind: "conn"; now?: number }
-  | { kind: "tick"; now?: number };
+  | { kind: "tick"; now?: number }
+  /** Telefonda PC sesi caliyor mu (canli gorusme); null = telefona ses gelmiyor. */
+  | { kind: "play"; playing: boolean | null; now?: number };
 
 /** Olaydan SONRAKI baglanti ve ses durumu. */
 export interface PcStatusContext {
   online: boolean;
   voice: boolean;
+  /** Canli gorusmede ses telefonda caliniyor: "konusuyor" PC'nin mesajindan degil, telefondaki
+   *  gercek calmadan gelir. PC sesi aga erken gonderir; telefonda tampon/gecikme yuzunden
+   *  PC'nin "speaking" mesaji telefonda duyulan sesle ortusmez (avatar dinlerken konusurdu). */
+  phoneAudio?: boolean;
 }
 
 // Kullanici konustuktan sonra PC bu sure icinde konusmaya baslamazsa "dusunuyor"dan cik.
@@ -49,6 +55,7 @@ export function nextPcStatus(
     if (!ev.msg || typeof ev.msg !== "object") return prev;
     const m = ev.msg as { type?: unknown; state?: unknown; speaker?: unknown };
     if (m.type === "speaking") {
+      if (ctx.phoneAudio) return prev; // telefondaki calma belirler ("play" olayi)
       return m.state === true
         ? { status: "speaking", thinkingAt: 0 }
         : { status: rest(ctx.voice), thinkingAt: 0 };
@@ -57,6 +64,12 @@ export function nextPcStatus(
       return { status: "thinking", thinkingAt: now };
     }
     return prev;
+  }
+
+  if (ev.kind === "play") {
+    if (ev.playing === null || !ctx.phoneAudio) return prev;
+    if (ev.playing) return prev.status === "speaking" ? prev : { status: "speaking", thinkingAt: 0 };
+    return prev.status === "speaking" ? { status: rest(ctx.voice), thinkingAt: 0 } : prev;
   }
 
   if (ev.kind === "tick") {
