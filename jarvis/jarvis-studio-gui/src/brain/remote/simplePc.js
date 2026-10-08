@@ -4,6 +4,8 @@
  *   POST /login  { pin: <tek kullanimlik anahtar> } -> { ok, token }
  *   WS   /ws?token=<token>  -> JSON mesajlar, gonderim: {type:"command", text:"..."}
  */
+import { SozKesme, pcmSeviye } from "./sozKesme";
+
 // PC'nin mobil uygulama icin actigi duz HTTP portu (dunya_live dashboard APP_PORT).
 // Asil panel portu (8000) kendinden imzali HTTPS kullaniyor, WebView ona guvenmiyor.
 export const PC_APP_PORT = 8002;
@@ -12,13 +14,29 @@ const PC_VOICE_RATE = 24000;
 // Cumle aralarindaki kisa bosluklarda avatar konusmayi kesmesin.
 const PLAY_HOLD_S = 0.3;
 
+// Telefon sesi kendi susturduktan sonra PC'nin onayi ("kes") gelmezse bu kadar sonra
+// gelen ses yeniden calinir (PC o arada konusmayi kesmemis olabilir).
+const KENDI_SUSMA_MS = 2500;
+
 /** PC'nin ses soketinden gelen metin: {"type":"kes"} = calan sesi hemen sustur. */
 export function sesKesMesaji(metin) {
+  return pcMesaji(metin)?.type === "kes";
+}
+
+/** PC'nin ses soketinden gelen metin mesaji ({type:"merhaba"|"kes", ...}) ya da null. */
+export function pcMesaji(metin) {
   try {
-    return JSON.parse(metin)?.type === "kes";
+    const m = JSON.parse(metin);
+    return m && typeof m === "object" && typeof m.type === "string" ? m : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/** iPhone/iPad (WKWebView): yanki engeli ancak ses ayni ses baglamindan calinirsa tanir. */
+export function iosMu(ua = globalThis.navigator?.userAgent || "", nav = globalThis.navigator) {
+  if (/iPhone|iPad|iPod/.test(ua)) return true;
+  return /Macintosh/.test(ua) && (nav?.maxTouchPoints || 0) > 1; // iPadOS masaustu kimligi
 }
 
 /**
@@ -242,9 +260,11 @@ export class SimplePC {
     );
     ws.binaryType = "arraybuffer";
     // DUNYATEK'in sesi ayni soketten gelir (24 kHz 16-bit mono PCM) ve telefonda calinir.
+    // iPhone'da mikrofonla ayni ses baglami kullanilir: iOS'un yanki engeli boylece
+    // DUNYATEK'in sesini taniyip mikrofondan siler. Android'de eskisi gibi ayri baglam.
     let playCtx = null;
     try {
-      playCtx = new AudioContext();
+      playCtx = iosMu() ? ctx : new AudioContext();
       if (playCtx.state === "suspended") await playCtx.resume().catch(() => {});
     } catch {
       playCtx = null;
@@ -275,12 +295,26 @@ export class SimplePC {
       calanlar.clear();
       playAt = 0;
     };
+    // Telefonda soz kesme: PC "merhaba" ile destekledigini (ve ayarin acik oldugunu)
+    // soylerse telefon da kendi caldigi sesin ustune kullanicinin konustugunu dinler.
+    let pcSozKesme = false;
+    const sozKesme = new SozKesme();
+    let kendiSustu = 0; // telefonun kendi susturdugu an (ms); PC onaylayana kadar ses calinmaz
     ws.onmessage = (ev) => {
       if (typeof ev.data === "string") {
-        if (sesKesMesaji(ev.data)) sustur();
+        const m = pcMesaji(ev.data);
+        if (m?.type === "merhaba") pcSozKesme = m.kes === true;
+        if (m?.type === "kes") {
+          sustur();
+          kendiSustu = 0; // PC kesti: bundan sonra gelen ses yeni cevaptir
+        }
         return;
       }
       if (!playCtx || !(ev.data instanceof ArrayBuffer) || ev.data.byteLength < 2) return;
+      if (kendiSustu) {
+        if (Date.now() - kendiSustu < KENDI_SUSMA_MS) return; // kesilen cevabin artigi
+        kendiSustu = 0;
+      }
       if (playCtx.state === "suspended") playCtx.resume().catch(() => {});
       gotAudio = true;
       const pcm = new Int16Array(ev.data, 0, ev.data.byteLength >> 1);
@@ -343,6 +377,15 @@ export class SimplePC {
             if (ws.readyState === WebSocket.OPEN) {
               ws.send(out.buffer);
               voice.lastSent = Date.now();
+              if (pcSozKesme && voice.playing()) {
+                if (sozKesme.feed(pcmSeviye(out))) {
+                  sustur();
+                  kendiSustu = Date.now();
+                  ws.send('{"type":"kes"}');
+                }
+              } else {
+                sozKesme.reset();
+              }
             }
             buf = [];
             len = 0;
@@ -410,7 +453,7 @@ export class SimplePC {
       /* ignore */
     }
     try {
-      v.playCtx?.close();
+      if (v.playCtx && v.playCtx !== v.ctx) v.playCtx.close();
     } catch {
       /* ignore */
     }
