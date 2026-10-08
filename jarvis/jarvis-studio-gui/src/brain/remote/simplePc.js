@@ -4,7 +4,7 @@
  *   POST /login  { pin: <tek kullanimlik anahtar> } -> { ok, token }
  *   WS   /ws?token=<token>  -> JSON mesajlar, gonderim: {type:"command", text:"..."}
  */
-import { SozKesme, pcmSeviye } from "./sozKesme";
+import { SozKesme, kesilme, pcmSeviye } from "./sozKesme";
 
 // PC'nin mobil uygulama icin actigi duz HTTP portu (dunya_live dashboard APP_PORT).
 // Asil panel portu (8000) kendinden imzali HTTPS kullaniyor, WebView ona guvenmiyor.
@@ -294,6 +294,7 @@ export class SimplePC {
       }
       calanlar.clear();
       playAt = 0;
+      kesilme.basla(Date.now() / 1000); // avatar: merakla dinleme klibi
     };
     // Telefonda soz kesme: PC "merhaba" ile destekledigini (ve ayarin acik oldugunu)
     // soylerse telefon da kendi caldigi sesin ustune kullanicinin konustugunu dinler.

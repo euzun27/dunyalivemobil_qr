@@ -69,8 +69,17 @@ describe("kamera klibi telefon paketinde", () => {
   it("pozlar.json kamera klibini iceriyor ve dosyasi var", () => {
     const kok = resolve(__dirname, "../../public/avatar");
     const meta = JSON.parse(readFileSync(resolve(kok, "pozlar.json"), "utf-8"));
-    expect(Object.keys(meta.klipler).sort()).toEqual(["bekleme", "dusunme", "kamera", "konusma"]);
+    expect(Object.keys(meta.klipler).sort()).toEqual([
+      "bekleme",
+      "dusunme",
+      "kamera",
+      "konusma",
+      "sozkesme",
+    ]);
     expect(meta.klipler.kamera.poz.length).toBe(240);
     expect(existsSync(resolve(kok, meta.klipler.kamera.dosya))).toBe(true);
+    // soz kesilince oynayan klip (74 kare, ~3 sn)
+    expect(meta.klipler.sozkesme.poz.length).toBe(74);
+    expect(existsSync(resolve(kok, meta.klipler.sozkesme.dosya))).toBe(true);
   });
 });

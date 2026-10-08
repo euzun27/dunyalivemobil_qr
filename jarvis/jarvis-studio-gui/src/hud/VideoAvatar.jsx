@@ -18,9 +18,10 @@ import {
   ters,
 } from "./videoPlayer";
 import { bakis } from "./kameraDurumu";
+import { kesilme } from "../brain/remote/sozKesme";
 
 const ILK = "bekleme"; // avatar yalnizca bunu bekler
-const SONRADAN = ["dusunme", "konusma", "kamera"]; // gelince eklenir; o zamana kadar bekleme oynar
+const SONRADAN = ["dusunme", "konusma", "kamera", "sozkesme"]; // gelince eklenir; o zamana kadar bekleme oynar
 const ILK_KARE = "/avatar/bekleme-ilk.jpg"; // bekleme klibinin 0. karesi (video hazir olana kadar)
 const FRAME_MS = 1000 / 30;
 let kaynakSozu = null; // { url: {klip: blobUrl}, poz: {klip: Afin[]} } - uygulama boyunca bir kez
@@ -152,7 +153,9 @@ export function VideoAvatar({ status = "idle", muted = false, width = 260, onErr
           son = now;
           const s = live.current;
           const bakiyor = bakis.aktif(Date.now() / 1000, s.status === "speaking");
-          let hedef = hedefKlip(s.status, s.muted, bakiyor);
+          const kesildi = kesilme.aktif(Date.now() / 1000);
+          let hedef = hedefKlip(s.status, s.muted, bakiyor, kesildi);
+          if (!url[hedef]) hedef = hedefKlip(s.status, s.muted, bakiyor);
           if (!url[hedef]) hedef = hedefKlip(s.status, s.muted);
           if (!url[hedef]) hedef = ILK; // klip henuz gelmedi
           const e = yon.adim(now / 1000, hedef, [durum(0), durum(1)]);

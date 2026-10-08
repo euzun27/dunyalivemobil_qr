@@ -10,7 +10,7 @@
  * 360x540 olceginde.
  */
 
-export type Klip = "bekleme" | "dusunme" | "konusma" | "kamera";
+export type Klip = "bekleme" | "dusunme" | "konusma" | "kamera" | "sozkesme";
 /** 2x3 afin donusum, satirlar: [[a, c, e], [b, d, f]]  (x' = a*x + c*y + e, y' = b*x + d*y + f) */
 export type Afin = [[number, number, number], [number, number, number]];
 
@@ -19,9 +19,10 @@ export const GECIS_SN = 0.4;
 export const POZ_GENISLIK = 360;
 export const POZ_YUKSEKLIK = 540;
 
-/** Konusma her zaman onde; sonra kamera bakisi (telefon kamerasi istendi), sonra dusunme. */
-export function hedefKlip(status: string, muted = false, bakiyor = false): Klip {
+/** Konusma her zaman onde; sonra soz kesilmesi (merakla dinler), kamera bakisi, dusunme. */
+export function hedefKlip(status: string, muted = false, bakiyor = false, kesildi = false): Klip {
   if (status === "speaking" && !muted) return "konusma";
+  if (kesildi) return "sozkesme";
   if (bakiyor) return "kamera";
   if (status === "thinking") return "dusunme";
   return "bekleme";

@@ -32,6 +32,26 @@ function medyan(d: number[]): number {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
+/** Soz kesildi: avatarin sozkesme klibi (merakla dinler, ~3 sn) bir kez oynar.
+ *  Masaustundeki core/video_avatar.py Kesilme sinifinin aynisi. */
+export const KESILME_SN = 2.6;
+export class Kesilme {
+  t0: number | null = null;
+  constructor(readonly sure = KESILME_SN) {}
+  basla(simdi: number): void {
+    this.t0 = simdi;
+  }
+  aktif(simdi: number): boolean {
+    if (this.t0 === null) return false;
+    if (simdi - this.t0 >= this.sure) {
+      this.t0 = null;
+      return false;
+    }
+    return true;
+  }
+}
+export const kesilme = new Kesilme();
+
 export class SozKesme {
   private oylar: boolean[] = [];
   private seviyeler: number[] = [];
@@ -44,8 +64,7 @@ export class SozKesme {
   /** Asistan konusurken her mikrofon parcasi icin; true donerse ses kesilmeli. */
   feed(seviye: number): boolean {
     const beklenen = this.seviyeler.length >= 6 ? medyan(this.seviyeler) : 0;
-    const oy =
-      this.seviyeler.length >= 6 && seviye >= LOUD_MIN && seviye >= beklenen * LOUD_RATIO;
+    const oy = this.seviyeler.length >= 6 && seviye >= LOUD_MIN && seviye >= beklenen * LOUD_RATIO;
     this.oylar = [...this.oylar, oy].slice(-PENCERE);
     // Kullanicinin kendi sesi yanki olcumunu sisirmesin.
     if (!oy) this.seviyeler = [...this.seviyeler, seviye].slice(-GECMIS);

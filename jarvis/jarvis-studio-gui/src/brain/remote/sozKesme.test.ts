@@ -30,3 +30,15 @@ describe("SozKesme", () => {
     expect(pcmSeviye(new Int16Array(1024).fill(1330))).toBeCloseTo(0.5, 2);
   });
 });
+
+describe("Kesilme", () => {
+  it("klibi bir kez, sure boyunca oynatir", async () => {
+    const { Kesilme } = await import("./sozKesme");
+    const k = new Kesilme(2.6);
+    expect(k.aktif(0)).toBe(false);
+    k.basla(10);
+    expect(k.aktif(12.5)).toBe(true);
+    expect(k.aktif(12.7)).toBe(false);
+    expect(k.aktif(12.8)).toBe(false);
+  });
+});
