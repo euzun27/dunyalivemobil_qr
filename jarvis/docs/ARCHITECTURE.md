@@ -434,7 +434,7 @@ by the brain now the loop is native; candidates for removal),
 app/system control (`open_app`, `close_app`, `open_url` — `http`/`https` only, since the
 URL is model-authored and injected page text can steer it — `set_volume`, `read_clipboard`,
 `open_system_settings`, `open_accessibility_settings`), TTS (`speak`, `stop_speaking`,
-`poll_speaking`), wake word (`start_wake_word`, `stop_wake_word`, `poll_wake_word`),
+`poll_speaking`), iOS live PC voice (`voice_start`, `voice_stop`, `voice_poll`), wake word (`start_wake_word`, `stop_wake_word`, `poll_wake_word`),
 STOP overlay (`show_stop_overlay`, `hide_stop_overlay`, `poll_stop_overlay`,
 `request_overlay_permission`), secrets (`config_secret_get/set/delete`), device identity
 (`identity_info`, `identity_sign_auth/envelope/pairing`,
@@ -462,6 +462,14 @@ implement `window.speechSynthesis`, so `platform/webspeech.ts` calls
 `plugin:phone|speak` and polls `poll_speaking` for real completion (the event bridge is
 unreliable, §5). `speechSynthesis` is only the browser-preview fallback. The same native
 commands also let the phone talk when the PC drives it remotely.
+
+**Live voice with the paired PC on iOS** (`voice_start`, `voice_stop`, `voice_poll`, iOS
+only): WKWebView's echo canceller does not use Web Audio playback as its reference, so on
+an iPhone the PC's voice leaked back into the mic. There, `simplePc.js` hands the whole
+`/ws/phone-audio` session to `SesMotoru.swift`: one `AVAudioEngine` with voice processing
+on (`.playAndRecord` + `.voiceChat`), mic and playback in the same engine, the WebSocket
+in `URLSessionWebSocketTask`. JS polls `voice_poll` every 100 ms (§5). Android keeps the
+WebView path, where its echo canceller already works.
 
 Known gap: the wake-word engine and `MediaRecorder` can't share the mic, so the handoff
 after the wake cue drops roughly the first half-second of a command (STATUS.md).

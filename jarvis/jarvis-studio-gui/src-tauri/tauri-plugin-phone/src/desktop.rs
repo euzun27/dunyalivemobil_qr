@@ -80,6 +80,11 @@ impl<R: Runtime> Phone<R> {
     pub fn poll_speaking(&self) -> crate::Result<crate::models::SpeakingStateResponse> {
         Ok(crate::models::SpeakingStateResponse { speaking: false })
     }
+    unavailable_command!(voice_start(VoiceStartRequest));
+    unavailable_command!(voice_stop());
+    pub fn voice_poll(&self) -> crate::Result<crate::models::VoicePollResponse> {
+        Ok(crate::models::VoicePollResponse { closed: true, ..Default::default() })
+    }
     unavailable_command!(start_wake_word());
     unavailable_command!(stop_wake_word());
     pub fn poll_wake_word(&self) -> crate::Result<crate::models::WakeStateResponse> {

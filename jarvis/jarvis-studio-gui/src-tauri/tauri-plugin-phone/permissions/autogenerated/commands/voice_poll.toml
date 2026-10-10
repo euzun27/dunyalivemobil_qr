@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-voice-poll"
+description = "Enables the voice_poll command without any pre-configured scope."
+commands.allow = ["voice_poll"]
+
+[[permission]]
+identifier = "deny-voice-poll"
+description = "Denies the voice_poll command without any pre-configured scope."
+commands.deny = ["voice_poll"]

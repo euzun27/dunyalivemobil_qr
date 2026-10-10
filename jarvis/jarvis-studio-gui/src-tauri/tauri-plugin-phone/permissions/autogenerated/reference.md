@@ -27,6 +27,9 @@ Allows the JARVIS brain to drive the phone via the AccessibilityService.
 - `allow-speak`
 - `allow-stop-speaking`
 - `allow-poll-speaking`
+- `allow-voice-start`
+- `allow-voice-stop`
+- `allow-voice-poll`
 - `allow-start-wake-word`
 - `allow-stop-wake-word`
 - `allow-poll-wake-word`
@@ -1441,6 +1444,84 @@ Enables the type_text command without any pre-configured scope.
 <td>
 
 Denies the type_text command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`phone:allow-voice-poll`
+
+</td>
+<td>
+
+Enables the voice_poll command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`phone:deny-voice-poll`
+
+</td>
+<td>
+
+Denies the voice_poll command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`phone:allow-voice-start`
+
+</td>
+<td>
+
+Enables the voice_start command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`phone:deny-voice-start`
+
+</td>
+<td>
+
+Denies the voice_start command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`phone:allow-voice-stop`
+
+</td>
+<td>
+
+Enables the voice_stop command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`phone:deny-voice-stop`
+
+</td>
+<td>
+
+Denies the voice_stop command without any pre-configured scope.
 
 </td>
 </tr>

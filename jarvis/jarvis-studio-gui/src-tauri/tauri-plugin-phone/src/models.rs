@@ -518,6 +518,35 @@ pub struct SpeakRequest {
     pub text: String,
 }
 
+/// iOS: PC ile sesli görüşmeyi yerel ses motorunda başlat (ws://…/ws/phone-audio adresi).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VoiceStartRequest {
+    pub url: String,
+}
+
+/// iOS yerel ses motorunun sorgulanan durumu (JS ~100 ms'de bir sorar; kural 4).
+/// `kes_seq` telefonun kendi söz kesmesinde artar.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VoicePollResponse {
+    #[serde(default)]
+    pub open: bool,
+    #[serde(default)]
+    pub closed: bool,
+    #[serde(default)]
+    pub got_audio: bool,
+    #[serde(default)]
+    pub playing: bool,
+    #[serde(default)]
+    pub mic: f64,
+    #[serde(default)]
+    pub out: f64,
+    #[serde(default)]
+    pub since_sent_ms: i64,
+    #[serde(default)]
+    pub kes_seq: i32,
+}
+
 /// Live HUD telemetry from the native Android layer.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeviceStatsResponse {

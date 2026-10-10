@@ -4,6 +4,7 @@
 //   • identity*      PC eşleşme kimliği: P-256 ECDSA (SHA256withECDSA ile aynı DER imza),
 //                    gizli anahtar Keychain'de (yalnızca bu cihaz), sayaç imzadan ÖNCE kaydedilir.
 //   • configSecret*  anahtarlar Keychain'de.
+//   • voiceStart / voiceStop / voicePoll: PC ile sesli görüşme, yerel ses motoru (SesMotoru.swift).
 //   • speak / stopSpeaking / pollSpeaking (AVSpeechSynthesizer), openUrl, readClipboard,
 //     getDeviceStats (pil), isEnabled (her zaman false: iOS erişilebilirlik kontrolüne izin vermez).
 // Diğer komutlar burada yok: Tauri onları "No command ... found" diye reddeder, JS tarafı
@@ -19,6 +20,7 @@ import WebKit
 
 // ── argümanlar (Rust models.rs ile aynı camelCase alanlar) ─────────────────
 class SpeakArgs: Decodable { var text: String = "" }
+class VoiceStartArgs: Decodable { var url: String = "" }
 class OpenUrlArgs: Decodable { var url: String = "" }
 class SecretNameArgs: Decodable { var name: String = "" }
 class SecretSetArgs: Decodable { var name: String = ""; var value: String = "" }
@@ -193,7 +195,11 @@ class PhonePlugin: Plugin, AVSpeechSynthesizerDelegate {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty { invoke.resolve(result(true, "nothing to say")); return }
         DispatchQueue.main.async {
-            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            // PC ile sesli görüşme sürerken ses oturumuna dokunma: "yalnız çalma" moduna geçmek
+            // mikrofonu ve yankı engelini bozar; Apple sesi görüşmenin oturumundan çalar.
+            if self.motor == nil {
+                try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            }
             self.synth.stopSpeaking(at: .immediate)
             let u = AVSpeechUtterance(string: text)
             u.voice = AVSpeechSynthesisVoice(language: "tr-TR")
@@ -201,6 +207,43 @@ class PhonePlugin: Plugin, AVSpeechSynthesizerDelegate {
             self.synth.speak(u)
         }
         invoke.resolve(result(true, "speaking"))
+    }
+
+    // ── PC ile sesli görüşme (yerel ses motoru) ──
+    private var motor: SesMotoru?
+
+    @objc public func voiceStart(_ invoke: Invoke) {
+        let adres = ((try? invoke.parseArgs(VoiceStartArgs.self))?.url ?? "")
+        guard let u = URL(string: adres), let sc = u.scheme?.lowercased(), sc == "ws" || sc == "wss" else {
+            invoke.resolve(result(false, "Geçersiz ses adresi.")); return
+        }
+        DispatchQueue.main.async {
+            self.motor?.durdur()
+            self.motor = nil
+            let m = SesMotoru()
+            do {
+                try m.baslat(u)
+                self.motor = m
+                invoke.resolve(self.result(true, "started"))
+            } catch {
+                m.durdur()
+                invoke.resolve(self.result(false, "Ses başlatılamadı: \(error.localizedDescription)"))
+            }
+        }
+    }
+
+    @objc public func voiceStop(_ invoke: Invoke) {
+        DispatchQueue.main.async {
+            self.motor?.durdur()
+            self.motor = nil
+            invoke.resolve(self.result(true, "stopped"))
+        }
+    }
+
+    @objc public func voicePoll(_ invoke: Invoke) {
+        DispatchQueue.main.async {
+            invoke.resolve(self.motor?.durum() ?? ["open": false, "closed": true])
+        }
     }
 
     @objc public func stopSpeaking(_ invoke: Invoke) {

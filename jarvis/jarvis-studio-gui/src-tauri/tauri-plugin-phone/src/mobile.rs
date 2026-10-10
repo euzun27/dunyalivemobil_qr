@@ -68,6 +68,9 @@ impl<R: Runtime> Phone<R> {
     mobile_command!(speak(payload: SpeakRequest) -> ActionResponse, "speak");
     mobile_command!(stop_speaking() -> ActionResponse, "stopSpeaking");
     mobile_command!(poll_speaking() -> crate::models::SpeakingStateResponse, "pollSpeaking");
+    mobile_command!(voice_start(payload: VoiceStartRequest) -> ActionResponse, "voiceStart");
+    mobile_command!(voice_stop() -> ActionResponse, "voiceStop");
+    mobile_command!(voice_poll() -> crate::models::VoicePollResponse, "voicePoll");
     mobile_command!(start_wake_word() -> ActionResponse, "startWakeWord");
     mobile_command!(stop_wake_word() -> ActionResponse, "stopWakeWord");
     mobile_command!(poll_wake_word() -> crate::models::WakeStateResponse, "pollWakeWord");

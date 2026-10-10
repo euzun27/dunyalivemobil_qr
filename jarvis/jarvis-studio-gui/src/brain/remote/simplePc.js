@@ -33,7 +33,8 @@ export function pcMesaji(metin) {
   }
 }
 
-/** iPhone/iPad (WKWebView): yanki engeli ancak ses ayni ses baglamindan calinirsa tanir. */
+/** iPhone/iPad (WKWebView). Oradaki yanki engeli Web Audio ile calinan sesi tanimaz;
+ *  bu yuzden iPhone'da sesli gorusme yerel ses motorunda yapilir (startVoice). */
 export function iosMu(ua = globalThis.navigator?.userAgent || "", nav = globalThis.navigator) {
   if (/iPhone|iPad|iPod/.test(ua)) return true;
   return /Macintosh/.test(ua) && (nav?.maxTouchPoints || 0) > 1; // iPadOS masaustu kimligi
@@ -230,6 +231,7 @@ export class SimplePC {
   voiceHealthy() {
     const v = this._voice;
     if (!v) return false;
+    if (v.native) return Boolean(v.durum.open) && (v.durum.sinceSentMs ?? 0) < 4000;
     if (v.ws.readyState !== WebSocket.OPEN) return false;
     if (v.stream.getAudioTracks().some((t) => t.readyState === "ended")) return false;
     if (v.ctx.state === "suspended") v.ctx.resume().catch(() => {});
@@ -244,6 +246,12 @@ export class SimplePC {
    */
   async startVoice(onEnd) {
     if (this._voice || !this.token) return false;
+    // iPhone: mikrofon + hoparlor tek bir yerel ses motorunda (iOS yanki engeli acik).
+    // Eski uygulama surumunde komut yoksa asagidaki web yoluna duser.
+    if (iosMu()) {
+      const ok = await this._startVoiceNative(onEnd).catch(() => null);
+      if (ok !== null) return ok;
+    }
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
     });
@@ -427,6 +435,59 @@ export class SimplePC {
     });
   }
 
+  /**
+   * iPhone yerel ses motoru (tauri-plugin-phone SesMotoru.swift): soket, mikrofon, calma
+   * ve telefondaki soz kesme orada. JS durumu ~100 ms'de bir sorar (CLAUDE.md kural 4).
+   * Komut yoksa (eski surum) null doner, cagiran web yoluna duser.
+   */
+  async _startVoiceNative(onEnd) {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const url = `${this.wsBase}/ws/phone-audio?token=${encodeURIComponent(this.token)}&speaker=1`;
+    let res;
+    try {
+      res = await invoke("plugin:phone|voice_start", { url });
+    } catch {
+      return null;
+    }
+    if (!res?.ok) return false;
+    const voice = {
+      native: true,
+      durum: { open: false, gotAudio: false, playing: false, mic: 0, out: 0, sinceSentMs: 0 },
+      baslangic: Date.now(),
+      kesSeq: 0,
+      timer: null,
+      playing: () => (voice.durum.gotAudio ? Boolean(voice.durum.playing) : null),
+    };
+    this._voice = voice;
+    const sor = async () => {
+      if (this._voice !== voice) return;
+      let d;
+      try {
+        d = await invoke("plugin:phone|voice_poll");
+      } catch {
+        return;
+      }
+      if (this._voice !== voice || !d) return;
+      voice.durum = d;
+      if ((d.kesSeq || 0) > voice.kesSeq) kesilme.basla(Date.now() / 1000); // telefon soz kesti
+      voice.kesSeq = d.kesSeq || 0;
+      if (d.closed) {
+        this.stopVoice();
+        onEnd?.();
+      }
+    };
+    voice.timer = setInterval(() => void sor(), 100);
+    // Soket acilana kadar bekle (web yolundaki ws.onopen gibi).
+    while (this._voice === voice && !voice.durum.open && !voice.durum.closed) {
+      if (Date.now() - voice.baslangic > 10000) {
+        this.stopVoice();
+        return false;
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return this._voice === voice && Boolean(voice.durum.open);
+  }
+
   /** Telefonda PC sesi caliyor mu; ses hic gelmediyse ya da gorusme yoksa null. */
   playing() {
     return this._voice?.playing ? this._voice.playing() : null;
@@ -436,6 +497,7 @@ export class SimplePC {
   levels() {
     const v = this._voice;
     if (!v) return { mic: 0, out: 0 };
+    if (v.native) return { mic: v.durum.mic || 0, out: v.durum.out || 0 };
     return { mic: rms(v.micMeter), out: rms(v.outMeter) };
   }
 
@@ -443,6 +505,13 @@ export class SimplePC {
     const v = this._voice;
     if (!v) return;
     this._voice = null;
+    if (v.native) {
+      clearInterval(v.timer);
+      import("@tauri-apps/api/core")
+        .then(({ invoke }) => invoke("plugin:phone|voice_stop"))
+        .catch(() => {});
+      return;
+    }
     try {
       v.node?.disconnect();
     } catch {
