@@ -10,9 +10,13 @@ workflows:
       xcode: 26.6   # "latest" havuzu yoğunlukta kuyrukta bekletiyor; 26.6 ile başarılı derlendi
       node: 22
     cache:
+      # Derlenmiş Rust çıktısı (target) ve npm paketleri de saklanır: önbellek olmadan Tauri ve
+      # bağımlılıkları her derlemede sıfırdan derleniyordu. İlk derleme yine uzun sürer.
       cache_paths:
         - $HOME/.cargo/registry
         - $HOME/.cargo/git
+        - $HOME/.npm
+        - $CM_BUILD_DIR/jarvis/jarvis-studio-gui/src-tauri/target
     scripts:
       - name: Araçlar (Rust, xcodegen)
         script: |
