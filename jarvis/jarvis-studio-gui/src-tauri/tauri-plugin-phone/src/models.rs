@@ -545,6 +545,9 @@ pub struct VoicePollResponse {
     pub since_sent_ms: i64,
     #[serde(default)]
     pub kes_seq: i32,
+    /// Görüşme neden bitti / açılamadı (boş: hata yok).
+    #[serde(default)]
+    pub error: String,
 }
 
 /// Live HUD telemetry from the native Android layer.

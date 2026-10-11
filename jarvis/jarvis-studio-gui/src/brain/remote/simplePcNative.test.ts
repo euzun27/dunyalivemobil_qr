@@ -86,12 +86,40 @@ describe("iPhone yerel ses motoru", () => {
     expect(gum).toHaveBeenCalled();
   });
 
-  it("soket acilmazsa 10 sn sonra vazgecer", async () => {
+  it("soket acilmazsa 10 sn sonra nedeniyle vazgecer", async () => {
     durum = { ...durum, open: false };
     const c = await istemci();
     const p = c.startVoice();
+    const beklenti = expect(p).rejects.toThrow("10 sn");
     await vi.advanceTimersByTimeAsync(10500);
-    expect(await p).toBe(false);
+    await beklenti;
     expect(c.voiceActive).toBe(false);
+  });
+
+  it("acilmadan kapanirsa yerel motorun nedenini gosterir", async () => {
+    durum = { ...durum, open: false, closed: true, error: "Bağlantı kurulamadı: zaman aşımı" };
+    const c = await istemci();
+    const p = c.startVoice();
+    const beklenti = expect(p).rejects.toThrow("Bağlantı kurulamadı: zaman aşımı");
+    await vi.advanceTimersByTimeAsync(300);
+    await beklenti;
+  });
+
+  it("motor baslamazsa nedenini gosterir", async () => {
+    invokeMock.mockImplementation(async (cmd: string) =>
+      cmd === "plugin:phone|voice_start"
+        ? { ok: false, summary: "Ses başlatılamadı: -10875" }
+        : { ok: true },
+    );
+    const c = await istemci();
+    await expect(c.startVoice()).rejects.toThrow("-10875");
+  });
+
+  it("izin hatasini web yoluna dusmeden gosterir", async () => {
+    invokeMock.mockImplementation(async () => {
+      throw "phone.voice_start not allowed. Permissions associated with this command: phone:allow-voice-start";
+    });
+    const c = await istemci();
+    await expect(c.startVoice()).rejects.toThrow("not allowed");
   });
 });

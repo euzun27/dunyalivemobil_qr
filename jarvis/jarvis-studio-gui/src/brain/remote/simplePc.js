@@ -249,7 +249,7 @@ export class SimplePC {
     // iPhone: mikrofon + hoparlor tek bir yerel ses motorunda (iOS yanki engeli acik).
     // Eski uygulama surumunde komut yoksa asagidaki web yoluna duser.
     if (iosMu()) {
-      const ok = await this._startVoiceNative(onEnd).catch(() => null);
+      const ok = await this._startVoiceNative(onEnd);
       if (ok !== null) return ok;
     }
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -446,10 +446,15 @@ export class SimplePC {
     let res;
     try {
       res = await invoke("plugin:phone|voice_start", { url });
-    } catch {
-      return null;
+    } catch (e) {
+      const m = String(e?.message || e);
+      // Eski uygulama surumu: komut yok, web yoluna dus. Baska hata ekranda gorunsun.
+      if (/no command/i.test(m)) return null;
+      throw new Error(`iPhone ses motoru: ${m}`, { cause: e });
     }
-    if (!res?.ok) return false;
+    // Yerel motor acilamadi: nedeni ekranda gorunsun ("Mikrofon acilamadi: ...").
+    if (!res?.ok) throw new Error(res?.summary || "iPhone ses motoru başlatılamadı");
+    let sorguHatasi = "";
     const voice = {
       native: true,
       durum: { open: false, gotAudio: false, playing: false, mic: 0, out: 0, sinceSentMs: 0 },
@@ -464,7 +469,8 @@ export class SimplePC {
       let d;
       try {
         d = await invoke("plugin:phone|voice_poll");
-      } catch {
+      } catch (e) {
+        sorguHatasi = String(e?.message || e);
         return;
       }
       if (this._voice !== voice || !d) return;
@@ -481,10 +487,13 @@ export class SimplePC {
     while (this._voice === voice && !voice.durum.open && !voice.durum.closed) {
       if (Date.now() - voice.baslangic > 10000) {
         this.stopVoice();
-        return false;
+        throw new Error(
+          `iPhone ses bağlantısı 10 sn'de açılmadı${sorguHatasi ? ` (${sorguHatasi})` : ""}`,
+        );
       }
       await new Promise((r) => setTimeout(r, 100));
     }
+    if (voice.durum.closed) throw new Error(voice.durum.error || "iPhone ses bağlantısı kapandı");
     return this._voice === voice && Boolean(voice.durum.open);
   }
 

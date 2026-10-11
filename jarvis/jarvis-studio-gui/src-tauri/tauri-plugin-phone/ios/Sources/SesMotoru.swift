@@ -74,6 +74,7 @@ final class SesMotoru: NSObject {
     private var kendiSustu: Date?
     private let sozKesme = SozKesmeSayaci()
     private var micTampon: [Int16] = []
+    private var hataMetni = ""       // görüşme neden bitti (JS ekranda gösterir)
 
     @discardableResult
     private func kilitli<T>(_ f: () -> T) -> T { kilit.lock(); defer { kilit.unlock() }; return f() }
@@ -108,19 +109,20 @@ final class SesMotoru: NSObject {
         try engine.start()
         player.play()
 
-        // Kulaklık/hoparlör değişimi ya da kesinti (arama) motoru durdurur. Aynı motoru yeniden
-        // başlatmak güvenli değil (Bluetooth'ta mikrofon hızı değişir, eski dinleyici çöker):
-        // görüşme biter, uygulama birkaç saniye içinde yeni biçimle kendisi yeniden açar.
+        // Kulaklık/hoparlör değişimi ya da yankı engelinin kendi ayarı motoru durdurabilir.
+        // Mikrofon biçimi aynıysa motor yeniden başlatılır (ilk açılışta da gelebiliyor).
+        // Biçim değiştiyse (ör. Bluetooth) eski dinleyiciyle başlatmak çöker: görüşme biter,
+        // uygulama birkaç saniye içinde yeni biçimle kendisi yeniden açar.
         let nc = NotificationCenter.default
         gozlemciler.append(nc.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine,
                                           queue: .main) { [weak self] _ in
-            if self?.engine.isRunning == false { self?.durdur() }
+            self?.ayarDegisti(girisBicim)
         })
         gozlemciler.append(nc.addObserver(forName: AVAudioSession.interruptionNotification, object: nil,
                                           queue: .main) { [weak self] n in
             let tur = (n.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt)
                 .flatMap(AVAudioSession.InterruptionType.init(rawValue:))
-            if tur == .began { self?.durdur() }
+            if tur == .began { self?.durdur("Ses kesintisi (arama, alarm vb.).") }
         })
 
         let us = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
@@ -132,10 +134,26 @@ final class SesMotoru: NSObject {
         dinle(ws)
     }
 
-    func durdur() {
+    private func ayarDegisti(_ eski: AVAudioFormat) {
+        guard !kilitli({ bitti }), !engine.isRunning else { return }
+        let yeni = engine.inputNode.outputFormat(forBus: 0)
+        guard yeni.sampleRate == eski.sampleRate, yeni.channelCount == eski.channelCount else {
+            durdur("Ses aygıtı değişti (kulaklık/hoparlör)."); return
+        }
+        engine.prepare()
+        do {
+            try engine.start()
+            player.play()
+        } catch {
+            durdur("Ses motoru yeniden başlatılamadı: \(error.localizedDescription)")
+        }
+    }
+
+    func durdur(_ sebep: String = "") {
         let ilk: Bool = kilitli {
             if bitti { return false }
             bitti = true; acik = false
+            if hataMetni.isEmpty { hataMetni = sebep }
             return true
         }
         guard ilk else { return }
@@ -157,7 +175,8 @@ final class SesMotoru: NSObject {
             let calan = bekleyen > 0 || Date().timeIntervalSince(sonCalma) < SesMotoru.kuyrukSn
             return ["open": acik && !bitti, "closed": bitti, "gotAudio": sesGeldi,
                     "playing": sesGeldi && calan, "mic": micSeviye, "out": calan ? cikisSeviye : 0,
-                    "sinceSentMs": Int(Date().timeIntervalSince(sonGonderim) * 1000), "kesSeq": kesSayac]
+                    "sinceSentMs": Int(Date().timeIntervalSince(sonGonderim) * 1000), "kesSeq": kesSayac,
+                    "error": hataMetni]
         }
     }
 
@@ -166,8 +185,8 @@ final class SesMotoru: NSObject {
         ws.receive { [weak self] sonuc in
             guard let self = self else { return }
             switch sonuc {
-            case .failure:
-                self.durdur()
+            case .failure(let e):
+                self.durdur("Bağlantı koptu: \(e.localizedDescription)")
             case .success(let m):
                 switch m {
                 case .data(let d): self.cal(d)
@@ -308,10 +327,10 @@ extension SesMotoru: URLSessionWebSocketDelegate {
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask,
                     didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
-        durdur()
+        durdur("Bilgisayar ses bağlantısını kapattı (kod \(closeCode.rawValue)).")
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        durdur()
+        durdur(error.map { "Bağlantı kurulamadı: \($0.localizedDescription)" } ?? "Bağlantı kapandı.")
     }
 }
