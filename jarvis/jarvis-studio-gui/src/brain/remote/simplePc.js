@@ -35,9 +35,9 @@ export function pcMesaji(metin) {
 
 // iPhone yerel ses motoru cokme korumasi: motor baslatilirken isaret konur, 15 sn sorunsuz
 // calisinca kaldirilir. Uygulama acildiginda isaret duruyorsa motor uygulamayi kapatmistir.
-const YEREL_SES_DENENIYOR = "dunyatek_yerel_ses_deneniyor";
+const YEREL_SES_DENENIYOR = "dunyatek_yerel_ses_deneniyor_3";
 // Motor duzeltilip yeni surum cikinca sonundaki numara artirilir: yerel motor yeniden denenir.
-const YEREL_SES_COKTU = "dunyatek_yerel_ses_coktu_2";
+const YEREL_SES_COKTU = "dunyatek_yerel_ses_coktu_3";
 function isaretKoy(ad, deger) {
   try {
     if (deger === null) globalThis.localStorage?.removeItem(ad);
@@ -485,6 +485,15 @@ export class SimplePC {
       // Eski uygulama surumu: komut yok, web yoluna dus. Baska hata ekranda gorunsun.
       if (/no command/i.test(m)) return null;
       throw new Error(`iPhone ses motoru: ${m}`, { cause: e });
+    }
+    // Yerel motor bir onceki acilista uygulamayi kapatti (telefonun kalici ayarindaki isaret):
+    // bir daha denenmez, web yoluna dusulur; kalinan adim ekranda gorunur.
+    const coktu = /^COKTU:(.*)$/s.exec(String(res?.summary || ""));
+    if (res && !res.ok && coktu) {
+      isaretKoy(YEREL_SES_DENENIYOR, null);
+      isaretKoy(YEREL_SES_COKTU, String(Date.now()));
+      this.voiceNotice = `iPhone ses motoru önceki denemede kapandı (adım: ${coktu[1] || "?"}); eski ses yolu kullanılıyor.`;
+      return null;
     }
     // Yerel motor acilamadi: nedeni ekranda gorunsun ("Mikrofon acilamadi: ...").
     if (!res?.ok) {

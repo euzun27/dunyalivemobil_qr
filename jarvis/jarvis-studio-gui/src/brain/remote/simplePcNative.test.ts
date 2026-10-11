@@ -123,7 +123,7 @@ describe("iPhone yerel ses motoru", () => {
     const b = expect(p).rejects.toThrow("x");
     await vi.advanceTimersByTimeAsync(300);
     await b;
-    expect(depo.dunyatek_yerel_ses_deneniyor).toBeUndefined();
+    expect(depo.dunyatek_yerel_ses_deneniyor_3).toBeUndefined();
   });
 
   it("motor baslamazsa nedenini gosterir", async () => {
@@ -149,13 +149,13 @@ describe("iPhone yerel ses motoru", () => {
     const p = c.startVoice();
     await vi.advanceTimersByTimeAsync(250);
     expect(await p).toBe(true);
-    expect(depo.dunyatek_yerel_ses_deneniyor).toBeTruthy();
+    expect(depo.dunyatek_yerel_ses_deneniyor_3).toBeTruthy();
     await vi.advanceTimersByTimeAsync(15000);
-    expect(depo.dunyatek_yerel_ses_deneniyor).toBeUndefined();
+    expect(depo.dunyatek_yerel_ses_deneniyor_3).toBeUndefined();
   });
 
   it("onceki acilista motor uygulamayi kapattiysa web yoluna duser", async () => {
-    depo.dunyatek_yerel_ses_deneniyor = "1"; // cokmeden once konan isaret kalmis
+    depo.dunyatek_yerel_ses_deneniyor_3 = "1"; // cokmeden once konan isaret kalmis
     const gum = vi.fn(async () => {
       throw new Error("web yolu");
     });
@@ -167,6 +167,27 @@ describe("iPhone yerel ses motoru", () => {
     const c = await istemci();
     await expect(c.startVoice()).rejects.toThrow("web yolu");
     expect(invokeMock).not.toHaveBeenCalledWith("plugin:phone|voice_start", expect.anything());
-    expect(depo.dunyatek_yerel_ses_coktu_2).toBeTruthy();
+    expect(depo.dunyatek_yerel_ses_coktu_3).toBeTruthy();
+  });
+
+  it("telefonun kalici isareti cokme bildirirse web yoluna duser ve adimi gosterir", async () => {
+    invokeMock.mockImplementation(async (cmd: string) =>
+      cmd === "plugin:phone|voice_start"
+        ? { ok: false, summary: "COKTU:ses motoru başlatılıyor" }
+        : { ok: true },
+    );
+    const gum = vi.fn(async () => {
+      throw new Error("web yolu");
+    });
+    vi.stubGlobal("navigator", {
+      userAgent: IPHONE,
+      maxTouchPoints: 5,
+      mediaDevices: { getUserMedia: gum },
+    });
+    const c = await istemci();
+    await expect(c.startVoice()).rejects.toThrow("web yolu");
+    expect(c.voiceNotice).toContain("ses motoru başlatılıyor");
+    expect(depo.dunyatek_yerel_ses_coktu_3).toBeTruthy();
+    expect(depo.dunyatek_yerel_ses_deneniyor_3).toBeUndefined();
   });
 });

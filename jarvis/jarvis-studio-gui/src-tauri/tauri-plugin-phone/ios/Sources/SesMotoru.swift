@@ -47,8 +47,17 @@ final class SesMotoru: NSObject {
     static let kendiSusmaSn: Double = 2.5  // telefon kendi susturunca PC onayı beklenen süre
     static let isinmaSn: Double = 1.5      // yankı engeli ısınırken mikrofon PC'ye sessizlik yollar
 
-    private let engine = AVAudioEngine()
-    private let player = AVAudioPlayerNode()
+    // Tek motor: uygulama boyunca yaşar, hiç silinmez. Yankı engeli açık bir motoru silmek
+    // iOS'ta çökme yapıyordu (2026-10-11 çökme raporu: Apple'ın arka plandaki temizlik işi
+    // silinmiş nesneye dokunuyor, EXC_BAD_ACCESS objc_release). Firebase ve pipecat
+    // örnekleri de motoru bir kez kurup durdurup yeniden başlatır.
+    // Motor, dinleyiciler ve çalıcının başlat/durdur işleri yalnız ana iş parçacığında yapılır.
+    private static let ortakMotor = AVAudioEngine()
+    private static let ortakCalici = AVAudioPlayerNode()
+    private static var hazir = false            // yankı engeli açıldı, çalıcı takıldı
+    private static var sahip: SesMotoru?         // motoru şu an kullanan görüşme (ana iş parçacığı)
+    private var engine: AVAudioEngine { SesMotoru.ortakMotor }
+    private var player: AVAudioPlayerNode { SesMotoru.ortakCalici }
     private let pcBicim = AVAudioFormat(standardFormatWithSampleRate: SesMotoru.pcHizi, channels: 1)!
     private let micBicim = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: SesMotoru.micHizi,
                                          channels: 1, interleaved: true)!
@@ -80,22 +89,32 @@ final class SesMotoru: NSObject {
     @discardableResult
     private func kilitli<T>(_ f: () -> T) -> T { kilit.lock(); defer { kilit.unlock() }; return f() }
 
-    // ── başlat / durdur ──
-    func baslat(_ adres: URL) throws {
+    // ── başlat / durdur (ana iş parçacığında) ──
+    /// adim: o an yapılan iş; PhonePlugin kalıcı ayara yazar, çökerse sonraki denemede görünür.
+    func baslat(_ adres: URL, adim: (String) -> Void) throws {
+        adim("ses oturumu ayarlanıyor")
         let oturum = AVAudioSession.sharedInstance()
         try oturum.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth])
         try? oturum.setPreferredIOBufferDuration(0.02)
-        try oturum.setActive(true)
+        try oturum.setActive(true)   // görüşme bitince kapatılmaz (aç/kapa çökmeye yol açıyordu)
 
+        adim("önceki görüşme temizleniyor")
+        SesMotoru.temizle()
         let giris = engine.inputNode
-        try giris.setVoiceProcessingEnabled(true)   // yankı engeli: motor başlamadan önce
-        engine.attach(player)
+        if !SesMotoru.hazir {
+            adim("yankı engeli açılıyor")
+            try giris.setVoiceProcessingEnabled(true)   // bir kez, motor başlamadan önce; açık kalır
+            engine.attach(player)
+            SesMotoru.hazir = true
+        }
+        adim("hoparlör bağlanıyor")
         engine.connect(player, to: engine.mainMixerNode, format: pcBicim)
 
         let girisBicim = giris.outputFormat(forBus: 0)
         guard girisBicim.sampleRate > 0, girisBicim.channelCount > 0 else {
             throw NSError(domain: "DUNYATEK", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mikrofon açılamadı."])
         }
+        adim("mikrofon dinleyicisi kuruluyor")
         // format: nil = düğümün gerçek biçimi. Biçimi elle vermek, yankı engeli açıkken
         // donanım hızı farklı olduğunda AVAudioEngine'i çökertebiliyor.
         giris.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] b, _ in
@@ -105,6 +124,8 @@ final class SesMotoru: NSObject {
             let s = SesMotoru.rms(b)
             self?.kilitli { self?.cikisSeviye = s }
         }
+        adim("ses motoru başlatılıyor")
+        SesMotoru.sahip = self
         engine.prepare()
         try engine.start()
         oynat()
@@ -125,6 +146,7 @@ final class SesMotoru: NSObject {
             if tur == .began { self?.durdur("Ses kesintisi (arama, alarm vb.).") }
         })
 
+        adim("bilgisayara bağlanılıyor")
         let us = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         urlOturum = us
         let ws = us.webSocketTask(with: adres)
@@ -157,16 +179,28 @@ final class SesMotoru: NSObject {
             return true
         }
         guard ilk else { return }
-        gozlemciler.forEach { NotificationCenter.default.removeObserver($0) }
-        gozlemciler = []
         soket?.cancel(with: .normalClosure, reason: nil)
         urlOturum?.invalidateAndCancel()
-        engine.inputNode.removeTap(onBus: 0)
-        player.removeTap(onBus: 0)
-        player.stop()
-        engine.stop()
-        try? engine.inputNode.setVoiceProcessingEnabled(false)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        // Soket kapanınca bu, ağ iş parçacığından gelir: motoru orada durdurmak ana iş
+        // parçacığındaki başlatmayla çakışıyordu. Motor işi hep ana iş parçacığında.
+        if Thread.isMainThread { kapat() } else { DispatchQueue.main.async { self.kapat() } }
+    }
+
+    private func kapat() {
+        gozlemciler.forEach { NotificationCenter.default.removeObserver($0) }
+        gozlemciler = []
+        // Yeni görüşme motoru devraldıysa ona dokunma (eski görüşmenin geç gelen kapanışı).
+        guard SesMotoru.sahip == nil || SesMotoru.sahip === self else { return }
+        SesMotoru.temizle()
+        SesMotoru.sahip = nil
+    }
+
+    /// Dinleyicileri sök, çalmayı ve motoru durdur. Motor silinmez, yankı engeli açık kalır.
+    private static func temizle() {
+        ortakMotor.inputNode.removeTap(onBus: 0)
+        ortakCalici.removeTap(onBus: 0)
+        ortakCalici.stop()
+        if ortakMotor.isRunning { ortakMotor.stop() }
     }
 
     /// JS bunu ~100 ms'de bir sorar (ekrandaki yüz, sağlık kontrolü, söz kesme klibi).
@@ -238,19 +272,30 @@ final class SesMotoru: NSObject {
                 self.calinanSn += sure
             }
         }
-        if !player.isPlaying { oynat() }
+        oynat()
     }
 
     /// Çalan ve sırada bekleyen sesi hemen sustur (söz kesildi).
     private func sustur() {
         kilitli { nesil += 1; bekleyen = 0; sonCalma = .distantPast; sozKesme.reset() }
-        player.stop()   // sıradaki parçaları da atar
-        oynat()
+        anaIste { [weak self] in
+            guard let self = self, SesMotoru.sahip === self, !self.kilitli({ self.bitti }) else { return }
+            self.player.stop()   // sıradaki parçaları da atar
+            self.oynat()
+        }
     }
 
-    /// Motor çalışmıyorken play() AVAudioEngine'i çökertir (uygulama kapanır).
+    /// Motor çalışmıyorken play() AVAudioEngine'i çökertir (uygulama kapanır). Ana iş
+    /// parçacığında: motor orada durdurulur, aynı anda çalmaya başlamak çakışmasın.
     private func oynat() {
-        if engine.isRunning && !kilitli({ bitti }) { player.play() }
+        anaIste { [weak self] in
+            guard let self = self, SesMotoru.sahip === self, !self.kilitli({ self.bitti }) else { return }
+            if self.engine.isRunning && !self.player.isPlaying { self.player.play() }
+        }
+    }
+
+    private func anaIste(_ f: @escaping () -> Void) {
+        if Thread.isMainThread { f() } else { DispatchQueue.main.async(execute: f) }
     }
 
     // ── mikrofon → PC ──

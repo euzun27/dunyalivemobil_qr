@@ -211,6 +211,7 @@ class PhonePlugin: Plugin, AVSpeechSynthesizerDelegate {
 
     // ── PC ile sesli görüşme (yerel ses motoru) ──
     private var motor: SesMotoru?
+    private static let sesAdimAnahtari = "dunyatek_ses_motoru_adim"
 
     @objc public func voiceStart(_ invoke: Invoke) {
         let adres = ((try? invoke.parseArgs(VoiceStartArgs.self))?.url ?? "")
@@ -218,14 +219,33 @@ class PhonePlugin: Plugin, AVSpeechSynthesizerDelegate {
             invoke.resolve(result(false, "Geçersiz ses adresi.")); return
         }
         DispatchQueue.main.async {
+            // Çökme koruması: her adım kalıcı ayara anında yazılır (uygulama çökse de kalır).
+            // Bir önceki açılış yarıda kaldıysa motor bu kez denenmez; JS "COKTU:" görünce
+            // eski web ses yoluna geçer ve kalınan adımı ekranda gösterir.
+            let ayar = UserDefaults.standard
+            if let onceki = ayar.string(forKey: PhonePlugin.sesAdimAnahtari), !onceki.isEmpty {
+                ayar.removeObject(forKey: PhonePlugin.sesAdimAnahtari)
+                invoke.resolve(self.result(false, "COKTU:\(onceki)"))
+                return
+            }
             self.motor?.durdur()
             self.motor = nil
             let m = SesMotoru()
+            let yaz: (String) -> Void = { a in
+                ayar.set(a, forKey: PhonePlugin.sesAdimAnahtari)
+                ayar.synchronize()
+            }
             do {
-                try m.baslat(u)
+                try m.baslat(u, adim: yaz)
                 self.motor = m
+                yaz("görüşmenin ilk saniyeleri")
+                // 10 sn çökmeden çalıştıysa motor sağlam: işaret kalkar.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                    if self.motor === m { ayar.removeObject(forKey: PhonePlugin.sesAdimAnahtari) }
+                }
                 invoke.resolve(self.result(true, "started"))
             } catch {
+                ayar.removeObject(forKey: PhonePlugin.sesAdimAnahtari)   // düzgün hata, çökme değil
                 m.durdur()
                 invoke.resolve(self.result(false, "Ses başlatılamadı: \(error.localizedDescription)"))
             }
@@ -234,6 +254,7 @@ class PhonePlugin: Plugin, AVSpeechSynthesizerDelegate {
 
     @objc public func voiceStop(_ invoke: Invoke) {
         DispatchQueue.main.async {
+            UserDefaults.standard.removeObject(forKey: PhonePlugin.sesAdimAnahtari)
             self.motor?.durdur()
             self.motor = nil
             invoke.resolve(self.result(true, "stopped"))

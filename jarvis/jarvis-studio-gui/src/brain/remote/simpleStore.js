@@ -211,6 +211,11 @@ export const simplePcStore = {
     });
     voice = ok;
     if (ok && /^(Ses|Mikrofon):/.test(lastError)) lastError = "";
+    // iPhone yerel motoru cokmustu, web yoluna gecildi: gorusme acikken de ekranda kalsin.
+    if (c.voiceNotice) {
+      lastError = `Bilgi: ${c.voiceNotice}`;
+      c.voiceNotice = "";
+    }
     pcEvent({ kind: "voice" });
     emit();
     return ok;
