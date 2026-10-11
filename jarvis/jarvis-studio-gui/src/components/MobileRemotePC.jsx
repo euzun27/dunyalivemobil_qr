@@ -240,6 +240,11 @@ export default function MobileRemotePC({ onClose }) {
               : "Görüşme kapalı. Yeniden başlatmak için düğmeye basın."}
           </div>
           {voiceError && <div className="settings-warn">{voiceError}</div>}
+          {!voice && !voiceError && state === "online" && lastError && (
+            <div className="settings-hint" style={{ marginTop: 4 }}>
+              Ayrıntı: {lastError}
+            </div>
+          )}
           {chat.length > 0 && (
             <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.5 }}>
               {chat.map((m, i) => (

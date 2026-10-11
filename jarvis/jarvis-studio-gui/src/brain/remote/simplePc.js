@@ -33,6 +33,35 @@ export function pcMesaji(metin) {
   }
 }
 
+// iPhone yerel ses motoru cokme korumasi: motor baslatilirken isaret konur, 15 sn sorunsuz
+// calisinca kaldirilir. Uygulama acildiginda isaret duruyorsa motor uygulamayi kapatmistir.
+const YEREL_SES_DENENIYOR = "dunyatek_yerel_ses_deneniyor";
+// Motor duzeltilip yeni surum cikinca sonundaki numara artirilir: yerel motor yeniden denenir.
+const YEREL_SES_COKTU = "dunyatek_yerel_ses_coktu_2";
+function isaretKoy(ad, deger) {
+  try {
+    if (deger === null) globalThis.localStorage?.removeItem(ad);
+    else globalThis.localStorage?.setItem(ad, deger);
+  } catch {
+    /* depolama yoksa koruma calismaz, sorun degil */
+  }
+}
+function isaretOku(ad) {
+  try {
+    return globalThis.localStorage?.getItem(ad) || null;
+  } catch {
+    return null;
+  }
+}
+/** Onceki acilista yerel ses motoru uygulamayi kapattiysa true (web yoluna dusulur). */
+export function yerelSesCoktu() {
+  if (isaretOku(YEREL_SES_DENENIYOR)) {
+    isaretKoy(YEREL_SES_DENENIYOR, null);
+    isaretKoy(YEREL_SES_COKTU, String(Date.now()));
+  }
+  return Boolean(isaretOku(YEREL_SES_COKTU));
+}
+
 /** iPhone/iPad (WKWebView). Oradaki yanki engeli Web Audio ile calinan sesi tanimaz;
  *  bu yuzden iPhone'da sesli gorusme yerel ses motorunda yapilir (startVoice). */
 export function iosMu(ua = globalThis.navigator?.userAgent || "", nav = globalThis.navigator) {
@@ -248,7 +277,9 @@ export class SimplePC {
     if (this._voice || !this.token) return false;
     // iPhone: mikrofon + hoparlor tek bir yerel ses motorunda (iOS yanki engeli acik).
     // Eski uygulama surumunde komut yoksa asagidaki web yoluna duser.
-    if (iosMu()) {
+    // Yerel motor uygulamayi kapattiysa (cokme isareti kaldiysa) bir daha denenmez,
+    // eski web yolu kullanilir: uygulama her acilista cokmesin.
+    if (iosMu() && !yerelSesCoktu()) {
       const ok = await this._startVoiceNative(onEnd);
       if (ok !== null) return ok;
     }
@@ -425,7 +456,8 @@ export class SimplePC {
         onEnd?.();
         resolve(false);
       };
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
+        this.lastVoiceError = `bilgisayar ses bağlantısını kapattı (kod ${ev?.code ?? "?"})`;
         if (this._voice === voice) {
           this.stopVoice();
           onEnd?.();
@@ -444,16 +476,21 @@ export class SimplePC {
     const { invoke } = await import("@tauri-apps/api/core");
     const url = `${this.wsBase}/ws/phone-audio?token=${encodeURIComponent(this.token)}&speaker=1`;
     let res;
+    isaretKoy(YEREL_SES_DENENIYOR, String(Date.now()));
     try {
       res = await invoke("plugin:phone|voice_start", { url });
     } catch (e) {
+      isaretKoy(YEREL_SES_DENENIYOR, null); // cokme degil, duzgun hata
       const m = String(e?.message || e);
       // Eski uygulama surumu: komut yok, web yoluna dus. Baska hata ekranda gorunsun.
       if (/no command/i.test(m)) return null;
       throw new Error(`iPhone ses motoru: ${m}`, { cause: e });
     }
     // Yerel motor acilamadi: nedeni ekranda gorunsun ("Mikrofon acilamadi: ...").
-    if (!res?.ok) throw new Error(res?.summary || "iPhone ses motoru başlatılamadı");
+    if (!res?.ok) {
+      isaretKoy(YEREL_SES_DENENIYOR, null);
+      throw new Error(res?.summary || "iPhone ses motoru başlatılamadı");
+    }
     let sorguHatasi = "";
     const voice = {
       native: true,
@@ -478,11 +515,16 @@ export class SimplePC {
       if ((d.kesSeq || 0) > voice.kesSeq) kesilme.basla(Date.now() / 1000); // telefon soz kesti
       voice.kesSeq = d.kesSeq || 0;
       if (d.closed) {
+        this.lastVoiceError = d.error || "iPhone ses bağlantısı kapandı";
         this.stopVoice();
         onEnd?.();
       }
     };
     voice.timer = setInterval(() => void sor(), 100);
+    // 15 sn cokmeden calistiysa motor saglam: isaret kaldirilir.
+    setTimeout(() => {
+      if (this._voice === voice) isaretKoy(YEREL_SES_DENENIYOR, null);
+    }, 15000);
     // Soket acilana kadar bekle (web yolundaki ws.onopen gibi).
     while (this._voice === voice && !voice.durum.open && !voice.durum.closed) {
       if (Date.now() - voice.baslangic > 10000) {
@@ -516,6 +558,7 @@ export class SimplePC {
     this._voice = null;
     if (v.native) {
       clearInterval(v.timer);
+      isaretKoy(YEREL_SES_DENENIYOR, null); // duzgun kapandi, cokme degil
       import("@tauri-apps/api/core")
         .then(({ invoke }) => invoke("plugin:phone|voice_stop"))
         .catch(() => {});

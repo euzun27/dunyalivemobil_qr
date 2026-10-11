@@ -52,7 +52,8 @@ final class SesMotoru: NSObject {
     private let pcBicim = AVAudioFormat(standardFormatWithSampleRate: SesMotoru.pcHizi, channels: 1)!
     private let micBicim = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: SesMotoru.micHizi,
                                          channels: 1, interleaved: true)!
-    private var donustur: AVAudioConverter?
+    private var donustur: AVAudioConverter?   // yalnız mikrofon iş parçacığında kullanılır
+    private var tekKanal: AVAudioFormat?
     private var urlOturum: URLSession?
     private var soket: URLSessionWebSocketTask?
     private var gozlemciler: [NSObjectProtocol] = []
@@ -92,22 +93,21 @@ final class SesMotoru: NSObject {
         engine.connect(player, to: engine.mainMixerNode, format: pcBicim)
 
         let girisBicim = giris.outputFormat(forBus: 0)
-        guard girisBicim.sampleRate > 0, girisBicim.channelCount > 0,
-              let tekKanal = AVAudioFormat(standardFormatWithSampleRate: girisBicim.sampleRate, channels: 1),
-              let cevir = AVAudioConverter(from: tekKanal, to: micBicim) else {
+        guard girisBicim.sampleRate > 0, girisBicim.channelCount > 0 else {
             throw NSError(domain: "DUNYATEK", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mikrofon açılamadı."])
         }
-        donustur = cevir
-        giris.installTap(onBus: 0, bufferSize: 1024, format: girisBicim) { [weak self] b, _ in
-            self?.mikrofon(b, tekKanal)
+        // format: nil = düğümün gerçek biçimi. Biçimi elle vermek, yankı engeli açıkken
+        // donanım hızı farklı olduğunda AVAudioEngine'i çökertebiliyor.
+        giris.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] b, _ in
+            self?.mikrofon(b)
         }
-        player.installTap(onBus: 0, bufferSize: 1024, format: pcBicim) { [weak self] b, _ in
+        player.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] b, _ in
             let s = SesMotoru.rms(b)
             self?.kilitli { self?.cikisSeviye = s }
         }
         engine.prepare()
         try engine.start()
-        player.play()
+        oynat()
 
         // Kulaklık/hoparlör değişimi ya da yankı engelinin kendi ayarı motoru durdurabilir.
         // Mikrofon biçimi aynıysa motor yeniden başlatılır (ilk açılışta da gelebiliyor).
@@ -143,7 +143,7 @@ final class SesMotoru: NSObject {
         engine.prepare()
         do {
             try engine.start()
-            player.play()
+            oynat()
         } catch {
             durdur("Ses motoru yeniden başlatılamadı: \(error.localizedDescription)")
         }
@@ -238,19 +238,31 @@ final class SesMotoru: NSObject {
                 self.calinanSn += sure
             }
         }
-        if !player.isPlaying { player.play() }
+        if !player.isPlaying { oynat() }
     }
 
     /// Çalan ve sırada bekleyen sesi hemen sustur (söz kesildi).
     private func sustur() {
         kilitli { nesil += 1; bekleyen = 0; sonCalma = .distantPast; sozKesme.reset() }
         player.stop()   // sıradaki parçaları da atar
-        player.play()
+        oynat()
+    }
+
+    /// Motor çalışmıyorken play() AVAudioEngine'i çökertir (uygulama kapanır).
+    private func oynat() {
+        if engine.isRunning && !kilitli({ bitti }) { player.play() }
     }
 
     // ── mikrofon → PC ──
-    private func mikrofon(_ b: AVAudioPCMBuffer, _ tekKanal: AVAudioFormat) {
-        guard let cevir = donustur, let kaynak = b.floatChannelData?[0], b.frameLength > 0,
+    private func mikrofon(_ b: AVAudioPCMBuffer) {
+        let hiz = b.format.sampleRate
+        guard hiz > 0, b.frameLength > 0 else { return }
+        if tekKanal?.sampleRate != hiz {   // ilk parça ya da donanım hızı değişti
+            guard let f = AVAudioFormat(standardFormatWithSampleRate: hiz, channels: 1),
+                  let c = AVAudioConverter(from: f, to: micBicim) else { return }
+            tekKanal = f; donustur = c
+        }
+        guard let cevir = donustur, let tekKanal = tekKanal, let kaynak = b.floatChannelData?[0],
               let mono = AVAudioPCMBuffer(pcmFormat: tekKanal, frameCapacity: b.frameLength),
               let hedef = mono.floatChannelData?[0] else { return }
         mono.frameLength = b.frameLength

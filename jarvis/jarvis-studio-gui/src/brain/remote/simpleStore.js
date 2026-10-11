@@ -201,12 +201,16 @@ export const simplePcStore = {
   },
   async startVoice() {
     if (!client || voice || state !== "online") return voice;
+    const c = client;
     const ok = await client.startVoice(() => {
       voice = false;
+      // Gorusme kendiliginden bitti: nedeni ekranda gorunsun (cevrimiciyken de).
+      if (c.lastVoiceError) lastError = `Ses: ${c.lastVoiceError}`;
       pcEvent({ kind: "voice" });
       emit();
     });
     voice = ok;
+    if (ok && /^(Ses|Mikrofon):/.test(lastError)) lastError = "";
     pcEvent({ kind: "voice" });
     emit();
     return ok;
