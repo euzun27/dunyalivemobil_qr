@@ -212,6 +212,9 @@ class PhonePlugin: Plugin, AVSpeechSynthesizerDelegate {
     // ── PC ile sesli görüşme (yerel ses motoru) ──
     private var motor: SesMotoru?
     private static let sesAdimAnahtari = "dunyatek_ses_motoru_adim"
+    /// Bu açılışın kimliği: işaret aynı açılışta yazıldıysa (başlatma sürüyor ya da ilk
+    /// saniyeler) çökme sayılmaz; yalnız önceki açılıştan kalan işaret çökmedir.
+    private static let buAcilis = UUID().uuidString
 
     @objc public func voiceStart(_ invoke: Invoke) {
         let adres = ((try? invoke.parseArgs(VoiceStartArgs.self))?.url ?? "")
@@ -224,15 +227,20 @@ class PhonePlugin: Plugin, AVSpeechSynthesizerDelegate {
             // eski web ses yoluna geçer ve kalınan adımı ekranda gösterir.
             let ayar = UserDefaults.standard
             if let onceki = ayar.string(forKey: PhonePlugin.sesAdimAnahtari), !onceki.isEmpty {
-                ayar.removeObject(forKey: PhonePlugin.sesAdimAnahtari)
-                invoke.resolve(self.result(false, "COKTU:\(onceki)"))
-                return
+                let parca = onceki.split(separator: "|", maxSplits: 1).map(String.init)
+                if parca.count < 2 {
+                    ayar.removeObject(forKey: PhonePlugin.sesAdimAnahtari)   // eski sürümün işareti
+                } else if parca.first != PhonePlugin.buAcilis {
+                    ayar.removeObject(forKey: PhonePlugin.sesAdimAnahtari)
+                    invoke.resolve(self.result(false, "COKTU:\(parca.last ?? onceki)"))
+                    return
+                }
             }
             self.motor?.durdur()
             self.motor = nil
             let m = SesMotoru()
             let yaz: (String) -> Void = { a in
-                ayar.set(a, forKey: PhonePlugin.sesAdimAnahtari)
+                ayar.set("\(PhonePlugin.buAcilis)|\(a)", forKey: PhonePlugin.sesAdimAnahtari)
                 ayar.synchronize()
             }
             do {

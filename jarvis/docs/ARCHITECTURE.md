@@ -477,7 +477,16 @@ runs on the main thread. Deallocating a voice-processing engine, or tearing it d
 the socket thread, crashed the app (EXC_BAD_ACCESS, 2026-10-11). `voice_start` writes its
 current step to `UserDefaults` before each step. If a start never finished, the next
 `voice_start` returns `COKTU:<step>`, and JS falls back to the WebView path and shows the
-step.
+step. The marker is `<launch id>|<step>`, and so is the JS `localStorage` flag. Only a
+marker left by an *earlier* launch counts as a crash. A marker from the current launch
+means a start is still running.
+
+`startVoice` is single-flight: the auto-start on connect, the 5 s keep-alive and the
+buttons can all call it at once, and a call made while a start is running gets the same
+promise. Before falling back to the WebView path, JS calls `voice_stop`. Two concurrent
+sessions (native plus WebView) each opened a `speaker=1` socket, so the PC sent every
+reply twice and the iPhone played it doubled (2026-10-12). The PC also keeps only the
+newest speaker socket.
 
 Known gap: the wake-word engine and `MediaRecorder` can't share the mic, so the handoff
 after the wake cue drops roughly the first half-second of a command (STATUS.md).

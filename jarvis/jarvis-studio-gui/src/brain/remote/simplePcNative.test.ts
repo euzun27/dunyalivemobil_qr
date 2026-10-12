@@ -123,7 +123,7 @@ describe("iPhone yerel ses motoru", () => {
     const b = expect(p).rejects.toThrow("x");
     await vi.advanceTimersByTimeAsync(300);
     await b;
-    expect(depo.dunyatek_yerel_ses_deneniyor_3).toBeUndefined();
+    expect(depo.dunyatek_yerel_ses_deneniyor_4).toBeUndefined();
   });
 
   it("motor baslamazsa nedenini gosterir", async () => {
@@ -149,13 +149,13 @@ describe("iPhone yerel ses motoru", () => {
     const p = c.startVoice();
     await vi.advanceTimersByTimeAsync(250);
     expect(await p).toBe(true);
-    expect(depo.dunyatek_yerel_ses_deneniyor_3).toBeTruthy();
+    expect(depo.dunyatek_yerel_ses_deneniyor_4).toBeTruthy();
     await vi.advanceTimersByTimeAsync(15000);
-    expect(depo.dunyatek_yerel_ses_deneniyor_3).toBeUndefined();
+    expect(depo.dunyatek_yerel_ses_deneniyor_4).toBeUndefined();
   });
 
   it("onceki acilista motor uygulamayi kapattiysa web yoluna duser", async () => {
-    depo.dunyatek_yerel_ses_deneniyor_3 = "1"; // cokmeden once konan isaret kalmis
+    depo.dunyatek_yerel_ses_deneniyor_4 = "1"; // cokmeden once konan isaret kalmis
     const gum = vi.fn(async () => {
       throw new Error("web yolu");
     });
@@ -167,7 +167,7 @@ describe("iPhone yerel ses motoru", () => {
     const c = await istemci();
     await expect(c.startVoice()).rejects.toThrow("web yolu");
     expect(invokeMock).not.toHaveBeenCalledWith("plugin:phone|voice_start", expect.anything());
-    expect(depo.dunyatek_yerel_ses_coktu_3).toBeTruthy();
+    expect(depo.dunyatek_yerel_ses_coktu_4).toBeTruthy();
   });
 
   it("telefonun kalici isareti cokme bildirirse web yoluna duser ve adimi gosterir", async () => {
@@ -187,7 +187,35 @@ describe("iPhone yerel ses motoru", () => {
     const c = await istemci();
     await expect(c.startVoice()).rejects.toThrow("web yolu");
     expect(c.voiceNotice).toContain("ses motoru başlatılıyor");
-    expect(depo.dunyatek_yerel_ses_coktu_3).toBeTruthy();
-    expect(depo.dunyatek_yerel_ses_deneniyor_3).toBeUndefined();
+    expect(depo.dunyatek_yerel_ses_coktu_4).toBeTruthy();
+    expect(depo.dunyatek_yerel_ses_deneniyor_4).toBeUndefined();
+    // web yoluna gecmeden once yerel motor durdurulur: iki ses ayni anda calismaz
+    expect(invokeMock).toHaveBeenCalledWith("plugin:phone|voice_stop");
+  });
+
+  it("ayni anda gelen iki baslatma tek ses oturumu acar", async () => {
+    const c = await istemci();
+    const p1 = c.startVoice();
+    const p2 = c.startVoice();
+    await vi.advanceTimersByTimeAsync(250);
+    expect(await p1).toBe(true);
+    expect(await p2).toBe(true);
+    const baslatmalar = invokeMock.mock.calls.filter((a) => a[0] === "plugin:phone|voice_start");
+    expect(baslatmalar).toHaveLength(1);
+  });
+
+  it("ayni acilista konan isaret cokme sayilmaz", async () => {
+    const c = await istemci();
+    const p = c.startVoice();
+    await vi.advanceTimersByTimeAsync(250);
+    expect(await p).toBe(true);
+    // oturum temizlenmeden dustu: isaret bu acilista konmus haliyle duruyor
+    expect(depo.dunyatek_yerel_ses_deneniyor_4).toBeTruthy();
+    clearInterval(c._voice.timer);
+    c._voice = null;
+    const p2 = c.startVoice();
+    await vi.advanceTimersByTimeAsync(250);
+    expect(await p2).toBe(true);
+    expect(depo.dunyatek_yerel_ses_coktu_4).toBeUndefined();
   });
 });
