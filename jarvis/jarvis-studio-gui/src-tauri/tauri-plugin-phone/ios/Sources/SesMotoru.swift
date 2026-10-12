@@ -46,6 +46,7 @@ final class SesMotoru: NSObject {
     static let kuyrukSn: Double = 0.3      // cümle aralarında "çalıyor" sayılmaya devam
     static let kendiSusmaSn: Double = 2.5  // telefon kendi susturunca PC onayı beklenen süre
     static let isinmaSn: Double = 1.5      // yankı engeli ısınırken mikrofon PC'ye sessizlik yollar
+    static let onDolumSn: Double = 0.12    // çalmadan önce biriktirilen ses tamponu (jitter yastığı)
 
     // Tek motor: uygulama boyunca yaşar, hiç silinmez. Yankı engeli açık bir motoru silmek
     // iOS'ta çökme yapıyordu (2026-10-11 çökme raporu: Apple'ın arka plandaki temizlik işi
@@ -73,6 +74,8 @@ final class SesMotoru: NSObject {
     private var bitti = false
     private var sesGeldi = false
     private var bekleyen = 0          // çalınmayı bekleyen parça sayısı
+    private var bekleyenSn: Double = 0 // çalıcıya verilmiş ama daha çalınmamış ses (saniye)
+    private var calmaBasladi = false  // bu söz için play() çağrıldı mı (ön dolum bitti mi)
     private var nesil = 0             // susturunca eski parçaların geri bildirimi yok sayılır
     private var sonCalma = Date.distantPast
     private var calinanSn: Double = 0 // bu görüşmede çalınan toplam süre (ısınma için)
@@ -262,22 +265,58 @@ final class SesMotoru: NSObject {
             }
         }
         let sure = Double(n) / SesMotoru.pcHizi
-        let benim: Int = kilitli { sesGeldi = true; bekleyen += 1; return nesil }
+        // Ön dolum: ilk parçada hemen play() demek, ağda ufak bir takılmada çalıcıyı aç
+        // bırakıyor (underrun) → hoparlörde cızırtı/patlama. Önce ~120 ms ses biriktir,
+        // sonra çal; kuyruk tam boşalırsa (jitter) bir sonraki söz yeniden biriktirir.
+        var benim = 0
+        var calsin = false
+        var zamanlayiciKur = false
+        kilitli {
+            sesGeldi = true
+            let onceki = bekleyen
+            bekleyen += 1
+            bekleyenSn += sure
+            if !calmaBasladi {
+                if bekleyenSn >= SesMotoru.onDolumSn { calmaBasladi = true; calsin = true }
+                else if onceki == 0 { zamanlayiciKur = true }
+            } else {
+                calsin = true
+            }
+            benim = nesil
+        }
         player.scheduleBuffer(b, completionCallbackType: .dataPlayedBack) { [weak self] _ in
             guard let self = self else { return }
             self.kilitli {
                 guard self.nesil == benim else { return }
                 self.bekleyen = max(0, self.bekleyen - 1)
+                self.bekleyenSn = max(0, self.bekleyenSn - sure)
+                if self.bekleyen == 0 { self.calmaBasladi = false } // kuyruk boşaldı: sonraki söz yeniden ön dolum
                 self.sonCalma = Date()
                 self.calinanSn += sure
             }
         }
-        oynat()
+        if zamanlayiciKur {   // kısa cevap ön dolum eşiğini geçmezse yine de çalınsın
+            let g = benim
+            DispatchQueue.main.asyncAfter(deadline: .now() + SesMotoru.onDolumSn) { [weak self] in
+                self?.onDolumBitti(g)
+            }
+        }
+        if calsin { oynat() }
+    }
+
+    /// Ön dolum süresi dolunca: yeterli ses birikmese bile (kısa cevap) çalmaya başla.
+    private func onDolumBitti(_ g: Int) {
+        let cal: Bool = kilitli {
+            guard nesil == g, !calmaBasladi, bekleyen > 0 else { return false }
+            calmaBasladi = true
+            return true
+        }
+        if cal { oynat() }
     }
 
     /// Çalan ve sırada bekleyen sesi hemen sustur (söz kesildi).
     private func sustur() {
-        kilitli { nesil += 1; bekleyen = 0; sonCalma = .distantPast; sozKesme.reset() }
+        kilitli { nesil += 1; bekleyen = 0; bekleyenSn = 0; calmaBasladi = false; sonCalma = .distantPast; sozKesme.reset() }
         anaIste { [weak self] in
             guard let self = self, SesMotoru.sahip === self, !self.kilitli({ self.bitti }) else { return }
             self.player.stop()   // sıradaki parçaları da atar
