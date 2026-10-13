@@ -76,6 +76,8 @@ function saveConfig(cfg) {
 }
 
 let reconnecting = false;
+// QR ile elle eşleşme sürerken arka plan (keepAlive) araya girip eski PC'ye bağlanmasın.
+let pairingInProgress = false;
 
 // Mikrofon acilamadiysa (izin yok vb.) her 5 sn'de tekrar sormayalim.
 function voiceFailed(e) {
@@ -121,28 +123,43 @@ export const simplePcStore = {
   },
   /** extraHosts: QR'daki Tailscale adres(ler)i - telefon ayni Wi-Fi'da degilse. */
   async pair({ host, port, secure, key, extraHosts = [] }) {
-    this.disconnect();
-    setState("connecting");
-    const candidates = uniq([host, ...extraHosts]);
-    const reach = (await findReachableHost(candidates, port, secure)) || host;
-    client = makeClient(reach, port, secure);
-    const ok = await client.connect(key);
-    if (ok) {
-      const info = client.loginInfo || {};
-      saveConfig({
-        host: reach,
-        port,
-        secure: !!secure,
-        // PC'nin bildirdigi adresler (Wi-Fi + Tailscale) ve kalici cihaz anahtari.
-        hosts: uniq([...candidates, ...(Array.isArray(info.hosts) ? info.hosts : [])]),
-        deviceToken: info.device_token || null,
-      });
-      lastError = "";
-    } else {
-      lastError = `${reach}: ${client.lastError || state}`;
+    pairingInProgress = true;
+    try {
+      this.disconnect();
+      setState("connecting");
+      const candidates = uniq([host, ...extraHosts]);
+      const reach = await findReachableHost(candidates, port, secure);
+      // Yeni bir bilgisayara geçiş: taranan QR, kayitli PC'den FARKLI bir bilgisayara aitse
+      // ve o bilgisayar yanit veriyorsa, eski eslesmeyi hemen birak. Boylece yeni eslesme
+      // yarida kalsa (anahtar suresi dolmus vb.) bile arka plan sessizce eski PC'ye geri
+      // baglanmaz. QR ile okunan bilgisayar her zaman kazanir ("hep eski PC'ye baglaniyor"
+      // sorununun koku buydu). Yeni PC hic cevap vermiyorsa (reach yok) eski eslesme korunur.
+      if (reach && config) {
+        const kayitli = uniq([config.host, ...(config.hosts || [])]);
+        if (!kayitli.some((h) => candidates.includes(h))) saveConfig(null);
+      }
+      const target = reach || host;
+      client = makeClient(target, port, secure);
+      const ok = await client.connect(key);
+      if (ok) {
+        const info = client.loginInfo || {};
+        saveConfig({
+          host: target,
+          port,
+          secure: !!secure,
+          // PC'nin bildirdigi adresler (Wi-Fi + Tailscale) ve kalici cihaz anahtari.
+          hosts: uniq([...candidates, ...(Array.isArray(info.hosts) ? info.hosts : [])]),
+          deviceToken: info.device_token || null,
+        });
+        lastError = "";
+      } else {
+        lastError = `${target}: ${client.lastError || state}`;
+      }
+      emit();
+      return ok;
+    } finally {
+      pairingInProgress = false;
     }
-    emit();
-    return ok;
   },
   /**
    * QR okutmadan yeniden baglan: kayitli adreslerin hepsini (ayni Wi-Fi + Tailscale)
@@ -285,6 +302,7 @@ async function restartVoice() {
 function keepAlive() {
   if (pcEvent({ kind: "tick" })) emit(); // "dusunuyor" zaman asimi
   void syncWakeLock();
+  if (pairingInProgress) return; // QR ile elle eslesme suruyor: araya girme
   if (!visible()) return; // arka planda Android zaten her seyi duraklatir
   if (config?.deviceToken && !reconnecting && (state === "idle" || state === "offline")) {
     void simplePcStore.reconnect();
