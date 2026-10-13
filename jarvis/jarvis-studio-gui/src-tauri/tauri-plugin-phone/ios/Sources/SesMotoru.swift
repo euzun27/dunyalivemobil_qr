@@ -45,7 +45,7 @@ final class SesMotoru: NSObject {
     static let parca = 1024                // 16 kHz'de 64 ms
     static let kuyrukSn: Double = 0.3      // cümle aralarında "çalıyor" sayılmaya devam
     static let kendiSusmaSn: Double = 2.5  // telefon kendi susturunca PC onayı beklenen süre
-    static let isinmaSn: Double = 1.5      // yankı engeli ısınırken mikrofon PC'ye sessizlik yollar
+    static let isinmaSn: Double = 1.5      // çalmanın ilk saniyesinde barge-in kapalı (mikrofon güvenilmez)
     static let onDolumSn: Double = 0.12    // çalmadan önce biriktirilen ses tamponu (jitter yastığı)
 
     // Tek motor: uygulama boyunca yaşar, hiç silinmez. Yankı engeli açık bir motoru silmek
@@ -370,12 +370,19 @@ final class SesMotoru: NSObject {
                 var p = Array(micTampon.prefix(SesMotoru.parca))
                 micTampon.removeFirst(SesMotoru.parca)
                 let calan = sesGeldi && (bekleyen > 0 || Date().timeIntervalSince(sonCalma) < SesMotoru.kuyrukSn)
-                if calan && calinanSn < SesMotoru.isinmaSn {
-                    // Yankı engeli henüz çalınan sesi öğrenmedi: ilk saniyede PC'ye sessizlik.
+                if calan {
+                    // Asistan konuşurken PC'ye HEP sessizlik gönder. Yankı engeli (AEC)
+                    // hoparlörden/kulaklıktan mikrofona sızan asistan sesini tam bastıramıyor;
+                    // o kalıntı PC'ye giderse asistan kendi sesini duyup tekrar tekrar
+                    // yankılıyordu (kulaklıkta da sürüyordu: akustik değil, iletim sorunu).
+                    // Söz kesme yerelde gerçek mikrofonla sürer: kullanıcı araya girince
+                    // aşağıda "kes" PC'ye gider, çalma durunca (calan=false) mikrofon yeniden akar.
+                    if calinanSn >= SesMotoru.isinmaSn && pcSozKesme {
+                        if sozKesme.feed(SesMotoru.pcmSeviye(p)) { kes = true }
+                    } else {
+                        sozKesme.reset()   // ısınma sırasında barge-in kapalı (mikrofon henüz güvenilmez)
+                    }
                     p = [Int16](repeating: 0, count: p.count)
-                    sozKesme.reset()
-                } else if calan && pcSozKesme {
-                    if sozKesme.feed(SesMotoru.pcmSeviye(p)) { kes = true }
                 } else {
                     sozKesme.reset()
                 }
