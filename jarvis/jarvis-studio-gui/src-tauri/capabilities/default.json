@@ -34,7 +34,13 @@
         { "url": "https://aiplatform.googleapis.com/*" },
         { "url": "https://*.aiplatform.googleapis.com/*" },
         { "url": "https://*.speech.googleapis.com/*" },
-        { "url": "https://*.googleapis.com/*" }
+        { "url": "https://*.googleapis.com/*" },
+        { "url": "http://*:8000/**" },
+        { "url": "http://*:8001/**" },
+        { "url": "http://*:8002/**" },
+        { "url": "https://*:8000/**" },
+        { "url": "https://*:8001/**" },
+        { "url": "https://*:8002/**" }
       ]
     }
   ]

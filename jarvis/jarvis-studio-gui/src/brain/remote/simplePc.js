@@ -5,6 +5,7 @@
  *   WS   /ws?token=<token>  -> JSON mesajlar, gonderim: {type:"command", text:"..."}
  */
 import { SozKesme, kesilme, pcmSeviye } from "./sozKesme";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
 // PC'nin mobil uygulama icin actigi duz HTTP portu (dunya_live dashboard APP_PORT).
 // Asil panel portu (8000) kendinden imzali HTTPS kullaniyor, WebView ona guvenmiyor.
@@ -17,6 +18,35 @@ const PLAY_HOLD_S = 0.3;
 // Telefon sesi kendi susturduktan sonra PC'nin onayi ("kes") gelmezse bu kadar sonra
 // gelen ses yeniden calinir (PC o arada konusmayi kesmemis olabilir).
 const KENDI_SUSMA_MS = 2500;
+
+/** True inside a Tauri WebView (the plugin's `fetch` only works there). */
+function inTauri() {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+/**
+ * PC'ye HTTP istegi. On-device Tauri'nin Rust HTTP motorundan gider: telefon WebView'i
+ * yerel-ag IP'sine (192.168.x / 100.x) duz `fetch`'i "Private Network Access"/CORS ile
+ * engelliyor ("Failed to fetch") — internet host'lari calisirken PC baglanamiyordu. Rust
+ * tarafi bu kisitlara tabi degil. Tarayici onizlemesinde (Tauri yok) normal fetch'e duser.
+ * Hatalar oldugu gibi yukari gider (sade "Ayrintil:" satiri icin).
+ */
+async function pcFetch(url, init = {}, timeoutMs = 12000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const ext = init.signal;
+  if (ext) {
+    if (ext.aborted) ctrl.abort();
+    else ext.addEventListener("abort", () => ctrl.abort(), { once: true });
+  }
+  const opts = { ...init, signal: ctrl.signal };
+  try {
+    if (inTauri()) return await tauriFetch(url, opts);
+    return await fetch(url, opts);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 /** PC'nin ses soketinden gelen metin: {"type":"kes"} = calan sesi hemen sustur. */
 export function sesKesMesaji(metin) {
@@ -84,7 +114,8 @@ export async function findReachableHost(hosts, port = PC_APP_PORT, secure = fals
   try {
     return await Promise.any(
       hosts.map(async (h) => {
-        await fetch(`${proto}://${h}:${port}/login`, { signal: ctrl.signal });
+        // pcFetch: Rust motoru uzerinden, WebView'in yerel-ag (PNA)/CORS engeline takilmadan.
+        await pcFetch(`${proto}://${h}:${port}/login`, { signal: ctrl.signal }, ms);
         return h;
       }),
     );
@@ -130,15 +161,18 @@ export class SimplePC {
     this._closed = false;
     this.onStateChange("connecting");
     try {
-      const ctrl = new AbortController();
-      // Tailscale'in ilk baglantisi (tunel kurulumu) birkac saniye surebilir.
-      const timer = setTimeout(() => ctrl.abort(), 12000);
-      const res = await fetch(`${this.httpBase}${path}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: ctrl.signal,
-      }).finally(() => clearTimeout(timer));
+      // pcFetch: on-device Rust motorundan gider. WebView'in duz `fetch`'i yerel-ag IP'sine
+      // (192.168.x / 100.x) "Private Network Access"/CORS ile engelliyordu ("Failed to
+      // fetch"); internet host'lari calisirken PC baglanamiyordu. Tunel ilk acilisi icin 12 sn.
+      const res = await pcFetch(
+        `${this.httpBase}${path}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        12000,
+      );
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok || !data?.token) {
         this.lastError = `HTTP ${res.status}`;
