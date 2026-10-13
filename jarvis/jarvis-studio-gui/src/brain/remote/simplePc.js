@@ -25,11 +25,13 @@ function inTauri() {
 }
 
 /**
- * PC'ye HTTP istegi. On-device Tauri'nin Rust HTTP motorundan gider: telefon WebView'i
- * yerel-ag IP'sine (192.168.x / 100.x) duz `fetch`'i "Private Network Access"/CORS ile
- * engelliyor ("Failed to fetch") — internet host'lari calisirken PC baglanamiyordu. Rust
- * tarafi bu kisitlara tabi degil. Tarayici onizlemesinde (Tauri yok) normal fetch'e duser.
- * Hatalar oldugu gibi yukari gider (sade "Ayrintil:" satiri icin).
+ * PC'ye HTTP istegi. ONCE WebView'in kendi `fetch`'i denenir: telefonun TARAYICISI
+ * PC'nin yerel-ag adresine (192.168.x:8002) zaten ulasiyor; sunucu artik Private Network
+ * (PNA) izni dondurdugu icin WebView fetch de o adrese ulasir. Native (Rust) motor bazi
+ * cihaz/ag kosullarinda yerel-ag IP'sine ulasamiyordu ("Request canceled" — istek PC'ye
+ * hic varmiyordu), bu yuzden native YALNIZCA WebView fetch basarisiz olursa yedek olarak
+ * denenir. Tarayici onizlemesinde (Tauri yok) zaten tek yol normal fetch. Hatalar oldugu
+ * gibi yukari gider (sade "Ayrintil:" satiri icin).
  */
 async function pcFetch(url, init = {}, timeoutMs = 12000) {
   const ctrl = new AbortController();
@@ -41,8 +43,14 @@ async function pcFetch(url, init = {}, timeoutMs = 12000) {
   }
   const opts = { ...init, signal: ctrl.signal };
   try {
-    if (inTauri()) return await tauriFetch(url, opts);
-    return await fetch(url, opts);
+    try {
+      return await fetch(url, opts);
+    } catch (e) {
+      // WebView fetch zaman asimiyla iptal olduysa yeniden deneme anlamsiz; ayrica
+      // tarayici onizlemesinde native motor yok. Diger durumlarda native'e dus.
+      if (ctrl.signal.aborted || !inTauri()) throw e;
+      return await tauriFetch(url, opts);
+    }
   } finally {
     clearTimeout(timer);
   }
@@ -114,7 +122,7 @@ export async function findReachableHost(hosts, port = PC_APP_PORT, secure = fals
   try {
     return await Promise.any(
       hosts.map(async (h) => {
-        // pcFetch: Rust motoru uzerinden, WebView'in yerel-ag (PNA)/CORS engeline takilmadan.
+        // pcFetch: once WebView fetch (sunucunun PNA izniyle yerel-aga ulasir), olmazsa native.
         await pcFetch(`${proto}://${h}:${port}/login`, { signal: ctrl.signal }, ms);
         return h;
       }),
@@ -161,9 +169,8 @@ export class SimplePC {
     this._closed = false;
     this.onStateChange("connecting");
     try {
-      // pcFetch: on-device Rust motorundan gider. WebView'in duz `fetch`'i yerel-ag IP'sine
-      // (192.168.x / 100.x) "Private Network Access"/CORS ile engelliyordu ("Failed to
-      // fetch"); internet host'lari calisirken PC baglanamiyordu. Tunel ilk acilisi icin 12 sn.
+      // pcFetch: once WebView fetch (sunucunun PNA izniyle yerel-ag IP'sine ulasir — tarayici
+      // zaten ulasiyor), basarisizsa native yedek. Tunel ilk acilisi icin 12 sn.
       const res = await pcFetch(
         `${this.httpBase}${path}`,
         {
