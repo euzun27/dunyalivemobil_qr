@@ -1,10 +1,15 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import ModalPanel from "./ModalPanel";
 import Icon from "./Icon";
 import { useSimplePc } from "../hooks/useSimplePc";
 import { PC_APP_PORT } from "../brain/remote/simplePc";
+import { simplePcStore } from "../brain/remote/simpleStore";
 
 const QrScanner = lazy(() => import("./QrScanner"));
+
+// GEÇİCİ teşhis satırı: görüşmede çıkış(ağız) ve mikrofon seviyesini ekranda gösterir.
+// iş bitince false yapıp kaldıracağız.
+const TESHIS = true;
 
 /* DUNYATEK - Basit Uzak PC eslestirme.
  * PC'nin zaten sahip oldugu /login + /ws API'sini kullanir. Karmasik imzali kimlik
@@ -52,6 +57,25 @@ export default function MobileRemotePC({ onClose }) {
   } = useSimplePc();
   const [voiceError, setVoiceError] = useState("");
   const [voiceStarting, setVoiceStarting] = useState(false);
+  const [teshis, setTeshis] = useState(null);
+
+  // GEÇİCİ: görüşme açıkken ses seviyelerini ~150 ms'de bir ekrana yaz.
+  // (Görüşme kapanınca satır zaten gösterilmiyor; render `voice`e bağlı.)
+  useEffect(() => {
+    if (!TESHIS || !voice) return undefined;
+    const id = setInterval(() => {
+      try {
+        const lv = simplePcStore.levels();
+        setTeshis({
+          out: Math.round((lv.out || 0) * 100),
+          mic: Math.round((lv.mic || 0) * 100),
+        });
+      } catch {
+        /* yoksay */
+      }
+    }, 150);
+    return () => clearInterval(id);
+  }, [voice]);
 
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState("");
@@ -240,6 +264,14 @@ export default function MobileRemotePC({ onClose }) {
               : "Görüşme kapalı. Yeniden başlatmak için düğmeye basın."}
           </div>
           {voiceError && <div className="settings-warn">{voiceError}</div>}
+          {TESHIS && voice && teshis && (
+            <div
+              className="settings-hint"
+              style={{ marginTop: 6, fontFamily: "monospace", fontSize: 12 }}
+            >
+              teşhis · çıkış(ağız): {teshis.out} · mikrofon: {teshis.mic}
+            </div>
+          )}
           {(!voice || /^Bilgi:/.test(lastError)) &&
             !voiceError &&
             state === "online" &&

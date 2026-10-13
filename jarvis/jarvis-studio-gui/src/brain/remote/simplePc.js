@@ -553,7 +553,9 @@ export class SimplePC {
         onEnd?.();
       }
     };
-    voice.timer = setInterval(() => void sor(), 100);
+    // 50 ms: ekrandaki ağzın çıkış seviyesi web yolundaki canlı ölçere yakın hızda güncellensin
+    // (100 ms'de ağız kaba/gecikmeli oynuyordu). Yüz ~30 fps çizdiği için bu yeterli.
+    voice.timer = setInterval(() => void sor(), 50);
     // 15 sn cokmeden calistiysa motor saglam: isaret kaldirilir.
     setTimeout(() => {
       if (this._voice === voice) isaretKoy(YEREL_SES_DENENIYOR, null);
