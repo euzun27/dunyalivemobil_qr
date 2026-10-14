@@ -19,7 +19,8 @@ import { useSimplePc } from "../hooks/useSimplePc";
 
 function openWebsite() {
   import("@tauri-apps/api/core")
-    .then(({ invoke }) => invoke("plugin:phone|open_url", { url: "https://www.ai.dunyatek.com.tr" }))
+    // Goruntude www.ai.dunyatek.com.tr yazsa da, www'li ana makine acilmiyor; hedef www'siz.
+    .then(({ invoke }) => invoke("plugin:phone|open_url", { url: "https://ai.dunyatek.com.tr/" }))
     .catch(() => {});
 }
 import { STATUS_META, DEFAULT_TELEMETRY } from "./hudConstants";
